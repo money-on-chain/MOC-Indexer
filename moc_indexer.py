@@ -306,6 +306,41 @@ class MoCIndexer:
 
         return d_moc_state
 
+    def prices_from_sc(self, block_identifier: BlockIdentifier = 'latest'):
+
+        bucket_x2 = str.encode('X2')
+
+        d_price = OrderedDict()
+        d_price["bitcoinPrice"] = str(self.contract_MoCState.bitcoin_price(
+            formatted=False,
+            block_identifier=block_identifier))
+        d_price["bproPriceInRbtc"] = str(self.contract_MoCState.bpro_tec_price(
+            formatted=False,
+            block_identifier=block_identifier))
+        d_price["bproPriceInUsd"] = str(self.contract_MoCState.bpro_price(
+            formatted=False,
+            block_identifier=block_identifier))
+        d_price["bproDiscountPrice"] = str(self.contract_MoCState.bpro_discount_price(
+            formatted=False,
+            block_identifier=block_identifier))
+        d_price["bprox2PriceInRbtc"] = str(self.contract_MoCState.btc2x_tec_price(
+            bucket_x2,
+            formatted=False,
+            block_identifier=block_identifier))
+        d_price["bprox2PriceInBpro"] = str(self.contract_MoCState.bprox_price(
+            bucket_x2,
+            formatted=False,
+            block_identifier=block_identifier))
+        d_price["reservePrecision"] = str(self.contract_MoC.reserve_precision(
+            formatted=False,
+            block_identifier=block_identifier))
+        d_price["bprox2PriceInUsd"] = str(
+            int(d_price["bprox2PriceInRbtc"]) * int(d_price["bitcoinPrice"]) / int(
+                d_price["reservePrecision"]))
+        d_price["createdAt"] = datetime.datetime.now()
+
+        return d_price
+
     def update_last_moc_state(self):
 
         # conect to mongo db
