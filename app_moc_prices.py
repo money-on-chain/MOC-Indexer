@@ -43,4 +43,4 @@ if __name__ == '__main__':
             network = options.network
 
     moc_inc = MoCIndexer(config, network)
-    moc_inc.update_balance_from_account('0xCD8A1c9aCc980ae031456573e34dC05cD7daE6e3')
+    moc_inc.update_last_moc_state()
