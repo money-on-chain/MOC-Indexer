@@ -23,7 +23,9 @@ from moneyonchain.events import MoCExchangeRiskProMint, \
     MoCExchangeStableTokenRedeem, \
     MoCSettlementRedeemRequestAlter, \
     MoCSettlementSettlementRedeemStableToken, \
-    MoCSettlementSettlementDeleveraging
+    MoCSettlementSettlementDeleveraging, \
+    MoCInrateDailyPay, \
+    MoCInrateRiskProHoldersInterestPay
 
 import logging
 import logging.config
@@ -394,7 +396,7 @@ class MoCIndexer:
 
         return d_price
 
-    def update_last_moc_state(self):
+    def update_moc_state(self, block_identifier: BlockIdentifier = 'latest'):
 
         # conect to mongo db
         m_client = self.mm.connect()
@@ -402,17 +404,22 @@ class MoCIndexer:
         # get last block from node
         last_block = self.connection_manager.block_number
 
-        # get all functions from smart contract
-        d_moc_state = self.moc_state_from_sc()
+        if block_identifier == 'latest':
+            block_height = last_block
+        else:
+            block_height = block_identifier
 
-        block_height = last_block - d_moc_state['dayBlockSpan']
+        # get all functions from smart contract
+        d_moc_state = self.moc_state_from_sc(block_identifier=block_height)
+
+        old_block_height = last_block - d_moc_state['dayBlockSpan']
 
         # get last price written in mongo
         collection_price = self.mm.collection_price(m_client)
-        last_price = collection_price.find_one(filter={"blockHeight": {"$lt": block_height}},
+        last_price = collection_price.find_one(filter={"blockHeight": {"$lt": old_block_height}},
                                                sort=[("blockHeight", -1)])
 
-        d_moc_state["lastUpdateHeight"] = last_block
+        d_moc_state["lastUpdateHeight"] = block_height
         d_moc_state["priceVariation"] = last_price
 
         # get collection moc_state from mongo
@@ -707,9 +714,7 @@ class MoCIndexer:
 
         tx_hash = Web3.toHex(tx_receipt['transactionHash'])
 
-        print(tx_event.formatted())
-
-        d_tx = dict()
+        d_tx = OrderedDict()
         d_tx["transactionHash"] = tx_hash
         #d_tx["isMintRedeem"] = True
         #d_tx["isUserOperation"] = True
@@ -748,7 +753,7 @@ class MoCIndexer:
 
         tx_hash = Web3.toHex(tx_receipt['transactionHash'])
 
-        d_tx = dict()
+        d_tx = OrderedDict()
         d_tx["address"] = tx_event.account
         d_tx["event"] = 'StableTokenRedeem'
         d_tx["transactionHash"] = tx_hash
@@ -785,7 +790,7 @@ class MoCIndexer:
 
         tx_hash = Web3.toHex(tx_receipt['transactionHash'])
 
-        d_tx = dict()
+        d_tx = OrderedDict()
         d_tx["transactionHash"] = tx_hash
         #d_tx["isMintRedeem"] = True
         #d_tx["isUserOperation"] = True
@@ -868,20 +873,18 @@ class MoCIndexer:
 
         tx_hash = Web3.toHex(tx_receipt['transactionHash'])
 
-        d_tx = dict()
-        d_tx["event"] = 'RedeemRequestAlter'
+        d_tx = OrderedDict()
         d_tx["transactionHash"] = tx_hash
-        d_tx["isMintRedeem"] = True
-        d_tx["isUserOperation"] = True
         d_tx["address"] = tx_event.redeemer
+        d_tx["status"] = 'pending'
+        d_tx["event"] = 'RedeemRequestAlter'
         d_tx["tokenInvolved"] = 'STABLE'
+        d_tx["lastUpdatedAt"] = datetime.datetime.now()
+        d_tx["createdAt"] = datetime.datetime.now()
         d_tx["amount"] = str(tx_event.delta)
         d_tx["confirmationTime"] = None
-        d_tx["lastUpdatedAt"] = datetime.datetime.now()
-        d_tx["status"] = 'pending'
         d_tx["isPositive"] = tx_event.isAddition
-        d_tx["createdAt"] = datetime.datetime.now()
-        d_tx["errorCode"] = ''
+        #d_tx["errorCode"] = ''
 
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash},
@@ -892,36 +895,62 @@ class MoCIndexer:
 
     def moc_settlement_redeem_stable_token(self, tx_receipt, tx_event, m_client):
 
+        pass
+
         # get collection transaction
-        collection_tx = self.mm.collection_transaction(m_client)
-
-        tx_hash = Web3.toHex(tx_receipt['transactionHash'])
-
-        d_tx = dict()
-        d_tx["event"] = 'SettlementRedeemStableToken'
-        d_tx["transactionHash"] = tx_hash
-        d_tx["isMintRedeem"] = True
-        d_tx["isUserOperation"] = True
-        d_tx["queueSize"] = str(tx_event.queueSize)
-        d_tx["accumCommissions"] = str(tx_event.accumCommissions)
-        d_tx["reservePrice"] = str(tx_event.reservePrice)
-        d_tx["confirmationTime"] = None
-        d_tx["lastUpdatedAt"] = datetime.datetime.now()
-        d_tx["status"] = 'pending'
-        d_tx["createdAt"] = datetime.datetime.now()
-        d_tx["errorCode"] = ''
-
-        post_id = collection_tx.find_one_and_update(
-            {"transactionHash": tx_hash},
-            {"$set": d_tx},
-            upsert=True)
-
-        return post_id
+        # collection_tx = self.mm.collection_transaction(m_client)
+        #
+        # tx_hash = Web3.toHex(tx_receipt['transactionHash'])
+        #
+        # d_tx = dict()
+        # d_tx["event"] = 'SettlementRedeemStableToken'
+        # d_tx["transactionHash"] = tx_hash
+        # #d_tx["isMintRedeem"] = True
+        # #d_tx["isUserOperation"] = True
+        # d_tx["queueSize"] = str(tx_event.queueSize)
+        # d_tx["accumCommissions"] = str(tx_event.accumCommissions)
+        # d_tx["reservePrice"] = str(tx_event.reservePrice)
+        # d_tx["confirmationTime"] = None
+        # d_tx["lastUpdatedAt"] = datetime.datetime.now()
+        # d_tx["status"] = 'pending'
+        # d_tx["createdAt"] = datetime.datetime.now()
+        # d_tx["errorCode"] = ''
+        #
+        # post_id = collection_tx.find_one_and_update(
+        #     {"transactionHash": tx_hash},
+        #     {"$set": d_tx},
+        #     upsert=True)
+        #
+        # return post_id
 
     def moc_settlement_deleveraging(self, tx_receipt, tx_event, m_client):
 
-        # process deleveraging
         pass
+
+        # get collection transaction
+        # collection_tx = self.mm.collection_transaction(m_client)
+        #
+        # tx_hash = Web3.toHex(tx_receipt['transactionHash'])
+        #
+        # d_tx = dict()
+        # d_tx["event"] = 'SettlementDeleveraging'
+        # d_tx["transactionHash"] = tx_hash
+        # d_tx["address"] = ""
+        # d_tx["RBTCAmount"] = ""
+        # d_tx["USDAmount"] = ""
+        # d_tx["amount"] = ""
+        # d_tx["confirmationTime"] = None
+        # d_tx["lastUpdatedAt"] = datetime.datetime.now()
+        # d_tx["status"] = 'pending'
+        # d_tx["tokenInvolved"] = 'RISKPROX'
+        # d_tx["createdAt"] = datetime.datetime.now()
+        #
+        # post_id = collection_tx.find_one_and_update(
+        #     {"transactionHash": tx_hash},
+        #     {"$set": d_tx},
+        #     upsert=True)
+        #
+        # return post_id
 
     def logs_process_moc_settlement(self, tx_receipt, m_client):
 
@@ -945,6 +974,58 @@ class MoCIndexer:
             tx_event = MoCSettlementSettlementDeleveraging(self.connection_manager, tx_log)
             self.moc_settlement_deleveraging(tx_receipt, tx_event, m_client)
 
+    def moc_inrate_daily_pay(self, tx_receipt, tx_event, m_client):
+
+        collection_inrate = self.mm.collection_inrate_income(m_client)
+
+        d_tx = OrderedDict()
+        d_tx["blockHeight"] = tx_event.blockNumber
+        d_tx["ratePayAmount"] = str(tx_event.amount)
+        d_tx["nBTCBitProOfBucketZero"] = str(tx_event.nReserveBucketC0)
+        d_tx["timestamp"] = tx_event.timestamp
+        d_tx["createdAt"] = datetime.datetime.now()
+
+        post_id = collection_inrate.find_one_and_update(
+            {"blockHeight": tx_event.blockNumber},
+            {"$set": d_tx},
+            upsert=True)
+
+        return post_id
+
+    def moc_inrate_risk_pro_holders_interest_pay(self, tx_receipt, tx_event, m_client):
+
+        collection_inrate = self.mm.collection_bitpro_holders_interest(m_client)
+
+        d_tx = OrderedDict()
+        d_tx["blockHeight"] = tx_event.blockNumber
+        d_tx["amount"] = str(tx_event.amount)
+        d_tx["nBtcBucketC0BeforePay"] = str(tx_event.nReserveBucketC0BeforePay)
+        d_tx["timestamp"] = tx_event.timestamp
+        d_tx["createdAt"] = datetime.datetime.now()
+
+        post_id = collection_inrate.find_one_and_update(
+            {"blockHeight": tx_event.blockNumber},
+            {"$set": d_tx},
+            upsert=True)
+
+        return post_id
+
+    def logs_process_moc_inrate(self, tx_receipt, m_client):
+
+        events = self.contract_MoC.sc_moc_inrate.events
+
+        # InrateDailyPay
+        tx_logs = events.InrateDailyPay().processReceipt(tx_receipt, errors=DISCARD)
+        for tx_log in tx_logs:
+            tx_event = MoCInrateDailyPay(self.connection_manager, tx_log)
+            self.moc_inrate_daily_pay(tx_receipt, tx_event, m_client)
+
+        # RiskProHoldersInterestPay
+        tx_logs = events.RiskProHoldersInterestPay().processReceipt(tx_receipt, errors=DISCARD)
+        for tx_log in tx_logs:
+            tx_event = MoCInrateRiskProHoldersInterestPay(self.connection_manager, tx_log)
+            self.moc_inrate_risk_pro_holders_interest_pay(tx_receipt, tx_event, m_client)
+
     def logs_transactions_receipts(self, tx_receipts, m_client):
 
         network = self.connection_manager.network
@@ -955,10 +1036,15 @@ class MoCIndexer:
                 continue
             for tx_log in tx_receipt['logs']:
                 tx_logs_address = str.lower(tx_log['address'])
-                if tx_logs_address in [str.lower(moc_addresses['MoCExchange'])]:
-                    self.logs_process_moc_exchange(tx_receipt, m_client)
+                if tx_logs_address in [str.lower(moc_addresses['MoCExchange']),
+                                       str.lower(moc_addresses['MoCSettlement']),
+                                       str.lower(moc_addresses['MoCInrate'])]:
 
-    def update_moc_transactions(self, block_identifier: BlockIdentifier = 'latest'):
+                    self.logs_process_moc_exchange(tx_receipt, m_client)
+                    self.logs_process_moc_settlement(tx_receipt, m_client)
+                    self.logs_process_moc_inrate(tx_receipt, m_client)
+
+    def update_moc_events(self, block_identifier: BlockIdentifier = 'latest'):
 
         # conect to mongo db
         m_client = self.mm.connect()

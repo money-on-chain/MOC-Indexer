@@ -43,4 +43,4 @@ if __name__ == '__main__':
             network = options.network
 
     moc_inc = MoCIndexer(config, network)
-    moc_inc.update_last_moc_state()
+    moc_inc.update_moc_state(904959)
