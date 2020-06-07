@@ -433,13 +433,21 @@ class MoCIndexer:
 
         return post_id
 
-    def update_balance_from_account(self, account_address):
+    def update_balance_from_account(self, account_address, block_identifier: BlockIdentifier = 'latest'):
 
         # conect to mongo db
         m_client = self.mm.connect()
 
+        # get last block from node
+        last_block = self.connection_manager.block_number
+
+        if block_identifier == 'latest':
+            block_height = last_block
+        else:
+            block_height = block_identifier
+
         # get all functions from smart contract
-        d_user_balance = self.balances_from_address(account_address)
+        d_user_balance = self.balances_from_address(account_address, block_identifier=block_height)
 
         # get collection user state from mongo
         collection_user_state = self.mm.collection_user_state(m_client)
