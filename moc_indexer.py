@@ -163,6 +163,7 @@ class MoCIndexer:
 
         self.connection_manager = ConnectionManager(options=self.options, network=self.network)
         self.app_mode = self.options['networks'][self.network]['app_mode']
+        self.debug_mode = self.options['debug']
 
         if self.app_mode == "RRC20":
             self.contract_MoC = RDOCMoC(self.connection_manager)
@@ -430,8 +431,9 @@ class MoCIndexer:
             {},
             {"$set": d_moc_state},
             upsert=True)
+        d_moc_state['post_id'] = post_id
 
-        return post_id
+        return d_moc_state
 
     def update_balance_from_account(self, account_address, block_identifier: BlockIdentifier = 'latest'):
 
@@ -461,7 +463,7 @@ class MoCIndexer:
             d_user_balance["prefLanguage"] = 'en'
             d_user_balance["createdAt"] = datetime.datetime.now()
             d_user_balance["lastNotificationCheckAt"] = datetime.datetime.now()
-            d_user_balance["showTermsAndConditions"] = False
+            d_user_balance["showTermsAndConditions"] = True
             d_user_balance["showTutorialNoMore"] = False
 
         # update or insert
@@ -470,7 +472,9 @@ class MoCIndexer:
             {"$set": d_user_balance},
             upsert=True)
 
-        return post_id
+        d_user_balance['post_id'] = post_id
+
+        return d_user_balance
 
     def update_prices(self, block_identifier: BlockIdentifier = 'latest'):
 
@@ -503,8 +507,9 @@ class MoCIndexer:
         d_prices["isDailyVariation"] = False
 
         post_id = collection_price.insert_one(d_prices).inserted_id
+        d_prices['post_id'] = post_id
 
-        return post_id
+        return d_prices
 
     def moc_contract_addresses(self):
 
@@ -578,22 +583,15 @@ class MoCIndexer:
         d_tx["address"] = tx_event.account
         d_tx["event"] = 'RiskProMint'
         d_tx["transactionHash"] = tx_hash
-        #d_tx["isMintRedeem"] = True
-        #d_tx["isUserOperation"] = True
         d_tx["RBTCAmount"] = str(tx_event.reserveTotal)
         usd_amount = Web3.fromWei(tx_event.reserveTotal, 'ether') * Web3.fromWei(tx_event.reservePrice, 'ether')
         d_tx["USDAmount"] = str(int(usd_amount * self.precision))
         d_tx["amount"] = str(tx_event.amount)
         d_tx["confirmationTime"] = None
         d_tx["isPositive"] = True
-        #d_tx["userAmount"] = str(Web3.fromWei(tx_event.amount, 'ether'))
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
         d_tx["rbtcCommission"] = str(tx_event.commission)
         d_tx["status"] = 'confirming'
-        #d_tx["otherAddress"] = ''
-        #d_tx["rbtcInterests"] = ''
-        #d_tx["leverage"] = ''
-        #d_tx["errorCode"] = ''
         d_tx["tokenInvolved"] = 'RISKPRO'
         d_tx["createdAt"] = datetime.datetime.now()
 
@@ -601,8 +599,9 @@ class MoCIndexer:
             {"transactionHash": tx_hash},
             {"$set": d_tx},
             upsert=True)
+        d_tx['post_id'] = post_id
 
-        return post_id
+        return d_tx
 
     def moc_exchange_risk_pro_redeem(self, tx_receipt, tx_event, m_client):
 
@@ -614,32 +613,27 @@ class MoCIndexer:
         d_tx = OrderedDict()
         d_tx["event"] = 'RiskProRedeem'
         d_tx["transactionHash"] = tx_hash
-        #d_tx["isMintRedeem"] = True
-        #d_tx["isUserOperation"] = True
         d_tx["address"] = tx_event.account
         d_tx["tokenInvolved"] = 'RISKPRO'
         d_tx["userAmount"] = str(Web3.fromWei(tx_event.amount, 'ether'))
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
         d_tx["createdAt"] = datetime.datetime.now()
         d_tx["status"] = 'confirming'
-        #d_tx["otherAddress"] = ''
         d_tx["RBTCAmount"] = str(tx_event.reserveTotal)
         usd_amount = Web3.fromWei(tx_event.reserveTotal, 'ether') * Web3.fromWei(tx_event.reservePrice, 'ether')
         d_tx["USDAmount"] = str(int(usd_amount * self.precision))
         d_tx["amount"] = str(tx_event.amount)
         d_tx["confirmationTime"] = None
         d_tx["rbtcCommission"] = str(tx_event.commission)
-        #d_tx["rbtcInterests"] = ''
-        #d_tx["leverage"] = ''
-        #d_tx["isPositive"] = False
-        #d_tx["errorCode"] = ''
 
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash},
             {"$set": d_tx},
             upsert=True)
 
-        return post_id
+        d_tx['post_id'] = post_id
+
+        return d_tx
 
     def moc_exchange_risk_prox_mint(self, tx_receipt, tx_event, m_client):
 
@@ -652,8 +646,6 @@ class MoCIndexer:
         d_tx["transactionHash"] = tx_hash
         d_tx["address"] = tx_event.account
         d_tx["status"] = 'confirming'
-        #d_tx["isMintRedeem"] = True
-        #d_tx["isUserOperation"] = True
         d_tx["event"] = 'RiskProxMint'
         d_tx["tokenInvolved"] = 'RISKPROX'
         d_tx["userAmount"] = str(Web3.fromWei(tx_event.amount, 'ether'))
@@ -668,15 +660,15 @@ class MoCIndexer:
         d_tx["leverage"] = str(tx_event.leverage)
         d_tx["rbtcCommission"] = str(tx_event.commission)
         d_tx["rbtcInterests"] = str(tx_event.interests)
-        #d_tx["otherAddress"] = ''
-        #d_tx["errorCode"] = ''
 
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash},
             {"$set": d_tx},
             upsert=True)
 
-        return post_id
+        d_tx['post_id'] = post_id
+
+        return d_tx
 
     def moc_exchange_risk_prox_redeem(self, tx_receipt, tx_event, m_client):
 
@@ -687,8 +679,6 @@ class MoCIndexer:
 
         d_tx = OrderedDict()
         d_tx["transactionHash"] = tx_hash
-        #d_tx["isMintRedeem"] = True
-        #d_tx["isUserOperation"] = True
         d_tx["address"] = tx_event.account
         d_tx["status"] = 'confirming'
         d_tx["event"] = 'RiskProxRedeem'
@@ -701,19 +691,18 @@ class MoCIndexer:
         d_tx["USDAmount"] = str(int(usd_amount * self.precision))
         d_tx["amount"] = str(tx_event.amount)
         d_tx["confirmationTime"] = None
-        #d_tx["otherAddress"] = ''
         d_tx["leverage"] = str(tx_event.leverage)
         d_tx["rbtcCommission"] = str(tx_event.commission)
         d_tx["rbtcInterests"] = str(tx_event.interests)
-        #d_tx["isPositive"] = False
-        #d_tx["errorCode"] = ''
 
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash},
             {"$set": d_tx},
             upsert=True)
 
-        return post_id
+        d_tx['post_id'] = post_id
+
+        return d_tx
 
     def moc_exchange_stable_token_mint(self, tx_receipt, tx_event, m_client):
 
@@ -724,8 +713,6 @@ class MoCIndexer:
 
         d_tx = OrderedDict()
         d_tx["transactionHash"] = tx_hash
-        #d_tx["isMintRedeem"] = True
-        #d_tx["isUserOperation"] = True
         d_tx["address"] = tx_event.account
         d_tx["status"] = 'confirming'
         d_tx["event"] = 'StableTokenMint'
@@ -740,19 +727,17 @@ class MoCIndexer:
         d_tx["USDAmount"] = str(int(usd_amount * self.precision))
         d_tx["amount"] = str(tx_event.amount)
         d_tx["confirmationTime"] = None
-        #d_tx["otherAddress"] = ''
         d_tx["isPositive"] = True
         d_tx["rbtcCommission"] = str(tx_event.commission)
-        #d_tx["rbtcInterests"] = ''
-        #d_tx["leverage"] = ''
-        #d_tx["errorCode"] = ''
 
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash},
             {"$set": d_tx},
             upsert=True)
 
-        return post_id
+        d_tx['post_id'] = post_id
+
+        return d_tx
 
     def moc_exchange_stable_token_redeem(self, tx_receipt, tx_event, m_client):
 
@@ -769,27 +754,21 @@ class MoCIndexer:
         usd_amount = Web3.fromWei(tx_event.reserveTotal, 'ether') * Web3.fromWei(tx_event.reservePrice, 'ether')
         d_tx["USDAmount"] = str(int(usd_amount * self.precision))
         d_tx["amount"] = str(tx_event.amount)
-        #d_tx["isMintRedeem"] = True
-        #d_tx["isUserOperation"] = True
         d_tx["confirmationTime"] = None
         d_tx["createdAt"] = datetime.datetime.now()
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
         d_tx["status"] = 'confirming'
         d_tx["tokenInvolved"] = 'STABLE'
-        #d_tx["userAmount"] = str(Web3.fromWei(tx_event.amount, 'ether'))
-        #d_tx["otherAddress"] = ''
         d_tx["rbtcCommission"] = str(tx_event.commission)
-        #d_tx["rbtcInterests"] = ''
-        #d_tx["leverage"] = ''
-        #d_tx["isPositive"] = False
-        #d_tx["errorCode"] = ''
 
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash},
             {"$set": d_tx},
             upsert=True)
 
-        return post_id
+        d_tx['post_id'] = post_id
+
+        return d_tx
 
     def moc_exchange_free_stable_token_redeem(self, tx_receipt, tx_event, m_client):
 
@@ -800,8 +779,6 @@ class MoCIndexer:
 
         d_tx = OrderedDict()
         d_tx["transactionHash"] = tx_hash
-        #d_tx["isMintRedeem"] = True
-        #d_tx["isUserOperation"] = True
         d_tx["address"] = tx_event.account
         d_tx["status"] = 'confirming'
         d_tx["event"] = 'FreeStableTokenRedeem'
@@ -814,19 +791,17 @@ class MoCIndexer:
         d_tx["USDAmount"] = str(int(usd_amount * self.precision))
         d_tx["amount"] = str(tx_event.amount)
         d_tx["confirmationTime"] = None
-        #d_tx["otherAddress"] = ''
         d_tx["rbtcCommission"] = str(tx_event.commission)
         d_tx["rbtcInterests"] = str(tx_event.interests)
-        #d_tx["leverage"] = ''
-        #d_tx["isPositive"] = False
-        #d_tx["errorCode"] = ''
 
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash},
             {"$set": d_tx},
             upsert=True)
 
-        return post_id
+        d_tx['post_id'] = post_id
+
+        return d_tx
 
     def logs_process_moc_exchange(self, tx_receipt, m_client):
 
@@ -892,14 +867,15 @@ class MoCIndexer:
         d_tx["amount"] = str(tx_event.delta)
         d_tx["confirmationTime"] = None
         d_tx["isPositive"] = tx_event.isAddition
-        #d_tx["errorCode"] = ''
 
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash},
             {"$set": d_tx},
             upsert=True)
 
-        return post_id
+        d_tx['post_id'] = post_id
+
+        return d_tx
 
     def moc_settlement_redeem_stable_token(self, tx_receipt, tx_event, m_client):
 
@@ -998,7 +974,9 @@ class MoCIndexer:
             {"$set": d_tx},
             upsert=True)
 
-        return post_id
+        d_tx['post_id'] = post_id
+
+        return d_tx
 
     def moc_inrate_risk_pro_holders_interest_pay(self, tx_receipt, tx_event, m_client):
 
@@ -1016,7 +994,9 @@ class MoCIndexer:
             {"$set": d_tx},
             upsert=True)
 
-        return post_id
+        d_tx['post_id'] = post_id
+
+        return d_tx
 
     def logs_process_moc_inrate(self, tx_receipt, m_client):
 
