@@ -878,8 +878,33 @@ class MoCIndexer:
         return d_tx
 
     def moc_settlement_redeem_stable_token(self, tx_receipt, tx_event, m_client):
-
         pass
+
+    def moc_settlement_redeem_stable_token_notification(self, tx_receipt, tx_event, tx_log, m_client):
+
+        # Notifications
+        collection_tx = self.mm.collection_notification(m_client)
+        tx_hash = Web3.toHex(tx_receipt['transactionHash'])
+        event_name = 'SettlementRedeemStableToken'
+        log_index = tx_log['logIndex']
+
+        d_tx = dict()
+        d_tx["event"] = event_name
+        d_tx["transactionHash"] = tx_hash
+        d_tx["logIndex"] = log_index
+        d_tx["queueSize"] = str(tx_event.queueSize)
+        d_tx["accumCommissions"] = str(tx_event.accumCommissions)
+        d_tx["reservePrice"] = str(tx_event.reservePrice)
+        d_tx["timestamp"] = tx_event.timestamp
+
+        post_id = collection_tx.find_one_and_update(
+            {"transactionHash": tx_hash, "event": event_name, "logIndex": log_index},
+            {"$set": d_tx},
+            upsert=True)
+        d_tx['post_id'] = post_id
+
+        return d_tx
+
 
         # get collection transaction
         # collection_tx = self.mm.collection_transaction(m_client)
@@ -951,6 +976,7 @@ class MoCIndexer:
         for tx_log in tx_logs:
             tx_event = MoCSettlementSettlementRedeemStableToken(self.connection_manager, tx_log)
             self.moc_settlement_redeem_stable_token(tx_receipt, tx_event, m_client)
+            self.moc_settlement_redeem_stable_token_notification(tx_receipt, tx_event, tx_log, m_client)
 
         # SettlementDeleveraging
         tx_logs = events.SettlementDeleveraging().processReceipt(tx_receipt, errors=DISCARD)
@@ -978,6 +1004,29 @@ class MoCIndexer:
 
         return d_tx
 
+    def moc_inrate_daily_pay_notification(self, tx_receipt, tx_event, tx_log, m_client):
+
+        collection_tx = self.mm.collection_notification(m_client)
+        tx_hash = Web3.toHex(tx_receipt['transactionHash'])
+        event_name = 'InrateDailyPay'
+        log_index = tx_log['logIndex']
+
+        d_tx = dict()
+        d_tx["event"] = event_name
+        d_tx["transactionHash"] = tx_hash
+        d_tx["logIndex"] = log_index
+        d_tx["amount"] = str(tx_event.amount)
+        d_tx["daysToSettlement"] = str(tx_event.daysToSettlement)
+        d_tx["timestamp"] = tx_event.timestamp
+
+        post_id = collection_tx.find_one_and_update(
+            {"transactionHash": tx_hash, "event": event_name, "logIndex": log_index},
+            {"$set": d_tx},
+            upsert=True)
+        d_tx['post_id'] = post_id
+
+        return d_tx
+
     def moc_inrate_risk_pro_holders_interest_pay(self, tx_receipt, tx_event, m_client):
 
         collection_inrate = self.mm.collection_bitpro_holders_interest(m_client)
@@ -998,6 +1047,30 @@ class MoCIndexer:
 
         return d_tx
 
+    def moc_inrate_risk_pro_holders_interest_pay_notification(self, tx_receipt, tx_log, tx_event, m_client):
+
+        collection_tx = self.mm.collection_notification(m_client)
+        tx_hash = Web3.toHex(tx_receipt['transactionHash'])
+        event_name = 'RiskProHoldersInterestPay'
+        log_index = tx_log['logIndex']
+
+        d_tx = OrderedDict()
+        d_tx["event"] = event_name
+        d_tx["transactionHash"] = tx_hash
+        d_tx["logIndex"] = log_index
+        d_tx["amount"] = str(tx_event.amount)
+        d_tx["nBtcBucketC0BeforePay"] = str(tx_event.nReserveBucketC0BeforePay)
+        d_tx["timestamp"] = tx_event.timestamp
+
+        post_id = collection_tx.find_one_and_update(
+            {"transactionHash": tx_hash, "event": event_name, "logIndex": log_index},
+            {"$set": d_tx},
+            upsert=True)
+
+        d_tx['post_id'] = post_id
+
+        return d_tx
+
     def logs_process_moc_inrate(self, tx_receipt, m_client):
 
         events = self.contract_MoC.sc_moc_inrate.events
@@ -1007,12 +1080,14 @@ class MoCIndexer:
         for tx_log in tx_logs:
             tx_event = MoCInrateDailyPay(self.connection_manager, tx_log)
             self.moc_inrate_daily_pay(tx_receipt, tx_event, m_client)
+            self.moc_inrate_daily_pay_notification(tx_receipt, tx_event, tx_log, m_client)
 
         # RiskProHoldersInterestPay
         tx_logs = events.RiskProHoldersInterestPay().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
             tx_event = MoCInrateRiskProHoldersInterestPay(self.connection_manager, tx_log)
             self.moc_inrate_risk_pro_holders_interest_pay(tx_receipt, tx_event, m_client)
+            self.moc_inrate_risk_pro_holders_interest_pay_notification(tx_receipt, tx_log, tx_event, m_client)
 
     def logs_transactions_receipts(self, tx_receipts, m_client):
 
