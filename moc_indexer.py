@@ -25,7 +25,9 @@ from moneyonchain.events import MoCExchangeRiskProMint, \
     MoCSettlementSettlementRedeemStableToken, \
     MoCSettlementSettlementDeleveraging, \
     MoCInrateDailyPay, \
-    MoCInrateRiskProHoldersInterestPay
+    MoCInrateRiskProHoldersInterestPay,\
+    MoCBucketLiquidation, \
+    MoCStateStateTransition
 
 import logging
 import logging.config
@@ -36,6 +38,14 @@ logging.basicConfig(level=logging.INFO,
                     datefmt='%Y-%m-%d %H:%M:%S')
 
 log = logging.getLogger('default')
+
+
+d_states = {
+    0: "Liquidated",
+    1: "BProDiscount",
+    2: "BelowCobj",
+    3: "AboveCobj"
+}
 
 
 class MongoManager:
@@ -905,61 +915,8 @@ class MoCIndexer:
 
         return d_tx
 
-
-        # get collection transaction
-        # collection_tx = self.mm.collection_transaction(m_client)
-        #
-        # tx_hash = Web3.toHex(tx_receipt['transactionHash'])
-        #
-        # d_tx = dict()
-        # d_tx["event"] = 'SettlementRedeemStableToken'
-        # d_tx["transactionHash"] = tx_hash
-        # #d_tx["isMintRedeem"] = True
-        # #d_tx["isUserOperation"] = True
-        # d_tx["queueSize"] = str(tx_event.queueSize)
-        # d_tx["accumCommissions"] = str(tx_event.accumCommissions)
-        # d_tx["reservePrice"] = str(tx_event.reservePrice)
-        # d_tx["confirmationTime"] = None
-        # d_tx["lastUpdatedAt"] = datetime.datetime.now()
-        # d_tx["status"] = 'pending'
-        # d_tx["createdAt"] = datetime.datetime.now()
-        # d_tx["errorCode"] = ''
-        #
-        # post_id = collection_tx.find_one_and_update(
-        #     {"transactionHash": tx_hash},
-        #     {"$set": d_tx},
-        #     upsert=True)
-        #
-        # return post_id
-
     def moc_settlement_deleveraging(self, tx_receipt, tx_event, m_client):
-
         pass
-
-        # get collection transaction
-        # collection_tx = self.mm.collection_transaction(m_client)
-        #
-        # tx_hash = Web3.toHex(tx_receipt['transactionHash'])
-        #
-        # d_tx = dict()
-        # d_tx["event"] = 'SettlementDeleveraging'
-        # d_tx["transactionHash"] = tx_hash
-        # d_tx["address"] = ""
-        # d_tx["RBTCAmount"] = ""
-        # d_tx["USDAmount"] = ""
-        # d_tx["amount"] = ""
-        # d_tx["confirmationTime"] = None
-        # d_tx["lastUpdatedAt"] = datetime.datetime.now()
-        # d_tx["status"] = 'pending'
-        # d_tx["tokenInvolved"] = 'RISKPROX'
-        # d_tx["createdAt"] = datetime.datetime.now()
-        #
-        # post_id = collection_tx.find_one_and_update(
-        #     {"transactionHash": tx_hash},
-        #     {"$set": d_tx},
-        #     upsert=True)
-        #
-        # return post_id
 
     def logs_process_moc_settlement(self, tx_receipt, m_client):
 
@@ -1089,6 +1046,80 @@ class MoCIndexer:
             self.moc_inrate_risk_pro_holders_interest_pay(tx_receipt, tx_event, m_client)
             self.moc_inrate_risk_pro_holders_interest_pay_notification(tx_receipt, tx_log, tx_event, m_client)
 
+    def moc_bucket_liquidation(self, tx_receipt, tx_event, m_client):
+        pass
+
+    def moc_bucket_liquidation_notification(self, tx_receipt, tx_event, tx_log, m_client):
+
+        collection_tx = self.mm.collection_notification(m_client)
+        tx_hash = Web3.toHex(tx_receipt['transactionHash'])
+        event_name = 'BucketLiquidation'
+        log_index = tx_log['logIndex']
+
+        d_tx = OrderedDict()
+        d_tx["event"] = event_name
+        d_tx["transactionHash"] = tx_hash
+        d_tx["logIndex"] = log_index
+        d_tx["bucket"] = tx_event.bucket
+        d_tx["timestamp"] = tx_event.timestamp
+
+        post_id = collection_tx.find_one_and_update(
+            {"transactionHash": tx_hash, "event": event_name, "logIndex": log_index},
+            {"$set": d_tx},
+            upsert=True)
+
+        d_tx['post_id'] = post_id
+
+        return d_tx
+
+    def logs_process_moc(self, tx_receipt, m_client):
+
+        events = self.contract_MoC.events
+
+        # BucketLiquidation
+        tx_logs = events.BucketLiquidation().processReceipt(tx_receipt, errors=DISCARD)
+        for tx_log in tx_logs:
+            tx_event = MoCBucketLiquidation(self.connection_manager, tx_log)
+            self.moc_bucket_liquidation(tx_receipt, tx_event, m_client)
+            self.moc_bucket_liquidation_notification(tx_receipt, tx_event, tx_log, m_client)
+
+    def moc_state_transition(self, tx_receipt, tx_event, m_client):
+        pass
+
+    def moc_state_transition_notification(self, tx_receipt, tx_event, tx_log, m_client):
+
+        collection_tx = self.mm.collection_notification(m_client)
+        tx_hash = Web3.toHex(tx_receipt['transactionHash'])
+        event_name = 'StateTransition'
+        log_index = tx_log['logIndex']
+
+        d_tx = OrderedDict()
+        d_tx["event"] = event_name
+        d_tx["transactionHash"] = tx_hash
+        d_tx["logIndex"] = log_index
+        d_tx["newState"] = d_states[tx_event.newState]
+        d_tx["timestamp"] = tx_event.timestamp
+
+        post_id = collection_tx.find_one_and_update(
+            {"transactionHash": tx_hash, "event": event_name, "logIndex": log_index},
+            {"$set": d_tx},
+            upsert=True)
+
+        d_tx['post_id'] = post_id
+
+        return d_tx
+
+    def logs_process_moc_state(self, tx_receipt, m_client):
+
+        events = self.contract_MoC.sc_moc_state.events
+
+        # StateTransition
+        tx_logs = events.StateTransition().processReceipt(tx_receipt, errors=DISCARD)
+        for tx_log in tx_logs:
+            tx_event = MoCStateStateTransition(self.connection_manager, tx_log)
+            self.moc_state_transition(tx_receipt, tx_event, m_client)
+            self.moc_state_transition_notification(tx_receipt, tx_event, tx_log, m_client)
+
     def logs_transactions_receipts(self, tx_receipts, m_client):
 
         network = self.connection_manager.network
@@ -1101,11 +1132,15 @@ class MoCIndexer:
                 tx_logs_address = str.lower(tx_log['address'])
                 if tx_logs_address in [str.lower(moc_addresses['MoCExchange']),
                                        str.lower(moc_addresses['MoCSettlement']),
-                                       str.lower(moc_addresses['MoCInrate'])]:
+                                       str.lower(moc_addresses['MoCInrate']),
+                                       str.lower(moc_addresses['MoC']),
+                                       str.lower(moc_addresses['MoCState'])]:
 
                     self.logs_process_moc_exchange(tx_receipt, m_client)
                     self.logs_process_moc_settlement(tx_receipt, m_client)
                     self.logs_process_moc_inrate(tx_receipt, m_client)
+                    self.logs_process_moc(tx_receipt, m_client)
+                    self.logs_process_moc_state(tx_receipt, m_client)
 
     def update_moc_events(self, block_identifier: BlockIdentifier = 'latest'):
 
