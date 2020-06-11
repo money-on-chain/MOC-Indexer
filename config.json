@@ -1,7 +1,7 @@
 {
   "mongo": {
     "uri": "mongodb://192.168.56.2:27017/",
-    "db": "ganache_desktop_2"
+    "db": "local_rdoc_testnet"
   },
   "timeout": 60,
   "timeout_wait": 300,

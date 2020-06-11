@@ -38,10 +38,10 @@ if __name__ == '__main__':
         network = os.environ['APP_NETWORK']
     else:
         if not options.network:
-            network = 'mocTestnetAlpha'
+            network = 'rdocTestnet'
         else:
             network = options.network
 
     moc_inc = MoCIndexer(config, network)
     #moc_inc.update_moc_transactions(889882)
-    moc_inc.update_moc_events(741328)
+    moc_inc.update_moc_events(647003)

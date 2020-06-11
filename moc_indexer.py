@@ -246,6 +246,7 @@ class MoCIndexer:
     def riskprox_balances_from_address(self, address, block_identifier: BlockIdentifier = 'latest'):
 
         d_user_balance = OrderedDict()
+
         d_user_balance["bprox2Balance"] = str(self.contract_MoC.bprox_balance_of(
             address,
             formatted=False,
@@ -1014,8 +1015,9 @@ class MoCIndexer:
         users = collection_users.find()
         l_users_riskprox = list()
         for user in users:
-            if float(user['bprox2Balance']) > 0.0:
-                l_users_riskprox.append(user)
+            l_users_riskprox.append(user)
+            #if float(user['bprox2Balance']) > 0.0:
+            #    l_users_riskprox.append(user)
 
         d_tx = OrderedDict()
         d_tx["transactionHash"] = tx_hash
@@ -1046,8 +1048,6 @@ class MoCIndexer:
                      "event": d_tx["event"]},
                     {"$set": d_tx},
                     upsert=True)
-
-                d_tx['post_id'] = post_id
 
                 l_transactions.append(d_tx)
 
