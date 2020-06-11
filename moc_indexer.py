@@ -27,7 +27,8 @@ from moneyonchain.events import MoCExchangeRiskProMint, \
     MoCInrateDailyPay, \
     MoCInrateRiskProHoldersInterestPay,\
     MoCBucketLiquidation, \
-    MoCStateStateTransition
+    MoCStateStateTransition, \
+    MoCSettlementSettlementStarted
 
 import logging
 import logging.config
@@ -239,6 +240,16 @@ class MoCIndexer:
         d_user_balance["estimateGasMintBprox2"] = str(self.contract_MoC.mint_bprox_gas_estimated(
             int(d_user_balance["rbtcBalance"]))
         )
+
+        return d_user_balance
+
+    def riskprox_balances_from_address(self, address, block_identifier: BlockIdentifier = 'latest'):
+
+        d_user_balance = OrderedDict()
+        d_user_balance["bprox2Balance"] = str(self.contract_MoC.bprox_balance_of(
+            address,
+            formatted=False,
+            block_identifier=block_identifier))
 
         return d_user_balance
 
@@ -606,7 +617,9 @@ class MoCIndexer:
         d_tx["createdAt"] = datetime.datetime.now()
 
         post_id = collection_tx.find_one_and_update(
-            {"transactionHash": tx_hash},
+            {"transactionHash": tx_hash,
+             "address": d_tx["address"],
+             "event": d_tx["event"]},
             {"$set": d_tx},
             upsert=True)
         d_tx['post_id'] = post_id
@@ -637,7 +650,9 @@ class MoCIndexer:
         d_tx["rbtcCommission"] = str(tx_event.commission)
 
         post_id = collection_tx.find_one_and_update(
-            {"transactionHash": tx_hash},
+            {"transactionHash": tx_hash,
+             "address": d_tx["address"],
+             "event": d_tx["event"]},
             {"$set": d_tx},
             upsert=True)
 
@@ -672,7 +687,9 @@ class MoCIndexer:
         d_tx["rbtcInterests"] = str(tx_event.interests)
 
         post_id = collection_tx.find_one_and_update(
-            {"transactionHash": tx_hash},
+            {"transactionHash": tx_hash,
+             "address": d_tx["address"],
+             "event": d_tx["event"]},
             {"$set": d_tx},
             upsert=True)
 
@@ -706,7 +723,9 @@ class MoCIndexer:
         d_tx["rbtcInterests"] = str(tx_event.interests)
 
         post_id = collection_tx.find_one_and_update(
-            {"transactionHash": tx_hash},
+            {"transactionHash": tx_hash,
+             "address": d_tx["address"],
+             "event": d_tx["event"]},
             {"$set": d_tx},
             upsert=True)
 
@@ -741,7 +760,9 @@ class MoCIndexer:
         d_tx["rbtcCommission"] = str(tx_event.commission)
 
         post_id = collection_tx.find_one_and_update(
-            {"transactionHash": tx_hash},
+            {"transactionHash": tx_hash,
+             "address": d_tx["address"],
+             "event": d_tx["event"]},
             {"$set": d_tx},
             upsert=True)
 
@@ -772,7 +793,9 @@ class MoCIndexer:
         d_tx["rbtcCommission"] = str(tx_event.commission)
 
         post_id = collection_tx.find_one_and_update(
-            {"transactionHash": tx_hash},
+            {"transactionHash": tx_hash,
+             "address": d_tx["address"],
+             "event": d_tx["event"]},
             {"$set": d_tx},
             upsert=True)
 
@@ -805,7 +828,9 @@ class MoCIndexer:
         d_tx["rbtcInterests"] = str(tx_event.interests)
 
         post_id = collection_tx.find_one_and_update(
-            {"transactionHash": tx_hash},
+            {"transactionHash": tx_hash,
+             "address": d_tx["address"],
+             "event": d_tx["event"]},
             {"$set": d_tx},
             upsert=True)
 
@@ -879,7 +904,9 @@ class MoCIndexer:
         d_tx["isPositive"] = tx_event.isAddition
 
         post_id = collection_tx.find_one_and_update(
-            {"transactionHash": tx_hash},
+            {"transactionHash": tx_hash,
+             "address": d_tx["address"],
+             "event": d_tx["event"]},
             {"$set": d_tx},
             upsert=True)
 
@@ -915,12 +942,130 @@ class MoCIndexer:
 
         return d_tx
 
+    def set_settlement_state(self, tx_event, m_client):
+        """Event: SettlementDeleveraging"""
+
+        # SettlementState
+        collection_tx = self.mm.collection_settlement_state(m_client)
+
+        exist_tx = collection_tx.find_one(
+            {"startBlockNumber": tx_event.blockNumber}
+        )
+
+        d_tx = dict()
+        d_tx["inProcess"] = False
+        d_tx["startBlockNumber"] = tx_event.blockNumber
+
+        if not exist_tx:
+
+            d_tx["docRedeemCount"] = 0
+            d_tx["deleveragingCount"] = 0
+
+            d_tx["btcxPrice"] = str(tx_event.riskProxPrice)
+            d_tx["btcPrice"] = str(tx_event.reservePrice)
+
+        post_id = collection_tx.find_one_and_update(
+            {"startBlockNumber": tx_event.blockNumber},
+            {"$set": d_tx},
+            upsert=True)
+
+        d_tx['post_id'] = post_id
+
+        return d_tx
+
+    def update_settlement_state(self, tx_event, m_client):
+        """Event: SettlementStarted"""
+
+        # SettlementState
+        collection_tx = self.mm.collection_settlement_state(m_client)
+
+        exist_tx = collection_tx.find_one(
+            {"startBlockNumber": tx_event.blockNumber}
+        )
+
+        d_tx = dict()
+        d_tx["inProcess"] = True
+        d_tx["startBlockNumber"] = tx_event.blockNumber
+        d_tx["docRedeemCount"] = tx_event.stableTokenRedeemCount
+        d_tx["deleveragingCount"] = tx_event.deleveragingCount
+        #adjust_price = Web3.fromWei(tx_event.riskProxPrice, 'ether') * Web3.fromWei(tx_event.reservePrice, 'ether')
+        #d_tx["btcxPrice"] = str(int(adjust_price * self.precision))
+        d_tx["btcxPrice"] = str(tx_event.riskProxPrice)
+        d_tx["btcPrice"] = str(tx_event.reservePrice)
+
+        if not exist_tx:
+            post_id = collection_tx.insert_one(d_tx).inserted_id
+            d_tx['post_id'] = post_id
+        else:
+            log.warning("SettlementState already exist!")
+            d_tx['post_id'] = None
+
+        return d_tx
+
     def moc_settlement_deleveraging(self, tx_receipt, tx_event, m_client):
+
+        # get collection transaction
+        collection_tx = self.mm.collection_transaction(m_client)
+
+        tx_hash = Web3.toHex(tx_receipt['transactionHash'])
+
+        # get all address who has bprox
+        collection_users = self.mm.collection_user_state(m_client)
+        users = collection_users.find()
+        l_users_riskprox = list()
+        for user in users:
+            if float(user['bprox2Balance']) > 0.0:
+                l_users_riskprox.append(user)
+
+        d_tx = OrderedDict()
+        d_tx["transactionHash"] = tx_hash
+        d_tx["event"] = 'SettlementDeleveraging'
+        d_tx["tokenInvolved"] = 'RISKPROX'
+        d_tx["status"] = 'confirming'
+        d_tx["confirmationTime"] = None
+        d_tx["lastUpdatedAt"] = datetime.datetime.now()
+
+        riskprox_price = Web3.fromWei(tx_event.riskProxPrice, 'ether')
+        reserve_price = Web3.fromWei(tx_event.reservePrice, 'ether')
+
+        start_block_number = tx_event.startBlockNumber
+        prior_block_to_deleveraging = start_block_number - 1
+        l_transactions = list()
+        for user_riskprox in l_users_riskprox:
+            d_user_balances = self.riskprox_balances_from_address(user_riskprox["address"],
+                                                                  prior_block_to_deleveraging)
+            if float(d_user_balances["bprox2Balance"]) > 0.0:
+                d_tx["address"] = user_riskprox["address"]
+                d_tx["amount"] = str(d_user_balances["bprox2Balance"])
+                d_tx["USDAmount"] = str(riskprox_price * reserve_price * int(d_user_balances["bprox2Balance"]))
+                d_tx["RBTCAmount"] = str(riskprox_price * int(d_user_balances["bprox2Balance"]))
+
+                post_id = collection_tx.find_one_and_update(
+                    {"transactionHash": tx_hash,
+                     "address": d_tx["address"],
+                     "event": d_tx["event"]},
+                    {"$set": d_tx},
+                    upsert=True)
+
+                d_tx['post_id'] = post_id
+
+                l_transactions.append(d_tx)
+
+        return l_transactions
+
+    def moc_settlement_started(self, tx_receipt, tx_event, m_client):
         pass
 
     def logs_process_moc_settlement(self, tx_receipt, m_client):
 
         events = self.contract_MoC.sc_moc_settlement.events
+
+        # SettlementStarted
+        tx_logs = events.SettlementStarted().processReceipt(tx_receipt, errors=DISCARD)
+        for tx_log in tx_logs:
+            tx_event = MoCSettlementSettlementStarted(self.connection_manager, tx_log)
+            self.moc_settlement_started(tx_receipt, tx_event, m_client)
+            self.update_settlement_state(tx_event, m_client)
 
         # RedeemRequestAlter
         tx_logs = events.RedeemRequestAlter().processReceipt(tx_receipt, errors=DISCARD)
@@ -940,6 +1085,7 @@ class MoCIndexer:
         for tx_log in tx_logs:
             tx_event = MoCSettlementSettlementDeleveraging(self.connection_manager, tx_log)
             self.moc_settlement_deleveraging(tx_receipt, tx_event, m_client)
+            self.set_settlement_state(tx_event, m_client)
 
     def moc_inrate_daily_pay(self, tx_receipt, tx_event, m_client):
 
@@ -1060,7 +1206,7 @@ class MoCIndexer:
         d_tx["event"] = event_name
         d_tx["transactionHash"] = tx_hash
         d_tx["logIndex"] = log_index
-        d_tx["bucket"] = tx_event.bucket
+        d_tx["bucket"] = Web3.toText(hexstr=tx_event.bucket)
         d_tx["timestamp"] = tx_event.timestamp
 
         post_id = collection_tx.find_one_and_update(

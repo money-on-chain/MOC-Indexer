@@ -44,4 +44,4 @@ if __name__ == '__main__':
 
     moc_inc = MoCIndexer(config, network)
     #moc_inc.update_moc_transactions(889882)
-    moc_inc.update_moc_events(737102)
+    moc_inc.update_moc_events(741328)
