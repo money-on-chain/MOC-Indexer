@@ -29,7 +29,8 @@ from moneyonchain.events import MoCExchangeRiskProMint, \
     MoCBucketLiquidation, \
     MoCStateStateTransition, \
     MoCSettlementSettlementStarted, \
-    ERC20Approval
+    ERC20Approval, \
+    ERC20Transfer
 from moneyonchain.token import RIF, RIFDoC, RIFPro, DoCToken, BProToken
 
 import logging
@@ -1273,6 +1274,93 @@ class MoCIndexer:
             self.moc_state_transition(tx_receipt, tx_event, m_client)
             self.moc_state_transition_notification(tx_receipt, tx_event, tx_log, m_client)
 
+    def tx_token_transfer(self, tx_receipt, tx_event, m_client, token_involved='RISKPRO'):
+
+        from_contract = '0x0000000000000000000000000000000000000000'
+
+        if str.lower(from_contract) in [str.lower(tx_event.e_from),
+                                        str.lower(tx_event.e_to)]:
+            # Transfer from our Contract we dont add because already done
+            # with ...Mint
+            if self.debug_mode:
+                log.info("Token transfer not processed")
+            return
+
+        # get collection transaction
+        collection_tx = self.mm.collection_transaction(m_client)
+
+        tx_hash = Web3.toHex(tx_receipt['transactionHash'])
+
+        # FROM
+        d_tx = OrderedDict()
+        d_tx["address"] = tx_event.e_from
+        d_tx["event"] = 'Transfer'
+        d_tx["transactionHash"] = tx_hash
+        d_tx["amount"] = str(tx_event.value)
+        d_tx["confirmationTime"] = None
+        d_tx["isPositive"] = False
+        d_tx["lastUpdatedAt"] = datetime.datetime.now()
+        d_tx["otherAddress"] = tx_event.e_to
+        d_tx["createdAt"] = datetime.datetime.now()
+        d_tx["status"] = 'pending'
+        d_tx["tokenInvolved"] = token_involved
+
+        post_id = collection_tx.find_one_and_update(
+            {"transactionHash": tx_hash,
+             "address": d_tx["address"],
+             "event": d_tx["event"]},
+            {"$set": d_tx},
+            upsert=True)
+
+        # TO
+        d_tx = OrderedDict()
+        d_tx["address"] = tx_event.e_to
+        d_tx["event"] = 'Transfer'
+        d_tx["transactionHash"] = tx_hash
+        d_tx["amount"] = str(tx_event.value)
+        d_tx["confirmationTime"] = None
+        d_tx["isPositive"] = True
+        d_tx["lastUpdatedAt"] = datetime.datetime.now()
+        d_tx["otherAddress"] = tx_event.e_from
+        d_tx["createdAt"] = datetime.datetime.now()
+        d_tx["status"] = 'pending'
+        d_tx["tokenInvolved"] = token_involved
+
+        post_id = collection_tx.find_one_and_update(
+            {"transactionHash": tx_hash,
+             "address": d_tx["address"],
+             "event": d_tx["event"]},
+            {"$set": d_tx},
+            upsert=True)
+
+        if self.debug_mode:
+            log.info("Tx Transfer {0} From: [{1}] To: [{2}] Amount: {3}".format(
+                token_involved,
+                tx_event.e_from,
+                tx_event.e_to,
+                tx_event.value))
+
+    def logs_process_transfer(self, tx_receipt, m_client):
+        """ Process events transfers"""
+
+        # RiskProToken
+        events = self.contract_RiskProToken.events
+
+        # Transfer
+        tx_logs = events.Transfer().processReceipt(tx_receipt, errors=DISCARD)
+        for tx_log in tx_logs:
+            tx_event = ERC20Transfer(self.connection_manager, tx_log)
+            self.tx_token_transfer(tx_receipt, tx_event, m_client, token_involved='RISKPRO')
+
+        # StableToken
+        events = self.contract_StableToken.events
+
+        # Transfer
+        tx_logs = events.Transfer().processReceipt(tx_receipt, errors=DISCARD)
+        for tx_log in tx_logs:
+            tx_event = ERC20Transfer(self.connection_manager, tx_log)
+            self.tx_token_transfer(tx_receipt, tx_event, m_client, token_involved='STABLE')
+
     def logs_moc_transactions_receipts(self, tx_receipts, m_client):
 
         network = self.connection_manager.network
@@ -1294,6 +1382,7 @@ class MoCIndexer:
                     self.logs_process_moc_inrate(tx_receipt, m_client)
                     self.logs_process_moc(tx_receipt, m_client)
                     self.logs_process_moc_state(tx_receipt, m_client)
+                    self.logs_process_transfer(tx_receipt, m_client)
 
     def update_moc_events(self, block_identifier: BlockIdentifier = 'latest'):
 
@@ -1311,6 +1400,46 @@ class MoCIndexer:
         transactions = self.search_moc_transaction(block_height)
         transactions_receipts = self.transactions_receipt(transactions)
         self.logs_moc_transactions_receipts(transactions_receipts, m_client)
+
+    def scan_moc_blocks(self,
+                        block_identifier: BlockIdentifier = 'latest',
+                        block_current: BlockIdentifier = 'latest'):
+
+        # conect to mongo db
+        m_client = self.mm.connect()
+
+        # get last block from node
+        last_block = self.connection_manager.block_number
+
+        if block_identifier == 'latest':
+            block_height = last_block
+        else:
+            block_height = block_identifier
+
+        if block_current == 'latest':
+            block_height_current = last_block
+        else:
+            block_height_current = block_current
+
+        if self.debug_mode:
+            log.info("Starting to scan transactions block height: [{0}] last block height: [{1}]".format(
+                block_height, block_height_current))
+
+        # get moc contracts adressess
+        moc_addresses = self.moc_contract_addresses()
+
+        # get block and full transactions
+        f_block = self.connection_manager.get_block(block_height, full_transactions=True)
+        all_transactions = f_block['transactions']
+
+        # From MOC Contract transactions
+        moc_transactions = self.filter_transactions(all_transactions, moc_addresses)
+
+        # get transactions receipts
+        moc_transactions_receipts = self.transactions_receipt(moc_transactions)
+
+        # process only MoC transactions
+        self.logs_moc_transactions_receipts(moc_transactions_receipts, m_client)
 
     def reserve_address(self):
 
@@ -1331,6 +1460,34 @@ class MoCIndexer:
 
         return l_transactions
 
+    def update_user_state_reserve(self, user_address, m_client, block_identifier: BlockIdentifier = 'latest'):
+
+        user_state = self.mm.collection_user_state(m_client)
+        exist_user = user_state.find_one(
+            {"address": user_address}
+        )
+        if exist_user:
+
+            d_user_balance = OrderedDict()
+            d_user_balance["reserveAllowance"] = str(self.contract_MoC.reserve_allowance(
+                user_address,
+                formatted=False,
+                block_identifier=block_identifier))
+            d_user_balance["spendableBalance"] = str(self.contract_MoC.spendable_balance(
+                user_address,
+                formatted=False,
+                block_identifier=block_identifier))
+
+            post_id = user_state.find_one_and_update(
+                {"address": user_address},
+                {"$set": d_user_balance}
+            )
+            if self.debug_mode:
+                log.info("Update user approval: [{0}] -> {1} -> Mongo _id: {2}".format(
+                    user_address,
+                    d_user_balance,
+                    post_id))
+
     def update_user_state_approval(self, tx_event, m_client):
 
         network = self.connection_manager.network
@@ -1344,27 +1501,7 @@ class MoCIndexer:
             # Approval is not from our contract
             return
 
-        d_user_balance = OrderedDict()
-        d_user_balance["reserveAllowance"] = str(self.contract_MoC.reserve_allowance(
-            user_address,
-            formatted=False,
-            block_identifier=block_identifier))
-        d_user_balance["spendableBalance"] = str(self.contract_MoC.spendable_balance(
-            user_address,
-            formatted=False,
-            block_identifier=block_identifier))
-
-        user_state = self.mm.collection_user_state(m_client)
-        exist_user = user_state.find_one(
-            {"address": user_address}
-        )
-        if exist_user:
-            post_id = user_state.find_one_and_update(
-                {"address": user_address},
-                {"$set": d_user_balance}
-            )
-            if self.debug_mode:
-                log.info("Update user approval: [{0}] -> {1}".format(user_address, d_user_balance))
+        self.update_user_state_reserve(user_address, m_client, block_identifier=block_identifier)
 
     def logs_process_reserve_approval(self, tx_receipt, m_client):
 
