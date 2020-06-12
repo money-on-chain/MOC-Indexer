@@ -28,7 +28,9 @@ from moneyonchain.events import MoCExchangeRiskProMint, \
     MoCInrateRiskProHoldersInterestPay,\
     MoCBucketLiquidation, \
     MoCStateStateTransition, \
-    MoCSettlementSettlementStarted
+    MoCSettlementSettlementStarted, \
+    ERC20Approval
+from moneyonchain.token import RIF, RIFDoC, RIFPro, DoCToken, BProToken
 
 import logging
 import logging.config
@@ -180,10 +182,15 @@ class MoCIndexer:
             self.contract_MoC = RDOCMoC(self.connection_manager)
             self.contract_MoCState = RDOCMoCState(self.connection_manager)
             self.contract_MoCInrate = RDOCMoCInrate(self.connection_manager)
+            self.contract_ReserveToken = RIF(self.connection_manager)
+            self.contract_StableToken = RIFDoC(self.connection_manager)
+            self.contract_RiskProToken = RIFPro(self.connection_manager)
         else:
             self.contract_MoC = MoC(self.connection_manager)
             self.contract_MoCState = MoCState(self.connection_manager)
             self.contract_MoCInrate = MoCInrate(self.connection_manager)
+            self.contract_StableToken = DoCToken(self.connection_manager)
+            self.contract_RiskProToken = BProToken(self.connection_manager)
 
         # initialize mongo db
         self.mm = MongoManager(self.options)
@@ -1266,7 +1273,7 @@ class MoCIndexer:
             self.moc_state_transition(tx_receipt, tx_event, m_client)
             self.moc_state_transition_notification(tx_receipt, tx_event, tx_log, m_client)
 
-    def logs_transactions_receipts(self, tx_receipts, m_client):
+    def logs_moc_transactions_receipts(self, tx_receipts, m_client):
 
         network = self.connection_manager.network
         moc_addresses = self.connection_manager.options['networks'][network]['addresses']
@@ -1303,4 +1310,102 @@ class MoCIndexer:
 
         transactions = self.search_moc_transaction(block_height)
         transactions_receipts = self.transactions_receipt(transactions)
-        self.logs_transactions_receipts(transactions_receipts, m_client)
+        self.logs_moc_transactions_receipts(transactions_receipts, m_client)
+
+    def reserve_address(self):
+
+        network = self.connection_manager.network
+
+        res_addresses = list()
+        res_addresses.append(
+            str.lower(self.connection_manager.options['networks'][network]['addresses']['ReserveToken']))
+
+        return res_addresses
+
+    def search_approval_transaction(self, block):
+
+        res_addresses = self.reserve_address()
+
+        f_block = self.connection_manager.get_block(block, full_transactions=True)
+        l_transactions = self.filter_transactions(f_block['transactions'], res_addresses)
+
+        return l_transactions
+
+    def update_user_state_approval(self, tx_event, m_client):
+
+        network = self.connection_manager.network
+        moc_addresses = self.connection_manager.options['networks'][network]['addresses']
+
+        user_address = tx_event.owner
+        contract_address = tx_event.spender
+        block_identifier = tx_event.blockNumber
+
+        if str.lower(contract_address) not in [str.lower(moc_addresses['MoC'])]:
+            # Approval is not from our contract
+            return
+
+        d_user_balance = OrderedDict()
+        d_user_balance["reserveAllowance"] = str(self.contract_MoC.reserve_allowance(
+            user_address,
+            formatted=False,
+            block_identifier=block_identifier))
+        d_user_balance["spendableBalance"] = str(self.contract_MoC.spendable_balance(
+            user_address,
+            formatted=False,
+            block_identifier=block_identifier))
+
+        user_state = self.mm.collection_user_state(m_client)
+        exist_user = user_state.find_one(
+            {"address": user_address}
+        )
+        if exist_user:
+            post_id = user_state.find_one_and_update(
+                {"address": user_address},
+                {"$set": d_user_balance}
+            )
+            if self.debug_mode:
+                log.info("Update user approval: [{0}] -> {1}".format(user_address, d_user_balance))
+
+    def logs_process_reserve_approval(self, tx_receipt, m_client):
+
+        events = self.contract_ReserveToken.events
+
+        # Approval
+        tx_logs = events.Approval().processReceipt(tx_receipt, errors=DISCARD)
+        for tx_log in tx_logs:
+            tx_event = ERC20Approval(self.connection_manager, tx_log)
+            self.update_user_state_approval(tx_event, m_client)
+
+    def logs_approval_transactions_receipts(self, tx_receipts, m_client):
+
+        network = self.connection_manager.network
+        moc_addresses = self.connection_manager.options['networks'][network]['addresses']
+
+        for tx_receipt in tx_receipts:
+            if not tx_receipt['logs']:
+                continue
+            for tx_log in tx_receipt['logs']:
+                tx_logs_address = str.lower(tx_log['address'])
+                if tx_logs_address in [str.lower(moc_addresses['ReserveToken'])]:
+                    self.logs_process_reserve_approval(tx_receipt, m_client)
+
+    def update_approval_event(self, block_identifier: BlockIdentifier = 'latest'):
+
+        if self.app_mode != "RRC20":
+            log.error("Update approval event NOT running on app mode <> RRC20")
+            return
+
+        # conect to mongo db
+        m_client = self.mm.connect()
+
+        # get last block from node
+        last_block = self.connection_manager.block_number
+
+        if block_identifier == 'latest':
+            block_height = last_block
+        else:
+            block_height = block_identifier
+
+        transactions = self.search_approval_transaction(block_height)
+        transactions_receipts = self.transactions_receipt(transactions)
+        self.logs_approval_transactions_receipts(transactions_receipts, m_client)

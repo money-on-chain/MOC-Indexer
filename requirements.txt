@@ -2,4 +2,4 @@ web3
 timeloop
 boto3
 pymongo
-moneyonchain>=0.0.30
+moneyonchain>=0.0.33
