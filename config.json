@@ -7,9 +7,11 @@
   "timeout_wait": 300,
   "gas_price": 60000000,
   "debug": true,
+  "confirm_blocks": 10,
   "networks": {
     "mocTestnetAlpha": {
       "app_mode": "MoC",
+      "project": "MoC",
       "uri": ["https://public-node.testnet.rsk.co"],
       "chain_id": 31,
       "accounts": [
@@ -39,6 +41,7 @@
     },
     "mocTestnet": {
       "app_mode": "MoC",
+      "project": "MoC",
       "uri": ["https://public-node.testnet.rsk.co"],
       "chain_id": 31,
       "accounts": [
@@ -73,6 +76,7 @@
     },
     "mocMainnet2": {
       "app_mode": "MoC",
+      "project": "MoC",
       "uri": ["https://public-node.rsk.co"],
       "chain_id": 30,
       "accounts": [
@@ -106,6 +110,7 @@
     },
     "rdocTestnetAlpha": {
       "app_mode": "RRC20",
+      "project": "RDoC",
       "uri": ["https://public-node.testnet.rsk.co"],
       "chain_id": 31,
       "accounts": [
@@ -136,6 +141,7 @@
     },
     "rdocTestnet": {
       "app_mode": "RRC20",
+      "project": "RDoC",
       "uri": ["https://public-node.testnet.rsk.co"],
       "chain_id": 31,
       "accounts": [
@@ -166,6 +172,7 @@
     },
     "rdocMainnet": {
       "app_mode": "RRC20",
+      "project": "RDoC",
       "uri": ["https://public-node.rsk.co"],
       "chain_id": 30,
       "accounts": [

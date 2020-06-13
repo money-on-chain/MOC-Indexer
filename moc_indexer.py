@@ -199,7 +199,7 @@ class MoCIndexer:
         # Create CloudWatch client
         self.cloudwatch = boto3.client('cloudwatch')
 
-    def balances_from_address(self, address, block_identifier: BlockIdentifier = 'latest'):
+    def balances_from_address(self, address, block_height):
 
         d_user_balance = OrderedDict()
         d_user_balance["mocBalance"] = str(0)
@@ -207,31 +207,31 @@ class MoCIndexer:
         d_user_balance["docBalance"] = str(self.contract_MoC.doc_balance_of(
             address,
             formatted=False,
-            block_identifier=block_identifier))
+            block_identifier=block_height))
         d_user_balance["bproBalance"] = str(self.contract_MoC.bpro_balance_of(
             address,
             formatted=False,
-            block_identifier=block_identifier))
+            block_identifier=block_height))
         d_user_balance["bprox2Balance"] = str(self.contract_MoC.bprox_balance_of(
             address,
             formatted=False,
-            block_identifier=block_identifier))
+            block_identifier=block_height))
         d_user_balance["rbtcBalance"] = str(self.contract_MoC.rbtc_balance_of(
             address,
             formatted=False,
-            block_identifier=block_identifier))
+            block_identifier=block_height))
         d_user_balance["docToRedeem"] = str(self.contract_MoC.doc_amount_to_redeem(
             address,
             formatted=False,
-            block_identifier=block_identifier))
+            block_identifier=block_height))
         d_user_balance["reserveAllowance"] = str(self.contract_MoC.reserve_allowance(
             address,
             formatted=False,
-            block_identifier=block_identifier))
+            block_identifier=block_height))
         d_user_balance["spendableBalance"] = str(self.contract_MoC.spendable_balance(
             address,
             formatted=False,
-            block_identifier=block_identifier))
+            block_identifier=block_height))
         d_user_balance["potentialBprox2MaxInterest"] = str(
             self.contract_MoCInrate.calc_mint_interest_value(
                 int(d_user_balance["rbtcBalance"]),
@@ -465,47 +465,6 @@ class MoCIndexer:
 
         return d_moc_state
 
-    def update_balance_from_account(self, account_address, block_identifier: BlockIdentifier = 'latest'):
-
-        # conect to mongo db
-        m_client = self.mm.connect()
-
-        # get last block from node
-        last_block = self.connection_manager.block_number
-
-        if block_identifier == 'latest':
-            block_height = last_block
-        else:
-            block_height = block_identifier
-
-        # get all functions from smart contract
-        d_user_balance = self.balances_from_address(account_address, block_identifier=block_height)
-
-        # get collection user state from mongo
-        collection_user_state = self.mm.collection_user_state(m_client)
-
-        user_state = collection_user_state.find_one(
-            {"address": account_address}
-        )
-
-        if not user_state:
-            # if the user not exist in the database created but default info
-            d_user_balance["prefLanguage"] = 'en'
-            d_user_balance["createdAt"] = datetime.datetime.now()
-            d_user_balance["lastNotificationCheckAt"] = datetime.datetime.now()
-            d_user_balance["showTermsAndConditions"] = True
-            d_user_balance["showTutorialNoMore"] = False
-
-        # update or insert
-        post_id = collection_user_state.find_one_and_update(
-            {"address": account_address},
-            {"$set": d_user_balance},
-            upsert=True)
-
-        d_user_balance['post_id'] = post_id
-
-        return d_user_balance
-
     def update_prices(self, block_identifier: BlockIdentifier = 'latest'):
 
         # conect to mongo db
@@ -563,6 +522,10 @@ class MoCIndexer:
         moc_addresses.append(
             str.lower(self.connection_manager.options['networks'][network]['addresses']['oracle']))
 
+        if self.app_mode == 'RRC20':
+            moc_addresses.append(
+                str.lower(self.connection_manager.options['networks'][network]['addresses']['ReserveToken']))
+
         return moc_addresses
 
     @staticmethod
@@ -602,7 +565,20 @@ class MoCIndexer:
             l_tx_receipt.append(tx_receipt)
         return l_tx_receipt
 
-    def moc_exchange_risk_pro_mint(self, tx_receipt, tx_event, m_client):
+    def moc_exchange_risk_pro_mint(self,
+                                   tx_receipt,
+                                   tx_event,
+                                   m_client,
+                                   block_height,
+                                   block_height_current):
+
+        confirm_blocks = self.options['confirm_blocks']
+        if block_height_current - block_height > confirm_blocks:
+            status = 'confirmed'
+            confirmation_time = datetime.datetime.now()
+        else:
+            status = 'confirming'
+            confirmation_time = None
 
         # get collection transaction
         collection_tx = self.mm.collection_transaction(m_client)
@@ -617,11 +593,11 @@ class MoCIndexer:
         usd_amount = Web3.fromWei(tx_event.reserveTotal, 'ether') * Web3.fromWei(tx_event.reservePrice, 'ether')
         d_tx["USDAmount"] = str(int(usd_amount * self.precision))
         d_tx["amount"] = str(tx_event.amount)
-        d_tx["confirmationTime"] = None
+        d_tx["confirmationTime"] = confirmation_time
         d_tx["isPositive"] = True
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
         d_tx["rbtcCommission"] = str(tx_event.commission)
-        d_tx["status"] = 'confirming'
+        d_tx["status"] = status
         d_tx["tokenInvolved"] = 'RISKPRO'
         d_tx["createdAt"] = datetime.datetime.now()
 
@@ -633,9 +609,25 @@ class MoCIndexer:
             upsert=True)
         d_tx['post_id'] = post_id
 
+        # update user balances
+        self.update_balance_address(m_client, d_tx["address"], block_height)
+
         return d_tx
 
-    def moc_exchange_risk_pro_redeem(self, tx_receipt, tx_event, m_client):
+    def moc_exchange_risk_pro_redeem(self,
+                                     tx_receipt,
+                                     tx_event,
+                                     m_client,
+                                     block_height,
+                                     block_height_current):
+
+        confirm_blocks = self.options['confirm_blocks']
+        if block_height_current - block_height > confirm_blocks:
+            status = 'confirmed'
+            confirmation_time = datetime.datetime.now()
+        else:
+            status = 'confirming'
+            confirmation_time = None
 
         # get collection transaction
         collection_tx = self.mm.collection_transaction(m_client)
@@ -650,12 +642,12 @@ class MoCIndexer:
         d_tx["userAmount"] = str(Web3.fromWei(tx_event.amount, 'ether'))
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
         d_tx["createdAt"] = datetime.datetime.now()
-        d_tx["status"] = 'confirming'
+        d_tx["status"] = status
         d_tx["RBTCAmount"] = str(tx_event.reserveTotal)
         usd_amount = Web3.fromWei(tx_event.reserveTotal, 'ether') * Web3.fromWei(tx_event.reservePrice, 'ether')
         d_tx["USDAmount"] = str(int(usd_amount * self.precision))
         d_tx["amount"] = str(tx_event.amount)
-        d_tx["confirmationTime"] = None
+        d_tx["confirmationTime"] = confirmation_time
         d_tx["rbtcCommission"] = str(tx_event.commission)
 
         post_id = collection_tx.find_one_and_update(
@@ -667,9 +659,25 @@ class MoCIndexer:
 
         d_tx['post_id'] = post_id
 
+        # update user balances
+        self.update_balance_address(m_client, d_tx["address"], block_height)
+
         return d_tx
 
-    def moc_exchange_risk_prox_mint(self, tx_receipt, tx_event, m_client):
+    def moc_exchange_risk_prox_mint(self,
+                                    tx_receipt,
+                                    tx_event,
+                                    m_client,
+                                    block_height,
+                                    block_height_current):
+
+        confirm_blocks = self.options['confirm_blocks']
+        if block_height_current - block_height > confirm_blocks:
+            status = 'confirmed'
+            confirmation_time = datetime.datetime.now()
+        else:
+            status = 'confirming'
+            confirmation_time = None
 
         # get collection transaction
         collection_tx = self.mm.collection_transaction(m_client)
@@ -679,7 +687,7 @@ class MoCIndexer:
         d_tx = OrderedDict()
         d_tx["transactionHash"] = tx_hash
         d_tx["address"] = tx_event.account
-        d_tx["status"] = 'confirming'
+        d_tx["status"] = status
         d_tx["event"] = 'RiskProxMint'
         d_tx["tokenInvolved"] = 'RISKPROX'
         d_tx["userAmount"] = str(Web3.fromWei(tx_event.amount, 'ether'))
@@ -689,7 +697,7 @@ class MoCIndexer:
         usd_amount = Web3.fromWei(tx_event.reserveTotal, 'ether') * Web3.fromWei(tx_event.reservePrice, 'ether')
         d_tx["USDAmount"] = str(int(usd_amount * self.precision))
         d_tx["amount"] = str(tx_event.amount)
-        d_tx["confirmationTime"] = None
+        d_tx["confirmationTime"] = confirmation_time
         d_tx["isPositive"] = True
         d_tx["leverage"] = str(tx_event.leverage)
         d_tx["rbtcCommission"] = str(tx_event.commission)
@@ -704,9 +712,25 @@ class MoCIndexer:
 
         d_tx['post_id'] = post_id
 
+        # update user balances
+        self.update_balance_address(m_client, d_tx["address"], block_height)
+
         return d_tx
 
-    def moc_exchange_risk_prox_redeem(self, tx_receipt, tx_event, m_client):
+    def moc_exchange_risk_prox_redeem(self,
+                                      tx_receipt,
+                                      tx_event,
+                                      m_client,
+                                      block_height,
+                                      block_height_current):
+
+        confirm_blocks = self.options['confirm_blocks']
+        if block_height_current - block_height > confirm_blocks:
+            status = 'confirmed'
+            confirmation_time = datetime.datetime.now()
+        else:
+            status = 'confirming'
+            confirmation_time = None
 
         # get collection transaction
         collection_tx = self.mm.collection_transaction(m_client)
@@ -716,7 +740,7 @@ class MoCIndexer:
         d_tx = OrderedDict()
         d_tx["transactionHash"] = tx_hash
         d_tx["address"] = tx_event.account
-        d_tx["status"] = 'confirming'
+        d_tx["status"] = status
         d_tx["event"] = 'RiskProxRedeem'
         d_tx["tokenInvolved"] = 'RISKPROX'
         d_tx["userAmount"] = str(Web3.fromWei(tx_event.amount, 'ether'))
@@ -726,7 +750,7 @@ class MoCIndexer:
         usd_amount = Web3.fromWei(tx_event.reserveTotal, 'ether') * Web3.fromWei(tx_event.reservePrice, 'ether')
         d_tx["USDAmount"] = str(int(usd_amount * self.precision))
         d_tx["amount"] = str(tx_event.amount)
-        d_tx["confirmationTime"] = None
+        d_tx["confirmationTime"] = confirmation_time
         d_tx["leverage"] = str(tx_event.leverage)
         d_tx["rbtcCommission"] = str(tx_event.commission)
         d_tx["rbtcInterests"] = str(tx_event.interests)
@@ -740,9 +764,25 @@ class MoCIndexer:
 
         d_tx['post_id'] = post_id
 
+        # update user balances
+        self.update_balance_address(m_client, d_tx["address"], block_height)
+
         return d_tx
 
-    def moc_exchange_stable_token_mint(self, tx_receipt, tx_event, m_client):
+    def moc_exchange_stable_token_mint(self,
+                                       tx_receipt,
+                                       tx_event,
+                                       m_client,
+                                       block_height,
+                                       block_height_current):
+
+        confirm_blocks = self.options['confirm_blocks']
+        if block_height_current - block_height > confirm_blocks:
+            status = 'confirmed'
+            confirmation_time = datetime.datetime.now()
+        else:
+            status = 'confirming'
+            confirmation_time = None
 
         # get collection transaction
         collection_tx = self.mm.collection_transaction(m_client)
@@ -752,7 +792,7 @@ class MoCIndexer:
         d_tx = OrderedDict()
         d_tx["transactionHash"] = tx_hash
         d_tx["address"] = tx_event.account
-        d_tx["status"] = 'confirming'
+        d_tx["status"] = status
         d_tx["event"] = 'StableTokenMint'
         d_tx["tokenInvolved"] = 'STABLE'
         # WARNING something to investigate, commented think is correct
@@ -764,7 +804,7 @@ class MoCIndexer:
         usd_amount = Web3.fromWei(tx_event.reserveTotal, 'ether') * Web3.fromWei(tx_event.reservePrice, 'ether')
         d_tx["USDAmount"] = str(int(usd_amount * self.precision))
         d_tx["amount"] = str(tx_event.amount)
-        d_tx["confirmationTime"] = None
+        d_tx["confirmationTime"] = confirmation_time
         d_tx["isPositive"] = True
         d_tx["rbtcCommission"] = str(tx_event.commission)
 
@@ -777,9 +817,25 @@ class MoCIndexer:
 
         d_tx['post_id'] = post_id
 
+        # update user balances
+        self.update_balance_address(m_client, d_tx["address"], block_height)
+
         return d_tx
 
-    def moc_exchange_stable_token_redeem(self, tx_receipt, tx_event, m_client):
+    def moc_exchange_stable_token_redeem(self,
+                                         tx_receipt,
+                                         tx_event,
+                                         m_client,
+                                         block_height,
+                                         block_height_current):
+
+        confirm_blocks = self.options['confirm_blocks']
+        if block_height_current - block_height > confirm_blocks:
+            status = 'confirmed'
+            confirmation_time = datetime.datetime.now()
+        else:
+            status = 'confirming'
+            confirmation_time = None
 
         # get collection transaction
         collection_tx = self.mm.collection_transaction(m_client)
@@ -794,10 +850,10 @@ class MoCIndexer:
         usd_amount = Web3.fromWei(tx_event.reserveTotal, 'ether') * Web3.fromWei(tx_event.reservePrice, 'ether')
         d_tx["USDAmount"] = str(int(usd_amount * self.precision))
         d_tx["amount"] = str(tx_event.amount)
-        d_tx["confirmationTime"] = None
+        d_tx["confirmationTime"] = confirmation_time
         d_tx["createdAt"] = datetime.datetime.now()
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
-        d_tx["status"] = 'confirming'
+        d_tx["status"] = status
         d_tx["tokenInvolved"] = 'STABLE'
         d_tx["rbtcCommission"] = str(tx_event.commission)
 
@@ -810,9 +866,25 @@ class MoCIndexer:
 
         d_tx['post_id'] = post_id
 
+        # update user balances
+        self.update_balance_address(m_client, d_tx["address"], block_height)
+
         return d_tx
 
-    def moc_exchange_free_stable_token_redeem(self, tx_receipt, tx_event, m_client):
+    def moc_exchange_free_stable_token_redeem(self,
+                                              tx_receipt,
+                                              tx_event,
+                                              m_client,
+                                              block_height,
+                                              block_height_current):
+
+        confirm_blocks = self.options['confirm_blocks']
+        if block_height_current - block_height > confirm_blocks:
+            status = 'confirmed'
+            confirmation_time = datetime.datetime.now()
+        else:
+            status = 'confirming'
+            confirmation_time = None
 
         # get collection transaction
         collection_tx = self.mm.collection_transaction(m_client)
@@ -822,7 +894,7 @@ class MoCIndexer:
         d_tx = OrderedDict()
         d_tx["transactionHash"] = tx_hash
         d_tx["address"] = tx_event.account
-        d_tx["status"] = 'confirming'
+        d_tx["status"] = status
         d_tx["event"] = 'FreeStableTokenRedeem'
         d_tx["tokenInvolved"] = 'STABLE'
         d_tx["userAmount"] = str(Web3.fromWei(tx_event.amount, 'ether'))
@@ -832,7 +904,7 @@ class MoCIndexer:
         usd_amount = Web3.fromWei(tx_event.reserveTotal, 'ether') * Web3.fromWei(tx_event.reservePrice, 'ether')
         d_tx["USDAmount"] = str(int(usd_amount * self.precision))
         d_tx["amount"] = str(tx_event.amount)
-        d_tx["confirmationTime"] = None
+        d_tx["confirmationTime"] = confirmation_time
         d_tx["rbtcCommission"] = str(tx_event.commission)
         d_tx["rbtcInterests"] = str(tx_event.interests)
 
@@ -845,9 +917,12 @@ class MoCIndexer:
 
         d_tx['post_id'] = post_id
 
+        # update user balances
+        self.update_balance_address(m_client, d_tx["address"], block_height)
+
         return d_tx
 
-    def logs_process_moc_exchange(self, tx_receipt, m_client):
+    def logs_process_moc_exchange(self, tx_receipt, m_client, block_height, block_height_current):
 
         events = self.contract_MoC.sc_moc_exchange.events
 
@@ -855,45 +930,86 @@ class MoCIndexer:
         tx_logs = events.RiskProMint().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
             tx_event = MoCExchangeRiskProMint(self.connection_manager, tx_log)
-            self.moc_exchange_risk_pro_mint(tx_receipt, tx_event, m_client)
+            self.moc_exchange_risk_pro_mint(tx_receipt,
+                                            tx_event,
+                                            m_client,
+                                            block_height,
+                                            block_height_current)
 
         # RiskProRedeem
         tx_logs = events.RiskProRedeem().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
             tx_event = MoCExchangeRiskProRedeem(self.connection_manager, tx_log)
-            self.moc_exchange_risk_pro_redeem(tx_receipt, tx_event, m_client)
+            self.moc_exchange_risk_pro_redeem(tx_receipt,
+                                              tx_event,
+                                              m_client,
+                                              block_height,
+                                              block_height_current)
 
         # RiskProxMint
         tx_logs = events.RiskProxMint().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
             tx_event = MoCExchangeRiskProxMint(self.connection_manager, tx_log)
-            self.moc_exchange_risk_prox_mint(tx_receipt, tx_event, m_client)
+            self.moc_exchange_risk_prox_mint(tx_receipt,
+                                             tx_event,
+                                             m_client,
+                                             block_height,
+                                             block_height_current)
 
         # RiskProxRedeem
         tx_logs = events.RiskProxRedeem().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
             tx_event = MoCExchangeRiskProxRedeem(self.connection_manager, tx_log)
-            self.moc_exchange_risk_prox_redeem(tx_receipt, tx_event, m_client)
+            self.moc_exchange_risk_prox_redeem(tx_receipt,
+                                               tx_event,
+                                               m_client,
+                                               block_height,
+                                               block_height_current)
 
         # StableTokenMint
         tx_logs = events.StableTokenMint().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
             tx_event = MoCExchangeStableTokenMint(self.connection_manager, tx_log)
-            self.moc_exchange_stable_token_mint(tx_receipt, tx_event, m_client)
+            self.moc_exchange_stable_token_mint(tx_receipt,
+                                                tx_event,
+                                                m_client,
+                                                block_height,
+                                                block_height_current)
 
         # StableTokenRedeem
         tx_logs = events.StableTokenRedeem().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
             tx_event = MoCExchangeStableTokenRedeem(self.connection_manager, tx_log)
-            self.moc_exchange_stable_token_redeem(tx_receipt, tx_event, m_client)
+            self.moc_exchange_stable_token_redeem(tx_receipt,
+                                                  tx_event,
+                                                  m_client,
+                                                  block_height,
+                                                  block_height_current)
 
         # FreeStableTokenRedeem
         tx_logs = events.FreeStableTokenRedeem().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
             tx_event = MoCExchangeFreeStableTokenRedeem(self.connection_manager, tx_log)
-            self.moc_exchange_free_stable_token_redeem(tx_receipt, tx_event, m_client)
+            self.moc_exchange_free_stable_token_redeem(tx_receipt,
+                                                       tx_event,
+                                                       m_client,
+                                                       block_height,
+                                                       block_height_current)
 
-    def moc_settlement_redeem_request_alter(self, tx_receipt, tx_event, m_client):
+    def moc_settlement_redeem_request_alter(self,
+                                            tx_receipt,
+                                            tx_event,
+                                            m_client,
+                                            block_height,
+                                            block_height_current):
+
+        confirm_blocks = self.options['confirm_blocks']
+        if block_height_current - block_height > confirm_blocks:
+            status = 'confirmed'
+            confirmation_time = datetime.datetime.now()
+        else:
+            status = 'confirming'
+            confirmation_time = None
 
         # get collection transaction
         collection_tx = self.mm.collection_transaction(m_client)
@@ -903,13 +1019,13 @@ class MoCIndexer:
         d_tx = OrderedDict()
         d_tx["transactionHash"] = tx_hash
         d_tx["address"] = tx_event.redeemer
-        d_tx["status"] = 'pending'
+        d_tx["status"] = status
         d_tx["event"] = 'RedeemRequestAlter'
         d_tx["tokenInvolved"] = 'STABLE'
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
         d_tx["createdAt"] = datetime.datetime.now()
         d_tx["amount"] = str(tx_event.delta)
-        d_tx["confirmationTime"] = None
+        d_tx["confirmationTime"] = confirmation_time
         d_tx["isPositive"] = tx_event.isAddition
 
         post_id = collection_tx.find_one_and_update(
@@ -921,9 +1037,19 @@ class MoCIndexer:
 
         d_tx['post_id'] = post_id
 
+        # update user balances
+        self.update_balance_address(m_client, d_tx["address"], block_height)
+
         return d_tx
 
-    def moc_settlement_redeem_stable_token(self, tx_receipt, tx_event, m_client):
+    def moc_settlement_redeem_stable_token(self,
+                                           tx_receipt,
+                                           tx_event,
+                                           m_client,
+                                           block_height,
+                                           block_height_current):
+        # update user balances
+        # self.update_balance_address(m_client, d_tx["address"], block_height)
         pass
 
     def moc_settlement_redeem_stable_token_notification(self, tx_receipt, tx_event, tx_log, m_client):
@@ -1011,7 +1137,20 @@ class MoCIndexer:
 
         return d_tx
 
-    def moc_settlement_deleveraging(self, tx_receipt, tx_event, m_client):
+    def moc_settlement_deleveraging(self,
+                                    tx_receipt,
+                                    tx_event,
+                                    m_client,
+                                    block_height,
+                                    block_height_current):
+
+        confirm_blocks = self.options['confirm_blocks']
+        if block_height_current - block_height > confirm_blocks:
+            status = 'confirmed'
+            confirmation_time = datetime.datetime.now()
+        else:
+            status = 'confirming'
+            confirmation_time = None
 
         # get collection transaction
         collection_tx = self.mm.collection_transaction(m_client)
@@ -1031,8 +1170,8 @@ class MoCIndexer:
         d_tx["transactionHash"] = tx_hash
         d_tx["event"] = 'SettlementDeleveraging'
         d_tx["tokenInvolved"] = 'RISKPROX'
-        d_tx["status"] = 'confirming'
-        d_tx["confirmationTime"] = None
+        d_tx["status"] = status
+        d_tx["confirmationTime"] = confirmation_time
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
 
         riskprox_price = Web3.fromWei(tx_event.riskProxPrice, 'ether')
@@ -1057,6 +1196,9 @@ class MoCIndexer:
                     {"$set": d_tx},
                     upsert=True)
 
+                # update user balances
+                self.update_balance_address(m_client, d_tx["address"], block_height)
+
                 l_transactions.append(d_tx)
 
         return l_transactions
@@ -1064,7 +1206,7 @@ class MoCIndexer:
     def moc_settlement_started(self, tx_receipt, tx_event, m_client):
         pass
 
-    def logs_process_moc_settlement(self, tx_receipt, m_client):
+    def logs_process_moc_settlement(self, tx_receipt, m_client, block_height, block_height_current):
 
         events = self.contract_MoC.sc_moc_settlement.events
 
@@ -1079,7 +1221,11 @@ class MoCIndexer:
         tx_logs = events.RedeemRequestAlter().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
             tx_event = MoCSettlementRedeemRequestAlter(self.connection_manager, tx_log)
-            self.moc_settlement_redeem_request_alter(tx_receipt, tx_event, m_client)
+            self.moc_settlement_redeem_request_alter(tx_receipt,
+                                                     tx_event,
+                                                     m_client,
+                                                     block_height,
+                                                     block_height_current)
 
         # SettlementRedeemStableToken
         tx_logs = events.SettlementRedeemStableToken().processReceipt(tx_receipt, errors=DISCARD)
@@ -1092,7 +1238,11 @@ class MoCIndexer:
         tx_logs = events.SettlementDeleveraging().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
             tx_event = MoCSettlementSettlementDeleveraging(self.connection_manager, tx_log)
-            self.moc_settlement_deleveraging(tx_receipt, tx_event, m_client)
+            self.moc_settlement_deleveraging(tx_receipt,
+                                             tx_event,
+                                             m_client,
+                                             block_height,
+                                             block_height_current)
             self.set_settlement_state(tx_event, m_client)
 
     def moc_inrate_daily_pay(self, tx_receipt, tx_event, m_client):
@@ -1274,7 +1424,21 @@ class MoCIndexer:
             self.moc_state_transition(tx_receipt, tx_event, m_client)
             self.moc_state_transition_notification(tx_receipt, tx_event, tx_log, m_client)
 
-    def tx_token_transfer(self, tx_receipt, tx_event, m_client, token_involved='RISKPRO'):
+    def tx_token_transfer(self,
+                          tx_receipt,
+                          tx_event,
+                          m_client,
+                          block_height,
+                          block_height_current,
+                          token_involved='RISKPRO'):
+
+        confirm_blocks = self.options['confirm_blocks']
+        if block_height_current - block_height > confirm_blocks:
+            status = 'confirmed'
+            confirmation_time = datetime.datetime.now()
+        else:
+            status = 'confirming'
+            confirmation_time = None
 
         from_contract = '0x0000000000000000000000000000000000000000'
 
@@ -1297,12 +1461,12 @@ class MoCIndexer:
         d_tx["event"] = 'Transfer'
         d_tx["transactionHash"] = tx_hash
         d_tx["amount"] = str(tx_event.value)
-        d_tx["confirmationTime"] = None
+        d_tx["confirmationTime"] = confirmation_time
         d_tx["isPositive"] = False
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
         d_tx["otherAddress"] = tx_event.e_to
         d_tx["createdAt"] = datetime.datetime.now()
-        d_tx["status"] = 'pending'
+        d_tx["status"] = status
         d_tx["tokenInvolved"] = token_involved
 
         post_id = collection_tx.find_one_and_update(
@@ -1311,6 +1475,8 @@ class MoCIndexer:
              "event": d_tx["event"]},
             {"$set": d_tx},
             upsert=True)
+
+        self.update_balance_address(m_client, d_tx["address"], block_height)
 
         # TO
         d_tx = OrderedDict()
@@ -1318,12 +1484,12 @@ class MoCIndexer:
         d_tx["event"] = 'Transfer'
         d_tx["transactionHash"] = tx_hash
         d_tx["amount"] = str(tx_event.value)
-        d_tx["confirmationTime"] = None
+        d_tx["confirmationTime"] = confirmation_time
         d_tx["isPositive"] = True
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
         d_tx["otherAddress"] = tx_event.e_from
         d_tx["createdAt"] = datetime.datetime.now()
-        d_tx["status"] = 'pending'
+        d_tx["status"] = status
         d_tx["tokenInvolved"] = token_involved
 
         post_id = collection_tx.find_one_and_update(
@@ -1332,6 +1498,8 @@ class MoCIndexer:
              "event": d_tx["event"]},
             {"$set": d_tx},
             upsert=True)
+
+        self.update_balance_address(m_client, d_tx["address"], block_height)
 
         if self.debug_mode:
             log.info("Tx Transfer {0} From: [{1}] To: [{2}] Amount: {3}".format(
@@ -1340,7 +1508,7 @@ class MoCIndexer:
                 tx_event.e_to,
                 tx_event.value))
 
-    def logs_process_transfer(self, tx_receipt, m_client):
+    def logs_process_transfer(self, tx_receipt, m_client, block_height, block_height_current):
         """ Process events transfers"""
 
         # RiskProToken
@@ -1350,7 +1518,12 @@ class MoCIndexer:
         tx_logs = events.Transfer().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
             tx_event = ERC20Transfer(self.connection_manager, tx_log)
-            self.tx_token_transfer(tx_receipt, tx_event, m_client, token_involved='RISKPRO')
+            self.tx_token_transfer(tx_receipt,
+                                   tx_event,
+                                   m_client,
+                                   block_height,
+                                   block_height_current,
+                                   token_involved='RISKPRO')
 
         # StableToken
         events = self.contract_StableToken.events
@@ -1359,10 +1532,15 @@ class MoCIndexer:
         tx_logs = events.Transfer().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
             tx_event = ERC20Transfer(self.connection_manager, tx_log)
-            self.tx_token_transfer(tx_receipt, tx_event, m_client, token_involved='STABLE')
+            self.tx_token_transfer(tx_receipt,
+                                   tx_event,
+                                   m_client,
+                                   block_height,
+                                   block_height_current,
+                                   token_involved='STABLE')
 
-    def logs_moc_transactions_receipts(self, tx_receipts, m_client):
-
+    def logs_moc_transactions_receipts(self, tx_receipts, m_client, block_height, block_height_current):
+        """ To speed it up we only accept from moc contract addressess"""
         network = self.connection_manager.network
         moc_addresses = self.connection_manager.options['networks'][network]['addresses']
 
@@ -1377,69 +1555,11 @@ class MoCIndexer:
                                        str.lower(moc_addresses['MoC']),
                                        str.lower(moc_addresses['MoCState'])]:
 
-                    self.logs_process_moc_exchange(tx_receipt, m_client)
-                    self.logs_process_moc_settlement(tx_receipt, m_client)
+                    self.logs_process_moc_exchange(tx_receipt, m_client, block_height, block_height_current)
+                    self.logs_process_moc_settlement(tx_receipt, m_client, block_height, block_height_current)
                     self.logs_process_moc_inrate(tx_receipt, m_client)
                     self.logs_process_moc(tx_receipt, m_client)
                     self.logs_process_moc_state(tx_receipt, m_client)
-                    self.logs_process_transfer(tx_receipt, m_client)
-
-    def update_moc_events(self, block_identifier: BlockIdentifier = 'latest'):
-
-        # conect to mongo db
-        m_client = self.mm.connect()
-
-        # get last block from node
-        last_block = self.connection_manager.block_number
-
-        if block_identifier == 'latest':
-            block_height = last_block
-        else:
-            block_height = block_identifier
-
-        transactions = self.search_moc_transaction(block_height)
-        transactions_receipts = self.transactions_receipt(transactions)
-        self.logs_moc_transactions_receipts(transactions_receipts, m_client)
-
-    def scan_moc_blocks(self,
-                        block_identifier: BlockIdentifier = 'latest',
-                        block_current: BlockIdentifier = 'latest'):
-
-        # conect to mongo db
-        m_client = self.mm.connect()
-
-        # get last block from node
-        last_block = self.connection_manager.block_number
-
-        if block_identifier == 'latest':
-            block_height = last_block
-        else:
-            block_height = block_identifier
-
-        if block_current == 'latest':
-            block_height_current = last_block
-        else:
-            block_height_current = block_current
-
-        if self.debug_mode:
-            log.info("Starting to scan transactions block height: [{0}] last block height: [{1}]".format(
-                block_height, block_height_current))
-
-        # get moc contracts adressess
-        moc_addresses = self.moc_contract_addresses()
-
-        # get block and full transactions
-        f_block = self.connection_manager.get_block(block_height, full_transactions=True)
-        all_transactions = f_block['transactions']
-
-        # From MOC Contract transactions
-        moc_transactions = self.filter_transactions(all_transactions, moc_addresses)
-
-        # get transactions receipts
-        moc_transactions_receipts = self.transactions_receipt(moc_transactions)
-
-        # process only MoC transactions
-        self.logs_moc_transactions_receipts(moc_transactions_receipts, m_client)
 
     def reserve_address(self):
 
@@ -1513,24 +1633,10 @@ class MoCIndexer:
             tx_event = ERC20Approval(self.connection_manager, tx_log)
             self.update_user_state_approval(tx_event, m_client)
 
-    def logs_approval_transactions_receipts(self, tx_receipts, m_client):
-
-        network = self.connection_manager.network
-        moc_addresses = self.connection_manager.options['networks'][network]['addresses']
-
-        for tx_receipt in tx_receipts:
-            if not tx_receipt['logs']:
-                continue
-            for tx_log in tx_receipt['logs']:
-                tx_logs_address = str.lower(tx_log['address'])
-                if tx_logs_address in [str.lower(moc_addresses['ReserveToken'])]:
-                    self.logs_process_reserve_approval(tx_receipt, m_client)
-
-    def update_approval_event(self, block_identifier: BlockIdentifier = 'latest'):
-
-        if self.app_mode != "RRC20":
-            log.error("Update approval event NOT running on app mode <> RRC20")
-            return
+    def scan_moc_blocks(self,
+                        block_identifier: BlockIdentifier = 'latest',
+                        block_current: BlockIdentifier = 'latest',
+                        scan_transfer=True):
 
         # conect to mongo db
         m_client = self.mm.connect()
@@ -1543,6 +1649,82 @@ class MoCIndexer:
         else:
             block_height = block_identifier
 
-        transactions = self.search_approval_transaction(block_height)
-        transactions_receipts = self.transactions_receipt(transactions)
-        self.logs_approval_transactions_receipts(transactions_receipts, m_client)
+        if block_current == 'latest':
+            block_height_current = last_block
+        else:
+            block_height_current = block_current
+
+        if self.debug_mode:
+            log.info("Starting to scan transactions block height: [{0}] last block height: [{1}]".format(
+                block_height, block_height_current))
+
+        # get moc contracts adressess
+        moc_addresses = self.moc_contract_addresses()
+
+        # get block and full transactions
+        f_block = self.connection_manager.get_block(block_height, full_transactions=True)
+        all_transactions = f_block['transactions']
+
+        # From MOC Contract transactions
+        moc_transactions = self.filter_transactions(all_transactions, moc_addresses)
+
+        # get transactions receipts
+        moc_transactions_receipts = self.transactions_receipt(moc_transactions)
+
+        # process only MoC contract transactions
+        for tx_receipt in moc_transactions_receipts:
+            if not tx_receipt['logs']:
+                continue
+
+            self.logs_process_moc_exchange(tx_receipt, m_client, block_height, block_height_current)
+            self.logs_process_moc_settlement(tx_receipt, m_client, block_height, block_height_current)
+            self.logs_process_moc_inrate(tx_receipt, m_client)
+            self.logs_process_moc(tx_receipt, m_client)
+            self.logs_process_moc_state(tx_receipt, m_client)
+            self.logs_process_reserve_approval(tx_receipt, m_client)
+
+        # process all transactions looking for transfers
+        if scan_transfer:
+            all_transactions_receipts = self.transactions_receipt(all_transactions)
+            for tx_receipt in all_transactions_receipts:
+
+                if not tx_receipt['logs']:
+                    continue
+
+                self.logs_process_transfer(tx_receipt, m_client, block_height, block_height_current)
+
+    def update_balance_address(self, m_client, account_address, block_height):
+
+        # get collection user state from mongo
+        collection_user_state = self.mm.collection_user_state(m_client)
+
+        user_state = collection_user_state.find_one(
+            {"address": account_address}
+        )
+        if user_state:
+            if 'block_height' in user_state:
+                if user_state['block_height'] >= block_height:
+                    # not process if already have updated in this block
+                    return
+
+        # get all functions state from smart contract
+        d_user_balance = self.balances_from_address(account_address, block_height)
+        d_user_balance['block_height'] = block_height
+
+        if not user_state:
+            # if the user not exist in the database created but default info
+            d_user_balance["prefLanguage"] = 'en'
+            d_user_balance["createdAt"] = datetime.datetime.now()
+            d_user_balance["lastNotificationCheckAt"] = datetime.datetime.now()
+            d_user_balance["showTermsAndConditions"] = True
+            d_user_balance["showTutorialNoMore"] = False
+
+        # update or insert
+        post_id = collection_user_state.find_one_and_update(
+            {"address": account_address},
+            {"$set": d_user_balance},
+            upsert=True)
+
+        d_user_balance['post_id'] = post_id
+
+        return d_user_balance
