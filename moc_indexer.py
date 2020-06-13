@@ -599,15 +599,25 @@ class MoCIndexer:
         d_tx["rbtcCommission"] = str(tx_event.commission)
         d_tx["status"] = status
         d_tx["tokenInvolved"] = 'RISKPRO'
-        d_tx["createdAt"] = datetime.datetime.now()
+
+        d_tx_insert = OrderedDict()
+        d_tx_insert["createdAt"] = datetime.datetime.now()
 
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash,
              "address": d_tx["address"],
              "event": d_tx["event"]},
-            {"$set": d_tx},
+            {"$set": d_tx,
+             "$setOnInsert": d_tx_insert},
             upsert=True)
         d_tx['post_id'] = post_id
+
+        if self.debug_mode:
+            log.info("Tx {0} From: [{1}] Amount: {2} Tx Hash: {3}".format(
+                d_tx["event"],
+                d_tx["address"],
+                d_tx["amount"],
+                tx_hash))
 
         # update user balances
         self.update_balance_address(m_client, d_tx["address"], block_height)
@@ -641,7 +651,6 @@ class MoCIndexer:
         d_tx["tokenInvolved"] = 'RISKPRO'
         d_tx["userAmount"] = str(Web3.fromWei(tx_event.amount, 'ether'))
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
-        d_tx["createdAt"] = datetime.datetime.now()
         d_tx["status"] = status
         d_tx["RBTCAmount"] = str(tx_event.reserveTotal)
         usd_amount = Web3.fromWei(tx_event.reserveTotal, 'ether') * Web3.fromWei(tx_event.reservePrice, 'ether')
@@ -650,14 +659,24 @@ class MoCIndexer:
         d_tx["confirmationTime"] = confirmation_time
         d_tx["rbtcCommission"] = str(tx_event.commission)
 
+        d_tx_insert = OrderedDict()
+        d_tx_insert["createdAt"] = datetime.datetime.now()
+
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash,
              "address": d_tx["address"],
              "event": d_tx["event"]},
-            {"$set": d_tx},
+            {"$set": d_tx,
+             "$setOnInsert": d_tx_insert},
             upsert=True)
-
         d_tx['post_id'] = post_id
+
+        if self.debug_mode:
+            log.info("Tx {0} From: [{1}] Amount: {2} Tx Hash: {3}".format(
+                d_tx["event"],
+                d_tx["address"],
+                d_tx["amount"],
+                tx_hash))
 
         # update user balances
         self.update_balance_address(m_client, d_tx["address"], block_height)
@@ -692,7 +711,6 @@ class MoCIndexer:
         d_tx["tokenInvolved"] = 'RISKPROX'
         d_tx["userAmount"] = str(Web3.fromWei(tx_event.amount, 'ether'))
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
-        d_tx["createdAt"] = datetime.datetime.now()
         d_tx["RBTCAmount"] = str(tx_event.reserveTotal)
         usd_amount = Web3.fromWei(tx_event.reserveTotal, 'ether') * Web3.fromWei(tx_event.reservePrice, 'ether')
         d_tx["USDAmount"] = str(int(usd_amount * self.precision))
@@ -703,14 +721,24 @@ class MoCIndexer:
         d_tx["rbtcCommission"] = str(tx_event.commission)
         d_tx["rbtcInterests"] = str(tx_event.interests)
 
+        d_tx_insert = OrderedDict()
+        d_tx_insert["createdAt"] = datetime.datetime.now()
+
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash,
              "address": d_tx["address"],
              "event": d_tx["event"]},
-            {"$set": d_tx},
+            {"$set": d_tx,
+             "$setOnInsert": d_tx_insert},
             upsert=True)
-
         d_tx['post_id'] = post_id
+
+        if self.debug_mode:
+            log.info("Tx {0} From: [{1}] Amount: {2} Tx Hash: {3}".format(
+                d_tx["event"],
+                d_tx["address"],
+                d_tx["amount"],
+                tx_hash))
 
         # update user balances
         self.update_balance_address(m_client, d_tx["address"], block_height)
@@ -745,7 +773,6 @@ class MoCIndexer:
         d_tx["tokenInvolved"] = 'RISKPROX'
         d_tx["userAmount"] = str(Web3.fromWei(tx_event.amount, 'ether'))
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
-        d_tx["createdAt"] = datetime.datetime.now()
         d_tx["RBTCAmount"] = str(tx_event.reserveTotal)
         usd_amount = Web3.fromWei(tx_event.reserveTotal, 'ether') * Web3.fromWei(tx_event.reservePrice, 'ether')
         d_tx["USDAmount"] = str(int(usd_amount * self.precision))
@@ -755,14 +782,24 @@ class MoCIndexer:
         d_tx["rbtcCommission"] = str(tx_event.commission)
         d_tx["rbtcInterests"] = str(tx_event.interests)
 
+        d_tx_insert = OrderedDict()
+        d_tx_insert["createdAt"] = datetime.datetime.now()
+
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash,
              "address": d_tx["address"],
              "event": d_tx["event"]},
-            {"$set": d_tx},
+            {"$set": d_tx,
+             "$setOnInsert": d_tx_insert},
             upsert=True)
-
         d_tx['post_id'] = post_id
+
+        if self.debug_mode:
+            log.info("Tx {0} From: [{1}] Amount: {2} Tx Hash: {3}".format(
+                d_tx["event"],
+                d_tx["address"],
+                d_tx["amount"],
+                tx_hash))
 
         # update user balances
         self.update_balance_address(m_client, d_tx["address"], block_height)
@@ -799,7 +836,6 @@ class MoCIndexer:
         #d_tx["userAmount"] = str(Web3.fromWei(tx_event.amount, 'ether'))
         d_tx["userAmount"] = str(Web3.fromWei(tx_event.reserveTotal, 'ether'))
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
-        d_tx["createdAt"] = datetime.datetime.now()
         d_tx["RBTCAmount"] = str(tx_event.reserveTotal)
         usd_amount = Web3.fromWei(tx_event.reserveTotal, 'ether') * Web3.fromWei(tx_event.reservePrice, 'ether')
         d_tx["USDAmount"] = str(int(usd_amount * self.precision))
@@ -808,14 +844,24 @@ class MoCIndexer:
         d_tx["isPositive"] = True
         d_tx["rbtcCommission"] = str(tx_event.commission)
 
+        d_tx_insert = OrderedDict()
+        d_tx_insert["createdAt"] = datetime.datetime.now()
+
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash,
              "address": d_tx["address"],
              "event": d_tx["event"]},
-            {"$set": d_tx},
+            {"$set": d_tx,
+             "$setOnInsert": d_tx_insert},
             upsert=True)
-
         d_tx['post_id'] = post_id
+
+        if self.debug_mode:
+            log.info("Tx {0} From: [{1}] Amount: {2} Tx Hash: {3}".format(
+                d_tx["event"],
+                d_tx["address"],
+                d_tx["amount"],
+                tx_hash))
 
         # update user balances
         self.update_balance_address(m_client, d_tx["address"], block_height)
@@ -851,20 +897,29 @@ class MoCIndexer:
         d_tx["USDAmount"] = str(int(usd_amount * self.precision))
         d_tx["amount"] = str(tx_event.amount)
         d_tx["confirmationTime"] = confirmation_time
-        d_tx["createdAt"] = datetime.datetime.now()
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
         d_tx["status"] = status
         d_tx["tokenInvolved"] = 'STABLE'
         d_tx["rbtcCommission"] = str(tx_event.commission)
 
+        d_tx_insert = OrderedDict()
+        d_tx_insert["createdAt"] = datetime.datetime.now()
+
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash,
              "address": d_tx["address"],
              "event": d_tx["event"]},
-            {"$set": d_tx},
+            {"$set": d_tx,
+             "$setOnInsert": d_tx_insert},
             upsert=True)
-
         d_tx['post_id'] = post_id
+
+        if self.debug_mode:
+            log.info("Tx {0} From: [{1}] Amount: {2} Tx Hash: {3}".format(
+                d_tx["event"],
+                d_tx["address"],
+                d_tx["amount"],
+                tx_hash))
 
         # update user balances
         self.update_balance_address(m_client, d_tx["address"], block_height)
@@ -899,7 +954,6 @@ class MoCIndexer:
         d_tx["tokenInvolved"] = 'STABLE'
         d_tx["userAmount"] = str(Web3.fromWei(tx_event.amount, 'ether'))
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
-        d_tx["createdAt"] = datetime.datetime.now()
         d_tx["RBTCAmount"] = str(tx_event.reserveTotal)
         usd_amount = Web3.fromWei(tx_event.reserveTotal, 'ether') * Web3.fromWei(tx_event.reservePrice, 'ether')
         d_tx["USDAmount"] = str(int(usd_amount * self.precision))
@@ -908,14 +962,24 @@ class MoCIndexer:
         d_tx["rbtcCommission"] = str(tx_event.commission)
         d_tx["rbtcInterests"] = str(tx_event.interests)
 
+        d_tx_insert = OrderedDict()
+        d_tx_insert["createdAt"] = datetime.datetime.now()
+
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash,
              "address": d_tx["address"],
              "event": d_tx["event"]},
-            {"$set": d_tx},
+            {"$set": d_tx,
+             "$setOnInsert": d_tx_insert},
             upsert=True)
-
         d_tx['post_id'] = post_id
+
+        if self.debug_mode:
+            log.info("Tx {0} From: [{1}] Amount: {2} Tx Hash: {3}".format(
+                d_tx["event"],
+                d_tx["address"],
+                d_tx["amount"],
+                tx_hash))
 
         # update user balances
         self.update_balance_address(m_client, d_tx["address"], block_height)
@@ -1028,14 +1092,24 @@ class MoCIndexer:
         d_tx["confirmationTime"] = confirmation_time
         d_tx["isPositive"] = tx_event.isAddition
 
+        d_tx_insert = OrderedDict()
+        d_tx_insert["createdAt"] = datetime.datetime.now()
+
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash,
              "address": d_tx["address"],
              "event": d_tx["event"]},
-            {"$set": d_tx},
+            {"$set": d_tx,
+             "$setOnInsert": d_tx_insert},
             upsert=True)
-
         d_tx['post_id'] = post_id
+
+        if self.debug_mode:
+            log.info("Tx {0} From: [{1}] Amount: {2} Tx Hash: {3}".format(
+                d_tx["event"],
+                d_tx["address"],
+                d_tx["amount"],
+                tx_hash))
 
         # update user balances
         self.update_balance_address(m_client, d_tx["address"], block_height)
@@ -1075,6 +1149,14 @@ class MoCIndexer:
             upsert=True)
         d_tx['post_id'] = post_id
 
+        if self.debug_mode:
+            log.info("Tx {0} queueSize: [{1}] accumCommissions: {2} reservePrice: {3} Tx Hash: {4}".format(
+                d_tx["event"],
+                d_tx["queueSize"],
+                d_tx["accumCommissions"],
+                d_tx["reservePrice"],
+                tx_hash))
+
         return d_tx
 
     def set_settlement_state(self, tx_event, m_client):
@@ -1106,6 +1188,11 @@ class MoCIndexer:
 
         d_tx['post_id'] = post_id
 
+        if self.debug_mode:
+            log.info("Tx {0} blockNumber: [{1}] Tx Hash:".format(
+                'SettlementDeleveraging',
+                d_tx["startBlockNumber"]))
+
         return d_tx
 
     def update_settlement_state(self, tx_event, m_client):
@@ -1134,6 +1221,13 @@ class MoCIndexer:
         else:
             log.warning("SettlementState already exist!")
             d_tx['post_id'] = None
+
+        if self.debug_mode:
+            log.info("Tx {0} startBlockNumber: [{1}] docRedeemCount: {2} deleveragingCount: {3}".format(
+                'SettlementStarted',
+                d_tx["startBlockNumber"],
+                d_tx["docRedeemCount"],
+                d_tx["deleveragingCount"]))
 
         return d_tx
 
@@ -1196,6 +1290,13 @@ class MoCIndexer:
                     {"$set": d_tx},
                     upsert=True)
 
+                if self.debug_mode:
+                    log.info("Tx {0} From: [{1}] Amount: {2} Tx Hash: {3}".format(
+                        d_tx["event"],
+                        d_tx["address"],
+                        d_tx["amount"],
+                        tx_hash))
+
                 # update user balances
                 self.update_balance_address(m_client, d_tx["address"], block_height)
 
@@ -1231,7 +1332,11 @@ class MoCIndexer:
         tx_logs = events.SettlementRedeemStableToken().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
             tx_event = MoCSettlementSettlementRedeemStableToken(self.connection_manager, tx_log)
-            self.moc_settlement_redeem_stable_token(tx_receipt, tx_event, m_client)
+            self.moc_settlement_redeem_stable_token(tx_receipt,
+                                                    tx_event,
+                                                    m_client,
+                                                    block_height,
+                                                    block_height_current)
             self.moc_settlement_redeem_stable_token_notification(tx_receipt, tx_event, tx_log, m_client)
 
         # SettlementDeleveraging
@@ -1260,6 +1365,12 @@ class MoCIndexer:
             {"blockHeight": tx_event.blockNumber},
             {"$set": d_tx},
             upsert=True)
+
+        if self.debug_mode:
+            log.info("Event Inrate Daily Pay - Blockheight: [{0}] ratePayAmount: {1}".format(
+                d_tx["blockHeight"],
+                d_tx["ratePayAmount"],
+                ))
 
         d_tx['post_id'] = post_id
 
@@ -1303,6 +1414,12 @@ class MoCIndexer:
             {"blockHeight": tx_event.blockNumber},
             {"$set": d_tx},
             upsert=True)
+
+        if self.debug_mode:
+            log.info("Event RiskPro Holders Interest Pay - Blockheight: [{0}] amount: {1}".format(
+                d_tx["blockHeight"],
+                d_tx["amount"],
+                ))
 
         d_tx['post_id'] = post_id
 
@@ -1440,14 +1557,18 @@ class MoCIndexer:
             status = 'confirming'
             confirmation_time = None
 
-        from_contract = '0x0000000000000000000000000000000000000000'
+        network = self.connection_manager.network
+        address_from_contract = '0x0000000000000000000000000000000000000000'
+        addresses_moc = self.connection_manager.options['networks'][network]['addresses']['MoC']
+        address_not_allowed = [str.lower(address_from_contract), str.lower(addresses_moc)]
+        if str.lower(tx_event.e_from) in address_not_allowed or \
+                str.lower(tx_event.e_to) in address_not_allowed:
 
-        if str.lower(from_contract) in [str.lower(tx_event.e_from),
-                                        str.lower(tx_event.e_to)]:
             # Transfer from our Contract we dont add because already done
             # with ...Mint
-            if self.debug_mode:
-                log.info("Token transfer not processed")
+            #if self.debug_mode:
+            #    log.info("Token transfer not processed! From: [{0}] To [{1}]".format(
+            #        tx_event.e_from, tx_event.e_to))
             return
 
         # get collection transaction
@@ -1561,25 +1682,6 @@ class MoCIndexer:
                     self.logs_process_moc(tx_receipt, m_client)
                     self.logs_process_moc_state(tx_receipt, m_client)
 
-    def reserve_address(self):
-
-        network = self.connection_manager.network
-
-        res_addresses = list()
-        res_addresses.append(
-            str.lower(self.connection_manager.options['networks'][network]['addresses']['ReserveToken']))
-
-        return res_addresses
-
-    def search_approval_transaction(self, block):
-
-        res_addresses = self.reserve_address()
-
-        f_block = self.connection_manager.get_block(block, full_transactions=True)
-        l_transactions = self.filter_transactions(f_block['transactions'], res_addresses)
-
-        return l_transactions
-
     def update_user_state_reserve(self, user_address, m_client, block_identifier: BlockIdentifier = 'latest'):
 
         user_state = self.mm.collection_user_state(m_client)
@@ -1655,7 +1757,7 @@ class MoCIndexer:
             block_height_current = block_current
 
         if self.debug_mode:
-            log.info("Starting to scan transactions block height: [{0}] last block height: [{1}]".format(
+            log.info("Starting to scan MOC transactions block height: [{0}] last block height: [{1}]".format(
                 block_height, block_height_current))
 
         # get moc contracts adressess
@@ -1685,6 +1787,10 @@ class MoCIndexer:
 
         # process all transactions looking for transfers
         if scan_transfer:
+            if self.debug_mode:
+                log.info("Starting to scan Transfer transactions block height: [{0}] last block height: [{1}]".format(
+                    block_height, block_height_current))
+
             all_transactions_receipts = self.transactions_receipt(all_transactions)
             for tx_receipt in all_transactions_receipts:
 
@@ -1724,7 +1830,11 @@ class MoCIndexer:
             {"address": account_address},
             {"$set": d_user_balance},
             upsert=True)
-
         d_user_balance['post_id'] = post_id
+
+        if self.debug_mode:
+            log.info("Update UserState: [{0}] block_height: [{1}] ".format(
+                account_address,
+                block_height))
 
         return d_user_balance
