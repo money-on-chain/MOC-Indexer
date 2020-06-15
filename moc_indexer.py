@@ -542,7 +542,7 @@ class MoCIndexer:
                                    block_height,
                                    block_height_current):
 
-        confirm_blocks = self.options['confirm_blocks']
+        confirm_blocks = self.options['scan_moc_blocks']['confirm_blocks']
         if block_height_current - block_height > confirm_blocks:
             status = 'confirmed'
             confirmation_time = datetime.datetime.now()
@@ -601,7 +601,7 @@ class MoCIndexer:
                                      block_height,
                                      block_height_current):
 
-        confirm_blocks = self.options['confirm_blocks']
+        confirm_blocks = self.options['scan_moc_blocks']['confirm_blocks']
         if block_height_current - block_height > confirm_blocks:
             status = 'confirmed'
             confirmation_time = datetime.datetime.now()
@@ -660,7 +660,7 @@ class MoCIndexer:
                                     block_height,
                                     block_height_current):
 
-        confirm_blocks = self.options['confirm_blocks']
+        confirm_blocks = self.options['scan_moc_blocks']['confirm_blocks']
         if block_height_current - block_height > confirm_blocks:
             status = 'confirmed'
             confirmation_time = datetime.datetime.now()
@@ -722,7 +722,7 @@ class MoCIndexer:
                                       block_height,
                                       block_height_current):
 
-        confirm_blocks = self.options['confirm_blocks']
+        confirm_blocks = self.options['scan_moc_blocks']['confirm_blocks']
         if block_height_current - block_height > confirm_blocks:
             status = 'confirmed'
             confirmation_time = datetime.datetime.now()
@@ -783,7 +783,7 @@ class MoCIndexer:
                                        block_height,
                                        block_height_current):
 
-        confirm_blocks = self.options['confirm_blocks']
+        confirm_blocks = self.options['scan_moc_blocks']['confirm_blocks']
         if block_height_current - block_height > confirm_blocks:
             status = 'confirmed'
             confirmation_time = datetime.datetime.now()
@@ -845,7 +845,7 @@ class MoCIndexer:
                                          block_height,
                                          block_height_current):
 
-        confirm_blocks = self.options['confirm_blocks']
+        confirm_blocks = self.options['scan_moc_blocks']['confirm_blocks']
         if block_height_current - block_height > confirm_blocks:
             status = 'confirmed'
             confirmation_time = datetime.datetime.now()
@@ -903,7 +903,7 @@ class MoCIndexer:
                                               block_height,
                                               block_height_current):
 
-        confirm_blocks = self.options['confirm_blocks']
+        confirm_blocks = self.options['scan_moc_blocks']['confirm_blocks']
         if block_height_current - block_height > confirm_blocks:
             status = 'confirmed'
             confirmation_time = datetime.datetime.now()
@@ -1037,7 +1037,7 @@ class MoCIndexer:
                                             block_height,
                                             block_height_current):
 
-        confirm_blocks = self.options['confirm_blocks']
+        confirm_blocks = self.options['scan_moc_blocks']['confirm_blocks']
         if block_height_current - block_height > confirm_blocks:
             status = 'confirmed'
             confirmation_time = datetime.datetime.now()
@@ -1208,7 +1208,7 @@ class MoCIndexer:
                                     block_height,
                                     block_height_current):
 
-        confirm_blocks = self.options['confirm_blocks']
+        confirm_blocks = self.options['scan_moc_blocks']['confirm_blocks']
         if block_height_current - block_height > confirm_blocks:
             status = 'confirmed'
             confirmation_time = datetime.datetime.now()
@@ -1519,7 +1519,7 @@ class MoCIndexer:
                           block_height_current,
                           token_involved='RISKPRO'):
 
-        confirm_blocks = self.options['confirm_blocks']
+        confirm_blocks = self.options['scan_moc_blocks']['confirm_blocks']
         if block_height_current - block_height > confirm_blocks:
             status = 'confirmed'
             confirmation_time = datetime.datetime.now()
@@ -1826,7 +1826,7 @@ class MoCIndexer:
         if to_block <= 0:
             to_block = last_block
 
-        if to_block > from_block:
+        if from_block > to_block:
             log.error("To block > from block!!??")
             return
 
@@ -1889,6 +1889,8 @@ class MoCIndexer:
             collection_moc_indexer.update_one({},
                                               {'$set': {'last_moc_block': current_block}},
                                               upsert=True)
+            # Go to next block
+            current_block += 1
 
         duration = time.time() - start_time
         log.info("Scan transactions done! Succesfull!! Done in {0} seconds".format(duration))
