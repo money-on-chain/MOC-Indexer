@@ -435,41 +435,6 @@ class MoCIndexer:
 
         return d_price
 
-    def update_prices(self, block_identifier: BlockIdentifier = 'latest'):
-
-        # conect to mongo db
-        m_client = self.mm.connect()
-
-        # get last block from node
-        last_block = self.connection_manager.block_number
-
-        if block_identifier == 'latest':
-            block_height = last_block
-        else:
-            block_height = block_identifier
-
-        # get collection price from mongo
-        collection_price = self.mm.collection_price(m_client)
-
-        exist_price = collection_price.find_one(
-            {"blockHeight": block_height}
-        )
-
-        if exist_price:
-            log.warning("Not updating prices! Already exist for that block")
-            return -1
-
-        # get all functions from smart contract
-        d_prices = self.prices_from_sc(block_identifier=block_height)
-        d_prices["blockHeight"] = block_height
-        d_prices["createdAt"] = datetime.datetime.now()
-        d_prices["isDailyVariation"] = False
-
-        post_id = collection_price.insert_one(d_prices).inserted_id
-        d_prices['post_id'] = post_id
-
-        return d_prices
-
     def moc_contract_addresses(self):
 
         network = self.connection_manager.network
@@ -1894,3 +1859,127 @@ class MoCIndexer:
 
         duration = time.time() - start_time
         log.info("Scan transactions done! Succesfull!! Done in {0} seconds".format(duration))
+
+    def is_confirmed_block(self, block_height, block_height_last):
+
+        confirm_blocks = self.options['scan_moc_blocks']['confirm_blocks']
+        if block_height_last - block_height > confirm_blocks:
+            status = 'confirmed'
+            confirmation_time = datetime.datetime.now()
+        else:
+            status = 'confirming'
+            confirmation_time = None
+
+        return status, confirmation_time
+
+    def scan_transaction_status(self):
+
+        # conect to mongo db
+        m_client = self.mm.connect()
+
+        # get last block from node
+        last_block = self.connection_manager.block_number
+
+        log.info("Starting to Scan Transactions status last block: {0} ".format(last_block))
+
+        start_time = time.time()
+
+        collection_tx = self.mm.collection_transaction(m_client)
+
+        # Get pendings tx and check for confirming, confirmed or failed
+        tx_pendings = collection_tx.find({'status': 'pending'})
+        for tx_pending in tx_pendings:
+            tx_receipt = self.connection_manager.web3.eth.getTransactionReceipt(tx_pending['transactionHash'])
+            if tx_receipt:
+                d_tx_up = dict()
+                if tx_receipt['status'] == 1:
+                    d_tx_up['status'], d_tx_up['confirmationTime'] = self.is_confirmed_block(
+                        tx_receipt['blockNumber'],
+                        last_block)
+                elif tx_receipt['status'] == 0:
+                    d_tx_up['status'] = 'error'
+                    d_tx_up['error_string'] = 'Not in a chain'
+                    d_tx_up['error_code'] = 999
+                    d_tx_up['confirmationTime'] = datetime.datetime.now()
+                else:
+                    continue
+
+                collection_tx.find_one_and_update(
+                    {"_id": tx_pending["_id"]},
+                    {"$set": d_tx_up})
+
+                if self.debug_mode:
+                    log.info("Setting tx status: {0} hash: {1}".format(d_tx_up['status'],
+                                                                       tx_pending['transactionHash']))
+
+        # Get confirming tx and check for confirming, confirmed or failed
+        tx_pendings = collection_tx.find({'status': 'confirming'})
+        for tx_pending in tx_pendings:
+            tx_receipt = self.connection_manager.web3.eth.getTransactionReceipt(tx_pending['transactionHash'])
+            if tx_receipt:
+                d_tx_up = dict()
+                if tx_receipt['status'] == 1:
+                    d_tx_up['status'], d_tx_up['confirmationTime'] = self.is_confirmed_block(
+                        tx_receipt['blockNumber'],
+                        last_block)
+                    if d_tx_up['status'] == 'confirming':
+                        # is already on confirming status
+                        # not write to db
+                        continue
+                elif tx_receipt['status'] == 0:
+                    d_tx_up['status'] = 'failed'
+                    d_tx_up['error_string'] = 'Not in a chain'
+                    d_tx_up['error_code'] = 999
+                    d_tx_up['confirmationTime'] = datetime.datetime.now()
+                else:
+                    continue
+
+                collection_tx.find_one_and_update(
+                    {"_id": tx_pending["_id"]},
+                    {"$set": d_tx_up})
+
+                if self.debug_mode:
+                    log.info("Setting tx status: {0} hash: {1}".format(d_tx_up['status'],
+                                                                       tx_pending['transactionHash']))
+            else:
+                # no receipt from tx
+                # here problem with eternal confirming
+                pass
+
+        duration = time.time() - start_time
+        log.info("Scan transactions status Succesfully!! Done in {0} seconds".format(duration))
+
+    def scan_moc_prices(self, block_identifier: BlockIdentifier = 'latest'):
+
+        # conect to mongo db
+        m_client = self.mm.connect()
+
+        # get last block from node
+        last_block = self.connection_manager.block_number
+
+        if block_identifier == 'latest':
+            block_height = last_block
+        else:
+            block_height = block_identifier
+
+        # get collection price from mongo
+        collection_price = self.mm.collection_price(m_client)
+
+        exist_price = collection_price.find_one(
+            {"blockHeight": block_height}
+        )
+
+        if exist_price:
+            log.warning("Not updating prices! Already exist for that block")
+            return -1
+
+        # get all functions from smart contract
+        d_prices = self.prices_from_sc(block_identifier=block_height)
+        d_prices["blockHeight"] = block_height
+        d_prices["createdAt"] = datetime.datetime.now()
+        d_prices["isDailyVariation"] = False
+
+        post_id = collection_price.insert_one(d_prices).inserted_id
+        d_prices['post_id'] = post_id
+
+        return d_prices

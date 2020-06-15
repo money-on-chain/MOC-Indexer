@@ -43,4 +43,4 @@ if __name__ == '__main__':
             network = options.network
 
     moc_inc = MoCIndexer(config, network)
-    moc_inc.update_balance_from_account('0xC67D9EE30d2119A384E02de568BE80fe785074Ba')
+    moc_inc.scan_moc_prices()

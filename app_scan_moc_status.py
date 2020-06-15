@@ -38,9 +38,9 @@ if __name__ == '__main__':
         network = os.environ['APP_NETWORK']
     else:
         if not options.network:
-            network = 'mocTestnetAlpha'
+            network = 'rdocTestnet'
         else:
             network = options.network
 
     moc_inc = MoCIndexer(config, network)
-    moc_inc.update_prices(747793)
+    moc_inc.scan_transaction_status()
