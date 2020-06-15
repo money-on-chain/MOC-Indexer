@@ -165,6 +165,14 @@ class MongoManager:
 
         return collection
 
+    def collection_moc_indexer(self, client, start_index=True):
+
+        mongo_db = self.options['mongo']['db']
+        db = client[mongo_db]
+        collection = db['moc_indexer']
+
+        return collection
+
 
 class MoCIndexer:
 
@@ -426,44 +434,6 @@ class MoCIndexer:
         d_price["createdAt"] = datetime.datetime.now()
 
         return d_price
-
-    def update_moc_state(self, block_identifier: BlockIdentifier = 'latest'):
-
-        # conect to mongo db
-        m_client = self.mm.connect()
-
-        # get last block from node
-        last_block = self.connection_manager.block_number
-
-        if block_identifier == 'latest':
-            block_height = last_block
-        else:
-            block_height = block_identifier
-
-        # get all functions from smart contract
-        d_moc_state = self.moc_state_from_sc(block_identifier=block_height)
-
-        old_block_height = last_block - d_moc_state['dayBlockSpan']
-
-        # get last price written in mongo
-        collection_price = self.mm.collection_price(m_client)
-        last_price = collection_price.find_one(filter={"blockHeight": {"$lt": old_block_height}},
-                                               sort=[("blockHeight", -1)])
-
-        d_moc_state["lastUpdateHeight"] = block_height
-        d_moc_state["priceVariation"] = last_price
-
-        # get collection moc_state from mongo
-        collection_moc_state = self.mm.collection_moc_state(m_client)
-
-        # update or insert the new info on mocstate
-        post_id = collection_moc_state.find_one_and_update(
-            {},
-            {"$set": d_moc_state},
-            upsert=True)
-        d_moc_state['post_id'] = post_id
-
-        return d_moc_state
 
     def update_prices(self, block_identifier: BlockIdentifier = 'latest'):
 
@@ -1735,70 +1705,6 @@ class MoCIndexer:
             tx_event = ERC20Approval(self.connection_manager, tx_log)
             self.update_user_state_approval(tx_event, m_client)
 
-    def scan_moc_blocks(self,
-                        block_identifier: BlockIdentifier = 'latest',
-                        block_current: BlockIdentifier = 'latest',
-                        scan_transfer=True):
-
-        # conect to mongo db
-        m_client = self.mm.connect()
-
-        # get last block from node
-        last_block = self.connection_manager.block_number
-
-        if block_identifier == 'latest':
-            block_height = last_block
-        else:
-            block_height = block_identifier
-
-        if block_current == 'latest':
-            block_height_current = last_block
-        else:
-            block_height_current = block_current
-
-        if self.debug_mode:
-            log.info("Starting to scan MOC transactions block height: [{0}] last block height: [{1}]".format(
-                block_height, block_height_current))
-
-        # get moc contracts adressess
-        moc_addresses = self.moc_contract_addresses()
-
-        # get block and full transactions
-        f_block = self.connection_manager.get_block(block_height, full_transactions=True)
-        all_transactions = f_block['transactions']
-
-        # From MOC Contract transactions
-        moc_transactions = self.filter_transactions(all_transactions, moc_addresses)
-
-        # get transactions receipts
-        moc_transactions_receipts = self.transactions_receipt(moc_transactions)
-
-        # process only MoC contract transactions
-        for tx_receipt in moc_transactions_receipts:
-            if not tx_receipt['logs']:
-                continue
-
-            self.logs_process_moc_exchange(tx_receipt, m_client, block_height, block_height_current)
-            self.logs_process_moc_settlement(tx_receipt, m_client, block_height, block_height_current)
-            self.logs_process_moc_inrate(tx_receipt, m_client)
-            self.logs_process_moc(tx_receipt, m_client)
-            self.logs_process_moc_state(tx_receipt, m_client)
-            self.logs_process_reserve_approval(tx_receipt, m_client)
-
-        # process all transactions looking for transfers
-        if scan_transfer:
-            if self.debug_mode:
-                log.info("Starting to scan Transfer transactions block height: [{0}] last block height: [{1}]".format(
-                    block_height, block_height_current))
-
-            all_transactions_receipts = self.transactions_receipt(all_transactions)
-            for tx_receipt in all_transactions_receipts:
-
-                if not tx_receipt['logs']:
-                    continue
-
-                self.logs_process_transfer(tx_receipt, m_client, block_height, block_height_current)
-
     def update_balance_address(self, m_client, account_address, block_height):
 
         # get collection user state from mongo
@@ -1838,3 +1744,151 @@ class MoCIndexer:
                 block_height))
 
         return d_user_balance
+
+    def scan_moc_state(self):
+
+        config_block_height = self.options['scan_moc_state']['block_height']
+
+        # conect to mongo db
+        m_client = self.mm.connect()
+
+        # get last block from node
+        last_block = self.connection_manager.block_number
+
+        block_height = config_block_height
+        if block_height <= 0:
+            block_height = last_block
+
+        log.info("Starting to index MoC State on block height: {0}".format(block_height))
+
+        start_time = time.time()
+
+        # get all functions from smart contract
+        d_moc_state = self.moc_state_from_sc(block_identifier=block_height)
+
+        old_block_height = last_block - d_moc_state['dayBlockSpan']
+
+        # get last price written in mongo
+        collection_price = self.mm.collection_price(m_client)
+        last_price = collection_price.find_one(filter={"blockHeight": {"$lt": old_block_height}},
+                                               sort=[("blockHeight", -1)])
+
+        d_moc_state["lastUpdateHeight"] = block_height
+        d_moc_state["priceVariation"] = last_price
+
+        # get collection moc_state from mongo
+        collection_moc_state = self.mm.collection_moc_state(m_client)
+
+        # update or insert the new info on mocstate
+        post_id = collection_moc_state.find_one_and_update(
+            {},
+            {"$set": d_moc_state},
+            upsert=True)
+        d_moc_state['post_id'] = post_id
+
+        duration = time.time() - start_time
+        log.info("Index MoC State done! Done in {0} seconds".format(duration))
+
+        return d_moc_state
+
+    def scan_moc_blocks(self,
+                        scan_transfer=True):
+
+        # conect to mongo db
+        m_client = self.mm.connect()
+
+        config_from_block = self.options['scan_moc_blocks']['block_start']
+        config_to_block = self.options['scan_moc_blocks']['block_end']
+        config_block_reference = self.options['scan_moc_blocks']['block_reference']
+        config_blocks_look_behind = self.options['scan_moc_blocks']['blocks_look_behind']
+
+        # get last block from node
+        last_block = self.connection_manager.block_number
+
+        collection_moc_indexer = self.mm.collection_moc_indexer(m_client)
+        moc_index = collection_moc_indexer.find_one()
+        last_block_indexed = 0
+        if moc_index:
+            last_block_indexed = moc_index['last_moc_block']
+
+        from_block = last_block - config_blocks_look_behind
+        if last_block_indexed > 0:
+            from_block = last_block_indexed + 1
+        else:
+            if config_from_block > 0:
+                from_block = config_from_block
+
+        if from_block >= last_block:
+            log.info("Its not the time to run indexer no new blocks avalaible!")
+            return
+
+        to_block = config_to_block
+        if to_block <= 0:
+            to_block = last_block
+
+        if to_block > from_block:
+            log.error("To block > from block!!??")
+            return
+
+        # block reference is the last block, is to compare to... except you specified in the settings
+        block_reference = config_block_reference
+        if block_reference <= 0:
+            block_reference = last_block
+
+        current_block = from_block
+
+        log.info("Starting to Scan Transactions: {0} To Block: {1} ...".format(from_block, to_block))
+
+        start_time = time.time()
+        while current_block <= to_block:
+
+            log.info("Starting to scan MOC transactions block height: [{0}] last block height: [{1}]".format(
+                current_block, block_reference))
+
+            # get moc contracts adressess
+            moc_addresses = self.moc_contract_addresses()
+
+            # get block and full transactions
+            f_block = self.connection_manager.get_block(current_block, full_transactions=True)
+            all_transactions = f_block['transactions']
+
+            # From MOC Contract transactions
+            moc_transactions = self.filter_transactions(all_transactions, moc_addresses)
+
+            # get transactions receipts
+            moc_transactions_receipts = self.transactions_receipt(moc_transactions)
+
+            # process only MoC contract transactions
+            for tx_receipt in moc_transactions_receipts:
+                if not tx_receipt['logs']:
+                    continue
+
+                self.logs_process_moc_exchange(tx_receipt, m_client, current_block, block_reference)
+                self.logs_process_moc_settlement(tx_receipt, m_client, current_block, block_reference)
+                self.logs_process_moc_inrate(tx_receipt, m_client)
+                self.logs_process_moc(tx_receipt, m_client)
+                self.logs_process_moc_state(tx_receipt, m_client)
+                self.logs_process_reserve_approval(tx_receipt, m_client)
+
+            # process all transactions looking for transfers
+            if scan_transfer:
+                if self.debug_mode:
+                    log.info("Starting to scan Transfer transactions block height: [{0}] last block height: [{1}]".format(
+                        current_block, block_reference))
+
+                all_transactions_receipts = self.transactions_receipt(all_transactions)
+                for tx_receipt in all_transactions_receipts:
+
+                    if not tx_receipt['logs']:
+                        continue
+
+                    self.logs_process_transfer(tx_receipt, m_client, current_block, block_reference)
+
+            log.info("Done scan transaction block height: [{0}]".format(current_block))
+
+            collection_moc_indexer.update_one({},
+                                              {'$set': {'last_moc_block': current_block}},
+                                              upsert=True)
+
+        duration = time.time() - start_time
+        log.info("Scan transactions done! Succesfull!! Done in {0} seconds".format(duration))

@@ -7,7 +7,16 @@
   "timeout_wait": 300,
   "gas_price": 60000000,
   "debug": true,
-  "confirm_blocks": 10,
+  "scan_moc_blocks": {
+    "block_start": 765200,
+    "block_end": 765900,
+    "block_reference": 765900,
+    "confirm_blocks": 10,
+    "blocks_look_behind": 10
+  },
+  "scan_moc_state": {
+    "block_height": 765200
+  },
   "networks": {
     "mocTestnetAlpha": {
       "app_mode": "MoC",
