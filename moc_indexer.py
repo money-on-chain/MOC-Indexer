@@ -12,8 +12,8 @@ from web3.types import BlockIdentifier
 from web3.logs import DISCARD
 
 from moneyonchain.manager import ConnectionManager
-from moneyonchain.moc import MoC, MoCState, MoCInrate
-from moneyonchain.rdoc import RDOCMoC, RDOCMoCState, RDOCMoCInrate
+from moneyonchain.moc import MoC, MoCState, MoCInrate, MoCSettlement
+from moneyonchain.rdoc import RDOCMoC, RDOCMoCState, RDOCMoCInrate, RDOCMoCSettlement
 from moneyonchain.events import MoCExchangeRiskProMint, \
     MoCExchangeStableTokenMint, \
     MoCExchangeRiskProxMint, \
@@ -191,6 +191,7 @@ class MoCIndexer:
             self.contract_MoC = RDOCMoC(self.connection_manager)
             self.contract_MoCState = RDOCMoCState(self.connection_manager)
             self.contract_MoCInrate = RDOCMoCInrate(self.connection_manager)
+            self.contract_MoCSettlement = RDOCMoCSettlement(self.connection_manager)
             self.contract_ReserveToken = RIF(self.connection_manager)
             self.contract_StableToken = RIFDoC(self.connection_manager)
             self.contract_RiskProToken = RIFPro(self.connection_manager)
@@ -198,6 +199,7 @@ class MoCIndexer:
             self.contract_MoC = MoC(self.connection_manager)
             self.contract_MoCState = MoCState(self.connection_manager)
             self.contract_MoCInrate = MoCInrate(self.connection_manager)
+            self.contract_MoCSettlement = MoCSettlement(self.connection_manager)
             self.contract_StableToken = DoCToken(self.connection_manager)
             self.contract_RiskProToken = BProToken(self.connection_manager)
 
@@ -388,6 +390,8 @@ class MoCIndexer:
         #d_moc_state["lastUpdateHeight"] = lastUpdateHeight
         d_moc_state["createdAt"] = datetime.datetime.now()
         d_moc_state["dayBlockSpan"] = self.contract_MoCState.day_block_span(
+            block_identifier=block_identifier)
+        d_moc_state["blockSpan"] = self.contract_MoCSettlement.block_span(
             block_identifier=block_identifier)
         d_moc_state["blocksToSettlement"] = self.contract_MoCState.blocks_to_settlement(
             block_identifier=block_identifier)
@@ -1731,12 +1735,30 @@ class MoCIndexer:
         # get all functions from smart contract
         d_moc_state = self.moc_state_from_sc(block_identifier=block_height)
 
+        # price variation
         old_block_height = last_block - d_moc_state['dayBlockSpan']
 
         # get last price written in mongo
         collection_price = self.mm.collection_price(m_client)
         last_price = collection_price.find_one(filter={"blockHeight": {"$lt": old_block_height}},
                                                sort=[("blockHeight", -1)])
+
+        # price variation on settlement day
+        d_moc_state["isDailyVariation"] = True
+        if d_moc_state["blockSpan"] - d_moc_state['blocksToSettlement'] <= d_moc_state['dayBlockSpan']:
+            # Price Variation is built in-app and not retrieved from blockchain.
+            # For leveraged coin, variation must be against the BTC price
+            # stated at the last settlement period.
+
+            collection_settlement = self.mm.collection_settlement_state(m_client)
+
+            last_settlement = collection_settlement.find_one(
+                {},
+                sort=[("startBlockNumber", -1)]
+            )
+            if last_settlement:
+                last_price['bprox2PriceInUsd'] = last_settlement['btcPrice']
+                d_moc_state["isDailyVariation"] = False
 
         d_moc_state["lastUpdateHeight"] = block_height
         d_moc_state["priceVariation"] = last_price

@@ -19,9 +19,9 @@
     "block_height": 765200
   },
   "scan_moc_prices": {
-    "block_start": 921798,
-    "block_end": 921898,
-    "blocks_look_behind": 10
+    "block_start": 921788,
+    "block_end": 921798,
+    "blocks_look_behind": 100
   },
   "networks": {
     "mocTestnetAlpha": {
