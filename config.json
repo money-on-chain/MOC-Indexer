@@ -1,27 +1,33 @@
 {
   "mongo": {
     "uri": "mongodb://192.168.56.2:27017/",
-    "db": "local_rdoc_testnet"
+    "db": "local_alpha_testnet"
   },
   "timeout": 60,
   "timeout_wait": 300,
   "gas_price": 60000000,
   "debug": true,
+  "tasks": {
+    "scan_moc_blocks": {"interval":  30},
+    "scan_moc_prices": {"interval":  40},
+    "scan_moc_state": {"interval":  50},
+    "scan_moc_status": {"interval":  65}
+  },
   "scan_moc_blocks": {
-    "block_start": 921798,
-    "block_end": 921898,
-    "block_reference": 934000,
+    "block_start": 0,
+    "block_end": 0,
+    "block_reference": 0,
     "confirm_blocks": 10,
     "blocks_look_behind": 10,
     "seconds_not_in_chain_error": 600
   },
   "scan_moc_state": {
-    "block_height": 765200
+    "block_height": 0
   },
   "scan_moc_prices": {
-    "block_start": 921788,
-    "block_end": 921798,
-    "blocks_look_behind": 100
+    "block_start": 0,
+    "block_end": 0,
+    "blocks_look_behind": 10
   },
   "networks": {
     "mocTestnetAlpha": {

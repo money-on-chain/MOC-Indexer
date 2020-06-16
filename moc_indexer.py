@@ -178,10 +178,10 @@ class MoCIndexer:
 
     precision = 10 ** 18
 
-    def __init__(self, monitor_config, network_nm):
+    def __init__(self, config_app, network_app):
 
-        self.options = monitor_config
-        self.network = network_nm
+        self.options = config_app
+        self.network = network_app
 
         self.connection_manager = ConnectionManager(options=self.options, network=self.network)
         self.app_mode = self.options['networks'][self.network]['app_mode']
