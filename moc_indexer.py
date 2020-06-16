@@ -2055,7 +2055,6 @@ class MoCIndexer:
             d_prices = self.prices_from_sc(block_identifier=current_block)
             d_prices["blockHeight"] = current_block
             d_prices["createdAt"] = datetime.datetime.now()
-            d_prices["isDailyVariation"] = False
 
             collection_price.find_one_and_update(
                 {"blockHeight": current_block},
