@@ -1771,10 +1771,11 @@ class MoCIndexer:
         last_block = self.connection_manager.block_number
 
         collection_moc_indexer = self.mm.collection_moc_indexer(m_client)
-        moc_index = collection_moc_indexer.find_one()
+        moc_index = collection_moc_indexer.find_one(sort=[("updatedAt", -1)])
         last_block_indexed = 0
         if moc_index:
-            last_block_indexed = moc_index['last_moc_block']
+            if 'last_moc_block' in moc_index:
+                last_block_indexed = moc_index['last_moc_block']
 
         from_block = last_block - config_blocks_look_behind
         if last_block_indexed > 0:
@@ -1852,7 +1853,8 @@ class MoCIndexer:
             log.info("Done scan transaction block height: [{0}]".format(current_block))
 
             collection_moc_indexer.update_one({},
-                                              {'$set': {'last_moc_block': current_block}},
+                                              {'$set': {'last_moc_block': current_block,
+                                                        'updatedAt': datetime.datetime.now()}},
                                               upsert=True)
             # Go to next block
             current_block += 1
@@ -1873,6 +1875,8 @@ class MoCIndexer:
         return status, confirmation_time
 
     def scan_transaction_status(self):
+
+        seconds_not_in_chain_error = self.options['scan_moc_blocks']['seconds_not_in_chain_error']
 
         # conect to mongo db
         m_client = self.mm.connect()
@@ -1944,42 +1948,106 @@ class MoCIndexer:
             else:
                 # no receipt from tx
                 # here problem with eternal confirming
-                pass
+                created_at = tx_pending['createdAt']
+                if created_at:
+                    dte = created_at + datetime.timedelta(seconds=seconds_not_in_chain_error)
+                    if dte < datetime.datetime.now():
+                        d_tx_up = dict()
+                        d_tx_up['status'] = 'failed'
+                        d_tx_up['error_string'] = 'Not in a chain'
+                        d_tx_up['error_code'] = 999
+                        d_tx_up['confirmationTime'] = datetime.datetime.now()
+
+                        collection_tx.find_one_and_update(
+                            {"_id": tx_pending["_id"]},
+                            {"$set": d_tx_up})
+
+                        if self.debug_mode:
+                            log.info("Setting tx status: {0} hash: {1}".format(d_tx_up['status'],
+                                                                               tx_pending['transactionHash']))
 
         duration = time.time() - start_time
         log.info("Scan transactions status Succesfully!! Done in {0} seconds".format(duration))
 
-    def scan_moc_prices(self, block_identifier: BlockIdentifier = 'latest'):
+    def scan_moc_prices(self):
 
         # conect to mongo db
         m_client = self.mm.connect()
 
+        config_from_block = self.options['scan_moc_prices']['block_start']
+        config_to_block = self.options['scan_moc_prices']['block_end']
+        config_blocks_look_behind = self.options['scan_moc_blocks']['blocks_look_behind']
+
         # get last block from node
         last_block = self.connection_manager.block_number
 
-        if block_identifier == 'latest':
-            block_height = last_block
+        collection_moc_indexer = self.mm.collection_moc_indexer(m_client)
+        moc_index = collection_moc_indexer.find_one(sort=[("updatedAt", -1)])
+        last_block_indexed = 0
+        if moc_index:
+            if 'last_moc_prices_block' in moc_index:
+                last_block_indexed = moc_index['last_moc_prices_block']
+
+        from_block = last_block - config_blocks_look_behind
+        if last_block_indexed > 0:
+            from_block = last_block_indexed + 1
         else:
-            block_height = block_identifier
+            if config_from_block > 0:
+                from_block = config_from_block
+
+        if from_block >= last_block:
+            log.info("Its not the time to run indexer no new blocks avalaible!")
+            return
+
+        to_block = config_to_block
+        if to_block <= 0:
+            to_block = last_block
+
+        if from_block > to_block:
+            log.error("To block > from block!!??")
+            return
+
+        current_block = from_block
 
         # get collection price from mongo
         collection_price = self.mm.collection_price(m_client)
 
-        exist_price = collection_price.find_one(
-            {"blockHeight": block_height}
-        )
+        log.info("Starting to Scan prices: {0} To Block: {1} ...".format(from_block, to_block))
 
-        if exist_price:
-            log.warning("Not updating prices! Already exist for that block")
-            return -1
+        start_time = time.time()
+        while current_block <= to_block:
 
-        # get all functions from smart contract
-        d_prices = self.prices_from_sc(block_identifier=block_height)
-        d_prices["blockHeight"] = block_height
-        d_prices["createdAt"] = datetime.datetime.now()
-        d_prices["isDailyVariation"] = False
+            log.info("Starting to scan MOC prices block height: [{0}]".format(
+                current_block))
 
-        post_id = collection_price.insert_one(d_prices).inserted_id
-        d_prices['post_id'] = post_id
+            last_price_height = collection_price.find_one(
+                filter={"blockHeight": {"$gte": current_block}},
+                sort=[("blockHeight", -1)]
+            )
 
-        return d_prices
+            if last_price_height:
+                log.warning("Not updating prices! Already exist for that block")
+                return
+
+            # get all functions from smart contract
+            d_prices = self.prices_from_sc(block_identifier=current_block)
+            d_prices["blockHeight"] = current_block
+            d_prices["createdAt"] = datetime.datetime.now()
+            d_prices["isDailyVariation"] = False
+
+            collection_price.find_one_and_update(
+                {"blockHeight": current_block},
+                {"$set": d_prices},
+                upsert=True)
+
+            log.info("Done scan prices block height: [{0}]".format(current_block))
+
+            collection_moc_indexer.update_one({},
+                                              {'$set': {'last_moc_prices_block': current_block,
+                                                        'updatedAt': datetime.datetime.now()}},
+                                              upsert=True)
+            # Go to next block
+            current_block += 1
+
+        duration = time.time() - start_time
+        log.info("Scan prices Succesfully!! Done in {0} seconds".format(duration))

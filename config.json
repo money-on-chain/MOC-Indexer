@@ -13,7 +13,7 @@
     "block_reference": 934000,
     "confirm_blocks": 10,
     "blocks_look_behind": 10,
-    "blocks_not_in_chain_error": 10
+    "seconds_not_in_chain_error": 600
   },
   "scan_moc_state": {
     "block_height": 765200
