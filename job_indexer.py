@@ -105,11 +105,11 @@ class JobsIndexer:
         interval = self.options['tasks']['scan_moc_prices']['interval']
         self.tl._add_job(self.task_scan_moc_prices, datetime.timedelta(seconds=interval))
 
-        # # scan_moc_state
-        # log.info("Jobs add scan_moc_state")
-        # interval = self.options['tasks']['scan_moc_state']['interval']
-        # self.tl._add_job(self.task_scan_moc_state, datetime.timedelta(seconds=interval))
-        #
+        # scan_moc_state
+        log.info("Jobs add scan_moc_state")
+        interval = self.options['tasks']['scan_moc_state']['interval']
+        self.tl._add_job(self.task_scan_moc_state, datetime.timedelta(seconds=interval))
+
         # # scan_moc_status
         # log.info("Jobs add scan_moc_status")
         # interval = self.options['tasks']['scan_moc_status']['interval']

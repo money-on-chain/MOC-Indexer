@@ -77,6 +77,18 @@ class MongoManager:
 
         return collection
 
+    def collection_moc_state_history(self, client, start_index=True):
+
+        mongo_db = self.options['mongo']['db']
+        db = client[mongo_db]
+        collection = db['MocState_history']
+
+        # index creation
+        if start_index:
+            collection.create_index([('blockHeight', pymongo.DESCENDING)], unique=True)
+
+        return collection
+
     def collection_price(self, client, start_index=True):
 
         mongo_db = self.options['mongo']['db']
@@ -1730,6 +1742,14 @@ class MoCIndexer:
 
         log.info("Starting to index MoC State on block height: {0}".format(block_height))
 
+        # get collection moc_state from mongo
+        collection_moc_state = self.mm.collection_moc_state(m_client)
+
+        exist_moc_state = collection_moc_state.find_one({"lastUpdateHeight": block_height})
+        if exist_moc_state:
+            log.info("Not time to run moc state, already exist")
+            return
+
         start_time = time.time()
 
         # get all functions from smart contract
@@ -1763,20 +1783,21 @@ class MoCIndexer:
         d_moc_state["lastUpdateHeight"] = block_height
         d_moc_state["priceVariation"] = last_price
 
-        # get collection moc_state from mongo
-        collection_moc_state = self.mm.collection_moc_state(m_client)
-
         # update or insert the new info on mocstate
-        post_id = collection_moc_state.find_one_and_update(
+        collection_moc_state.find_one_and_update(
             {},
             {"$set": d_moc_state},
             upsert=True)
-        d_moc_state['post_id'] = post_id
+
+        # history
+        collection_moc_state_history = self.mm.collection_moc_state_history(m_client)
+        collection_moc_state_history.find_one_and_update(
+            {"blockHeight": block_height},
+            {"$set": d_moc_state},
+            upsert=True)
 
         duration = time.time() - start_time
         log.info("Index MoC State done! Done in {0} seconds".format(duration))
-
-        return d_moc_state
 
     def scan_moc_blocks(self,
                         scan_transfer=True):
@@ -1856,7 +1877,8 @@ class MoCIndexer:
                 self.logs_process_moc_inrate(tx_receipt, m_client)
                 self.logs_process_moc(tx_receipt, m_client)
                 self.logs_process_moc_state(tx_receipt, m_client)
-                self.logs_process_reserve_approval(tx_receipt, m_client)
+                if self.app_mode == "RRC20":
+                    self.logs_process_reserve_approval(tx_receipt, m_client)
 
             # process all transactions looking for transfers
             if scan_transfer:
