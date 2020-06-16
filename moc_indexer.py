@@ -10,6 +10,7 @@ from bson.decimal128 import Decimal128
 from collections import OrderedDict
 from web3.types import BlockIdentifier
 from web3.logs import DISCARD
+from web3.exceptions import TransactionNotFound
 
 from moneyonchain.manager import ConnectionManager
 from moneyonchain.moc import MoC, MoCState, MoCInrate, MoCSettlement
@@ -1038,7 +1039,6 @@ class MoCIndexer:
         d_tx["event"] = 'RedeemRequestAlter'
         d_tx["tokenInvolved"] = 'STABLE'
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
-        d_tx["createdAt"] = datetime.datetime.now()
         d_tx["amount"] = str(tx_event.delta)
         d_tx["confirmationTime"] = confirmation_time
         d_tx["isPositive"] = tx_event.isAddition
@@ -1760,8 +1760,8 @@ class MoCIndexer:
 
         # get last price written in mongo
         collection_price = self.mm.collection_price(m_client)
-        last_price = collection_price.find_one(filter={"blockHeight": {"$lt": old_block_height}},
-                                               sort=[("blockHeight", -1)])
+        daily_last_price = collection_price.find_one(filter={"blockHeight": {"$lt": old_block_height}},
+                                                     sort=[("blockHeight", -1)])
 
         # price variation on settlement day
         d_moc_state["isDailyVariation"] = True
@@ -1777,11 +1777,13 @@ class MoCIndexer:
                 sort=[("startBlockNumber", -1)]
             )
             if last_settlement:
-                last_price['bprox2PriceInUsd'] = last_settlement['btcPrice']
+                daily_last_price['bprox2PriceInUsd'] = last_settlement['btcPrice']
                 d_moc_state["isDailyVariation"] = False
 
         d_moc_state["lastUpdateHeight"] = block_height
-        d_moc_state["priceVariation"] = last_price
+        d_price_variation = dict()
+        d_price_variation['daily'] = daily_last_price
+        d_moc_state["priceVariation"] = d_price_variation
 
         # update or insert the new info on mocstate
         collection_moc_state.find_one_and_update(
@@ -1937,7 +1939,12 @@ class MoCIndexer:
         # Get pendings tx and check for confirming, confirmed or failed
         tx_pendings = collection_tx.find({'status': 'pending'})
         for tx_pending in tx_pendings:
-            tx_receipt = self.connection_manager.web3.eth.getTransactionReceipt(tx_pending['transactionHash'])
+
+            try:
+                tx_receipt = self.connection_manager.web3.eth.getTransactionReceipt(tx_pending['transactionHash'])
+            except TransactionNotFound:
+                tx_receipt = None
+
             if tx_receipt:
                 d_tx_up = dict()
                 if tx_receipt['status'] == 1:

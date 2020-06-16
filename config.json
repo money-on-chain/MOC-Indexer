@@ -10,8 +10,8 @@
   "tasks": {
     "scan_moc_blocks": {"interval":  30},
     "scan_moc_prices": {"interval":  40},
-    "scan_moc_state": {"interval":  50},
-    "scan_moc_status": {"interval":  65}
+    "scan_moc_state": {"interval":  30},
+    "scan_moc_status": {"interval":  20}
   },
   "scan_moc_blocks": {
     "block_start": 0,
