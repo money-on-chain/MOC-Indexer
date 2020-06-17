@@ -937,77 +937,87 @@ class MoCIndexer:
 
     def logs_process_moc_exchange(self, tx_receipt, m_client, block_height, block_height_current):
 
+        network = self.connection_manager.network
+        moc_addresses = self.connection_manager.options['networks'][network]['addresses']
+
         events = self.contract_MoC.sc_moc_exchange.events
 
         # RiskProMint
         tx_logs = events.RiskProMint().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
-            tx_event = MoCExchangeRiskProMint(self.connection_manager, tx_log)
-            self.moc_exchange_risk_pro_mint(tx_receipt,
-                                            tx_event,
-                                            m_client,
-                                            block_height,
-                                            block_height_current)
-
-        # RiskProRedeem
-        tx_logs = events.RiskProRedeem().processReceipt(tx_receipt, errors=DISCARD)
-        for tx_log in tx_logs:
-            tx_event = MoCExchangeRiskProRedeem(self.connection_manager, tx_log)
-            self.moc_exchange_risk_pro_redeem(tx_receipt,
-                                              tx_event,
-                                              m_client,
-                                              block_height,
-                                              block_height_current)
-
-        # RiskProxMint
-        tx_logs = events.RiskProxMint().processReceipt(tx_receipt, errors=DISCARD)
-        for tx_log in tx_logs:
-            tx_event = MoCExchangeRiskProxMint(self.connection_manager, tx_log)
-            self.moc_exchange_risk_prox_mint(tx_receipt,
-                                             tx_event,
-                                             m_client,
-                                             block_height,
-                                             block_height_current)
-
-        # RiskProxRedeem
-        tx_logs = events.RiskProxRedeem().processReceipt(tx_receipt, errors=DISCARD)
-        for tx_log in tx_logs:
-            tx_event = MoCExchangeRiskProxRedeem(self.connection_manager, tx_log)
-            self.moc_exchange_risk_prox_redeem(tx_receipt,
-                                               tx_event,
-                                               m_client,
-                                               block_height,
-                                               block_height_current)
-
-        # StableTokenMint
-        tx_logs = events.StableTokenMint().processReceipt(tx_receipt, errors=DISCARD)
-        for tx_log in tx_logs:
-            tx_event = MoCExchangeStableTokenMint(self.connection_manager, tx_log)
-            self.moc_exchange_stable_token_mint(tx_receipt,
+            if str(tx_log['address']).lower() == str(moc_addresses['MoCExchange']).lower():
+                tx_event = MoCExchangeRiskProMint(self.connection_manager, tx_log)
+                self.moc_exchange_risk_pro_mint(tx_receipt,
                                                 tx_event,
                                                 m_client,
                                                 block_height,
                                                 block_height_current)
 
-        # StableTokenRedeem
-        tx_logs = events.StableTokenRedeem().processReceipt(tx_receipt, errors=DISCARD)
+        # RiskProRedeem
+        tx_logs = events.RiskProRedeem().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
-            tx_event = MoCExchangeStableTokenRedeem(self.connection_manager, tx_log)
-            self.moc_exchange_stable_token_redeem(tx_receipt,
+            if str(tx_log['address']).lower() == str(moc_addresses['MoCExchange']).lower():
+                tx_event = MoCExchangeRiskProRedeem(self.connection_manager, tx_log)
+                self.moc_exchange_risk_pro_redeem(tx_receipt,
                                                   tx_event,
                                                   m_client,
                                                   block_height,
                                                   block_height_current)
 
+        # RiskProxMint
+        tx_logs = events.RiskProxMint().processReceipt(tx_receipt, errors=DISCARD)
+        for tx_log in tx_logs:
+            if str(tx_log['address']).lower() == str(moc_addresses['MoCExchange']).lower():
+                tx_event = MoCExchangeRiskProxMint(self.connection_manager, tx_log)
+                self.moc_exchange_risk_prox_mint(tx_receipt,
+                                                 tx_event,
+                                                 m_client,
+                                                 block_height,
+                                                 block_height_current)
+
+        # RiskProxRedeem
+        tx_logs = events.RiskProxRedeem().processReceipt(tx_receipt, errors=DISCARD)
+        for tx_log in tx_logs:
+            if str(tx_log['address']).lower() == str(moc_addresses['MoCExchange']).lower():
+                tx_event = MoCExchangeRiskProxRedeem(self.connection_manager, tx_log)
+                self.moc_exchange_risk_prox_redeem(tx_receipt,
+                                                   tx_event,
+                                                   m_client,
+                                                   block_height,
+                                                   block_height_current)
+
+        # StableTokenMint
+        tx_logs = events.StableTokenMint().processReceipt(tx_receipt, errors=DISCARD)
+        for tx_log in tx_logs:
+            if str(tx_log['address']).lower() == str(moc_addresses['MoCExchange']).lower():
+                tx_event = MoCExchangeStableTokenMint(self.connection_manager, tx_log)
+                self.moc_exchange_stable_token_mint(tx_receipt,
+                                                    tx_event,
+                                                    m_client,
+                                                    block_height,
+                                                    block_height_current)
+
+        # StableTokenRedeem
+        tx_logs = events.StableTokenRedeem().processReceipt(tx_receipt, errors=DISCARD)
+        for tx_log in tx_logs:
+            if str(tx_log['address']).lower() == str(moc_addresses['MoCExchange']).lower():
+                tx_event = MoCExchangeStableTokenRedeem(self.connection_manager, tx_log)
+                self.moc_exchange_stable_token_redeem(tx_receipt,
+                                                      tx_event,
+                                                      m_client,
+                                                      block_height,
+                                                      block_height_current)
+
         # FreeStableTokenRedeem
         tx_logs = events.FreeStableTokenRedeem().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
-            tx_event = MoCExchangeFreeStableTokenRedeem(self.connection_manager, tx_log)
-            self.moc_exchange_free_stable_token_redeem(tx_receipt,
-                                                       tx_event,
-                                                       m_client,
-                                                       block_height,
-                                                       block_height_current)
+            if str(tx_log['address']).lower() == str(moc_addresses['MoCExchange']).lower():
+                tx_event = MoCExchangeFreeStableTokenRedeem(self.connection_manager, tx_log)
+                self.moc_exchange_free_stable_token_redeem(tx_receipt,
+                                                           tx_event,
+                                                           m_client,
+                                                           block_height,
+                                                           block_height_current)
 
     def moc_settlement_redeem_request_alter(self,
                                             tx_receipt,
@@ -1252,46 +1262,53 @@ class MoCIndexer:
 
     def logs_process_moc_settlement(self, tx_receipt, m_client, block_height, block_height_current):
 
+        network = self.connection_manager.network
+        moc_addresses = self.connection_manager.options['networks'][network]['addresses']
+
         events = self.contract_MoC.sc_moc_settlement.events
 
         # SettlementStarted
         tx_logs = events.SettlementStarted().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
-            tx_event = MoCSettlementSettlementStarted(self.connection_manager, tx_log)
-            self.moc_settlement_started(tx_receipt, tx_event, m_client)
-            self.update_settlement_state(tx_event, m_client)
+            if str(tx_log['address']).lower() == str(moc_addresses['MoCSettlement']).lower():
+                tx_event = MoCSettlementSettlementStarted(self.connection_manager, tx_log)
+                self.moc_settlement_started(tx_receipt, tx_event, m_client)
+                self.update_settlement_state(tx_event, m_client)
 
         # RedeemRequestAlter
         tx_logs = events.RedeemRequestAlter().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
-            tx_event = MoCSettlementRedeemRequestAlter(self.connection_manager, tx_log)
-            self.moc_settlement_redeem_request_alter(tx_receipt,
-                                                     tx_event,
-                                                     m_client,
-                                                     block_height,
-                                                     block_height_current)
+            if str(tx_log['address']).lower() == str(moc_addresses['MoCSettlement']).lower():
+                tx_event = MoCSettlementRedeemRequestAlter(self.connection_manager, tx_log)
+                self.moc_settlement_redeem_request_alter(tx_receipt,
+                                                         tx_event,
+                                                         m_client,
+                                                         block_height,
+                                                         block_height_current)
 
         # SettlementRedeemStableToken
         tx_logs = events.SettlementRedeemStableToken().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
-            tx_event = MoCSettlementSettlementRedeemStableToken(self.connection_manager, tx_log)
-            self.moc_settlement_redeem_stable_token(tx_receipt,
-                                                    tx_event,
-                                                    m_client,
-                                                    block_height,
-                                                    block_height_current)
-            self.moc_settlement_redeem_stable_token_notification(tx_receipt, tx_event, tx_log, m_client)
+            if str(tx_log['address']).lower() == str(moc_addresses['MoCSettlement']).lower():
+                tx_event = MoCSettlementSettlementRedeemStableToken(self.connection_manager, tx_log)
+                self.moc_settlement_redeem_stable_token(tx_receipt,
+                                                        tx_event,
+                                                        m_client,
+                                                        block_height,
+                                                        block_height_current)
+                self.moc_settlement_redeem_stable_token_notification(tx_receipt, tx_event, tx_log, m_client)
 
         # SettlementDeleveraging
         tx_logs = events.SettlementDeleveraging().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
-            tx_event = MoCSettlementSettlementDeleveraging(self.connection_manager, tx_log)
-            self.moc_settlement_deleveraging(tx_receipt,
-                                             tx_event,
-                                             m_client,
-                                             block_height,
-                                             block_height_current)
-            self.set_settlement_state(tx_event, m_client)
+            if str(tx_log['address']).lower() == str(moc_addresses['MoCSettlement']).lower():
+                tx_event = MoCSettlementSettlementDeleveraging(self.connection_manager, tx_log)
+                self.moc_settlement_deleveraging(tx_receipt,
+                                                 tx_event,
+                                                 m_client,
+                                                 block_height,
+                                                 block_height_current)
+                self.set_settlement_state(tx_event, m_client)
 
     def moc_inrate_daily_pay(self, tx_receipt, tx_event, m_client):
 
@@ -1392,21 +1409,26 @@ class MoCIndexer:
 
     def logs_process_moc_inrate(self, tx_receipt, m_client):
 
+        network = self.connection_manager.network
+        moc_addresses = self.connection_manager.options['networks'][network]['addresses']
+
         events = self.contract_MoC.sc_moc_inrate.events
 
         # InrateDailyPay
         tx_logs = events.InrateDailyPay().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
-            tx_event = MoCInrateDailyPay(self.connection_manager, tx_log)
-            self.moc_inrate_daily_pay(tx_receipt, tx_event, m_client)
-            self.moc_inrate_daily_pay_notification(tx_receipt, tx_event, tx_log, m_client)
+            if str(tx_log['address']).lower() == str(moc_addresses['MoCInrate']).lower():
+                tx_event = MoCInrateDailyPay(self.connection_manager, tx_log)
+                self.moc_inrate_daily_pay(tx_receipt, tx_event, m_client)
+                self.moc_inrate_daily_pay_notification(tx_receipt, tx_event, tx_log, m_client)
 
         # RiskProHoldersInterestPay
         tx_logs = events.RiskProHoldersInterestPay().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
-            tx_event = MoCInrateRiskProHoldersInterestPay(self.connection_manager, tx_log)
-            self.moc_inrate_risk_pro_holders_interest_pay(tx_receipt, tx_event, m_client)
-            self.moc_inrate_risk_pro_holders_interest_pay_notification(tx_receipt, tx_log, tx_event, m_client)
+            if str(tx_log['address']).lower() == str(moc_addresses['MoCInrate']).lower():
+                tx_event = MoCInrateRiskProHoldersInterestPay(self.connection_manager, tx_log)
+                self.moc_inrate_risk_pro_holders_interest_pay(tx_receipt, tx_event, m_client)
+                self.moc_inrate_risk_pro_holders_interest_pay_notification(tx_receipt, tx_log, tx_event, m_client)
 
     def moc_bucket_liquidation(self, tx_receipt, tx_event, m_client):
         pass
@@ -1436,14 +1458,18 @@ class MoCIndexer:
 
     def logs_process_moc(self, tx_receipt, m_client):
 
+        network = self.connection_manager.network
+        moc_addresses = self.connection_manager.options['networks'][network]['addresses']
+
         events = self.contract_MoC.events
 
         # BucketLiquidation
         tx_logs = events.BucketLiquidation().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
-            tx_event = MoCBucketLiquidation(self.connection_manager, tx_log)
-            self.moc_bucket_liquidation(tx_receipt, tx_event, m_client)
-            self.moc_bucket_liquidation_notification(tx_receipt, tx_event, tx_log, m_client)
+            if str(tx_log['address']).lower() == str(moc_addresses['MoC']).lower():
+                tx_event = MoCBucketLiquidation(self.connection_manager, tx_log)
+                self.moc_bucket_liquidation(tx_receipt, tx_event, m_client)
+                self.moc_bucket_liquidation_notification(tx_receipt, tx_event, tx_log, m_client)
 
     def moc_state_transition(self, tx_receipt, tx_event, m_client):
         pass
@@ -1473,14 +1499,18 @@ class MoCIndexer:
 
     def logs_process_moc_state(self, tx_receipt, m_client):
 
+        network = self.connection_manager.network
+        moc_addresses = self.connection_manager.options['networks'][network]['addresses']
+
         events = self.contract_MoC.sc_moc_state.events
 
         # StateTransition
         tx_logs = events.StateTransition().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
-            tx_event = MoCStateStateTransition(self.connection_manager, tx_log)
-            self.moc_state_transition(tx_receipt, tx_event, m_client)
-            self.moc_state_transition_notification(tx_receipt, tx_event, tx_log, m_client)
+            if str(tx_log['address']).lower() == str(moc_addresses['MoCState']).lower():
+                tx_event = MoCStateStateTransition(self.connection_manager, tx_log)
+                self.moc_state_transition(tx_receipt, tx_event, m_client)
+                self.moc_state_transition_notification(tx_receipt, tx_event, tx_log, m_client)
 
     def tx_token_transfer(self,
                           tx_receipt,
@@ -1570,35 +1600,36 @@ class MoCIndexer:
             tx_event.value))
 
     def logs_process_transfer(self, tx_receipt, m_client, block_height, block_height_current):
-        """ Process events transfers"""
+        """ Process events transfers only from our tokens"""
 
-        # RiskProToken
-        events = self.contract_RiskProToken.events
+        network = self.connection_manager.network
+        moc_addresses = self.connection_manager.options['networks'][network]['addresses']
+        token_riskpro = moc_addresses['BProToken']
+        token_stable = moc_addresses['DoCToken']
 
-        # Transfer
-        tx_logs = events.Transfer().processReceipt(tx_receipt, errors=DISCARD)
+        # RiskProToken Transfer
+        tx_logs = self.contract_RiskProToken.events.Transfer().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
-            tx_event = ERC20Transfer(self.connection_manager, tx_log)
-            self.tx_token_transfer(tx_receipt,
-                                   tx_event,
-                                   m_client,
-                                   block_height,
-                                   block_height_current,
-                                   token_involved='RISKPRO')
+            if str(tx_log['address']).lower() == str(token_riskpro).lower():
+                tx_event = ERC20Transfer(self.connection_manager, tx_log)
+                self.tx_token_transfer(tx_receipt,
+                                       tx_event,
+                                       m_client,
+                                       block_height,
+                                       block_height_current,
+                                       token_involved='RISKPRO')
 
-        # StableToken
-        events = self.contract_StableToken.events
-
-        # Transfer
-        tx_logs = events.Transfer().processReceipt(tx_receipt, errors=DISCARD)
+        # StableToken Transfer
+        tx_logs = self.contract_StableToken.events.Transfer().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
-            tx_event = ERC20Transfer(self.connection_manager, tx_log)
-            self.tx_token_transfer(tx_receipt,
-                                   tx_event,
-                                   m_client,
-                                   block_height,
-                                   block_height_current,
-                                   token_involved='STABLE')
+            if str(tx_log['address']).lower() == str(token_stable).lower():
+                tx_event = ERC20Transfer(self.connection_manager, tx_log)
+                self.tx_token_transfer(tx_receipt,
+                                       tx_event,
+                                       m_client,
+                                       block_height,
+                                       block_height_current,
+                                       token_involved='STABLE')
 
     def logs_moc_transactions_receipts(self, tx_receipts, m_client, block_height, block_height_current):
         """ To speed it up we only accept from moc contract addressess"""
@@ -1667,13 +1698,17 @@ class MoCIndexer:
 
     def logs_process_reserve_approval(self, tx_receipt, m_client):
 
+        network = self.connection_manager.network
+        moc_addresses = self.connection_manager.options['networks'][network]['addresses']
+
         events = self.contract_ReserveToken.events
 
         # Approval
         tx_logs = events.Approval().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
-            tx_event = ERC20Approval(self.connection_manager, tx_log)
-            self.update_user_state_approval(tx_event, m_client)
+            if str(tx_log['address']).lower() == str(moc_addresses['ReserveToken']).lower():
+                tx_event = ERC20Approval(self.connection_manager, tx_log)
+                self.update_user_state_approval(tx_event, m_client)
 
     def update_balance_address(self, m_client, account_address, block_height):
 
