@@ -564,12 +564,11 @@ class MoCIndexer:
             upsert=True)
         d_tx['post_id'] = post_id
 
-        if self.debug_mode:
-            log.info("Tx {0} From: [{1}] Amount: {2} Tx Hash: {3}".format(
-                d_tx["event"],
-                d_tx["address"],
-                d_tx["amount"],
-                tx_hash))
+        log.info("Tx {0} From: [{1}] Amount: {2} Tx Hash: {3}".format(
+            d_tx["event"],
+            d_tx["address"],
+            d_tx["amount"],
+            tx_hash))
 
         # update user balances
         self.update_balance_address(m_client, d_tx["address"], block_height)
@@ -610,6 +609,7 @@ class MoCIndexer:
         d_tx["amount"] = str(tx_event.amount)
         d_tx["confirmationTime"] = confirmation_time
         d_tx["rbtcCommission"] = str(tx_event.commission)
+        d_tx["isPositive"] = False
 
         d_tx_insert = OrderedDict()
         d_tx_insert["createdAt"] = datetime.datetime.now()
@@ -623,12 +623,11 @@ class MoCIndexer:
             upsert=True)
         d_tx['post_id'] = post_id
 
-        if self.debug_mode:
-            log.info("Tx {0} From: [{1}] Amount: {2} Tx Hash: {3}".format(
-                d_tx["event"],
-                d_tx["address"],
-                d_tx["amount"],
-                tx_hash))
+        log.info("Tx {0} From: [{1}] Amount: {2} Tx Hash: {3}".format(
+            d_tx["event"],
+            d_tx["address"],
+            d_tx["amount"],
+            tx_hash))
 
         # update user balances
         self.update_balance_address(m_client, d_tx["address"], block_height)
@@ -685,12 +684,11 @@ class MoCIndexer:
             upsert=True)
         d_tx['post_id'] = post_id
 
-        if self.debug_mode:
-            log.info("Tx {0} From: [{1}] Amount: {2} Tx Hash: {3}".format(
-                d_tx["event"],
-                d_tx["address"],
-                d_tx["amount"],
-                tx_hash))
+        log.info("Tx {0} From: [{1}] Amount: {2} Tx Hash: {3}".format(
+            d_tx["event"],
+            d_tx["address"],
+            d_tx["amount"],
+            tx_hash))
 
         # update user balances
         self.update_balance_address(m_client, d_tx["address"], block_height)
@@ -733,6 +731,7 @@ class MoCIndexer:
         d_tx["leverage"] = str(tx_event.leverage)
         d_tx["rbtcCommission"] = str(tx_event.commission)
         d_tx["rbtcInterests"] = str(tx_event.interests)
+        d_tx["isPositive"] = False
 
         d_tx_insert = OrderedDict()
         d_tx_insert["createdAt"] = datetime.datetime.now()
@@ -746,12 +745,11 @@ class MoCIndexer:
             upsert=True)
         d_tx['post_id'] = post_id
 
-        if self.debug_mode:
-            log.info("Tx {0} From: [{1}] Amount: {2} Tx Hash: {3}".format(
-                d_tx["event"],
-                d_tx["address"],
-                d_tx["amount"],
-                tx_hash))
+        log.info("Tx {0} From: [{1}] Amount: {2} Tx Hash: {3}".format(
+            d_tx["event"],
+            d_tx["address"],
+            d_tx["amount"],
+            tx_hash))
 
         # update user balances
         self.update_balance_address(m_client, d_tx["address"], block_height)
@@ -808,12 +806,11 @@ class MoCIndexer:
             upsert=True)
         d_tx['post_id'] = post_id
 
-        if self.debug_mode:
-            log.info("Tx {0} From: [{1}] Amount: {2} Tx Hash: {3}".format(
-                d_tx["event"],
-                d_tx["address"],
-                d_tx["amount"],
-                tx_hash))
+        log.info("Tx {0} From: [{1}] Amount: {2} Tx Hash: {3}".format(
+            d_tx["event"],
+            d_tx["address"],
+            d_tx["amount"],
+            tx_hash))
 
         # update user balances
         self.update_balance_address(m_client, d_tx["address"], block_height)
@@ -853,6 +850,7 @@ class MoCIndexer:
         d_tx["status"] = status
         d_tx["tokenInvolved"] = 'STABLE'
         d_tx["rbtcCommission"] = str(tx_event.commission)
+        d_tx["isPositive"] = False
 
         d_tx_insert = OrderedDict()
         d_tx_insert["createdAt"] = datetime.datetime.now()
@@ -866,12 +864,11 @@ class MoCIndexer:
             upsert=True)
         d_tx['post_id'] = post_id
 
-        if self.debug_mode:
-            log.info("Tx {0} From: [{1}] Amount: {2} Tx Hash: {3}".format(
-                d_tx["event"],
-                d_tx["address"],
-                d_tx["amount"],
-                tx_hash))
+        log.info("Tx {0} From: [{1}] Amount: {2} Tx Hash: {3}".format(
+            d_tx["event"],
+            d_tx["address"],
+            d_tx["amount"],
+            tx_hash))
 
         # update user balances
         self.update_balance_address(m_client, d_tx["address"], block_height)
@@ -913,6 +910,7 @@ class MoCIndexer:
         d_tx["confirmationTime"] = confirmation_time
         d_tx["rbtcCommission"] = str(tx_event.commission)
         d_tx["rbtcInterests"] = str(tx_event.interests)
+        d_tx["isPositive"] = False
 
         d_tx_insert = OrderedDict()
         d_tx_insert["createdAt"] = datetime.datetime.now()
@@ -926,12 +924,11 @@ class MoCIndexer:
             upsert=True)
         d_tx['post_id'] = post_id
 
-        if self.debug_mode:
-            log.info("Tx {0} From: [{1}] Amount: {2} Tx Hash: {3}".format(
-                d_tx["event"],
-                d_tx["address"],
-                d_tx["amount"],
-                tx_hash))
+        log.info("Tx {0} From: [{1}] Amount: {2} Tx Hash: {3}".format(
+            d_tx["event"],
+            d_tx["address"],
+            d_tx["amount"],
+            tx_hash))
 
         # update user balances
         self.update_balance_address(m_client, d_tx["address"], block_height)
@@ -1055,12 +1052,11 @@ class MoCIndexer:
             upsert=True)
         d_tx['post_id'] = post_id
 
-        if self.debug_mode:
-            log.info("Tx {0} From: [{1}] Amount: {2} Tx Hash: {3}".format(
-                d_tx["event"],
-                d_tx["address"],
-                d_tx["amount"],
-                tx_hash))
+        log.info("Tx {0} From: [{1}] Amount: {2} Tx Hash: {3}".format(
+            d_tx["event"],
+            d_tx["address"],
+            d_tx["amount"],
+            tx_hash))
 
         # update user balances
         self.update_balance_address(m_client, d_tx["address"], block_height)
@@ -1100,13 +1096,12 @@ class MoCIndexer:
             upsert=True)
         d_tx['post_id'] = post_id
 
-        if self.debug_mode:
-            log.info("Tx {0} queueSize: [{1}] accumCommissions: {2} reservePrice: {3} Tx Hash: {4}".format(
-                d_tx["event"],
-                d_tx["queueSize"],
-                d_tx["accumCommissions"],
-                d_tx["reservePrice"],
-                tx_hash))
+        log.info("Tx {0} queueSize: [{1}] accumCommissions: {2} reservePrice: {3} Tx Hash: {4}".format(
+            d_tx["event"],
+            d_tx["queueSize"],
+            d_tx["accumCommissions"],
+            d_tx["reservePrice"],
+            tx_hash))
 
         return d_tx
 
@@ -1139,10 +1134,9 @@ class MoCIndexer:
 
         d_tx['post_id'] = post_id
 
-        if self.debug_mode:
-            log.info("Tx {0} blockNumber: [{1}] Tx Hash:".format(
-                'SettlementDeleveraging',
-                d_tx["startBlockNumber"]))
+        log.info("Tx {0} blockNumber: [{1}] Tx Hash:".format(
+            'SettlementDeleveraging',
+            d_tx["startBlockNumber"]))
 
         return d_tx
 
@@ -1173,12 +1167,11 @@ class MoCIndexer:
             log.warning("SettlementState already exist!")
             d_tx['post_id'] = None
 
-        if self.debug_mode:
-            log.info("Tx {0} startBlockNumber: [{1}] docRedeemCount: {2} deleveragingCount: {3}".format(
-                'SettlementStarted',
-                d_tx["startBlockNumber"],
-                d_tx["docRedeemCount"],
-                d_tx["deleveragingCount"]))
+        log.info("Tx {0} startBlockNumber: [{1}] docRedeemCount: {2} deleveragingCount: {3}".format(
+            'SettlementStarted',
+            d_tx["startBlockNumber"],
+            d_tx["docRedeemCount"],
+            d_tx["deleveragingCount"]))
 
         return d_tx
 
@@ -1241,12 +1234,11 @@ class MoCIndexer:
                     {"$set": d_tx},
                     upsert=True)
 
-                if self.debug_mode:
-                    log.info("Tx {0} From: [{1}] Amount: {2} Tx Hash: {3}".format(
-                        d_tx["event"],
-                        d_tx["address"],
-                        d_tx["amount"],
-                        tx_hash))
+                log.info("Tx {0} From: [{1}] Amount: {2} Tx Hash: {3}".format(
+                    d_tx["event"],
+                    d_tx["address"],
+                    d_tx["amount"],
+                    tx_hash))
 
                 # update user balances
                 self.update_balance_address(m_client, d_tx["address"], block_height)
@@ -1317,11 +1309,10 @@ class MoCIndexer:
             {"$set": d_tx},
             upsert=True)
 
-        if self.debug_mode:
-            log.info("Event Inrate Daily Pay - Blockheight: [{0}] ratePayAmount: {1}".format(
-                d_tx["blockHeight"],
-                d_tx["ratePayAmount"],
-                ))
+        log.info("Event Inrate Daily Pay - Blockheight: [{0}] ratePayAmount: {1}".format(
+            d_tx["blockHeight"],
+            d_tx["ratePayAmount"],
+            ))
 
         d_tx['post_id'] = post_id
 
@@ -1366,11 +1357,10 @@ class MoCIndexer:
             {"$set": d_tx},
             upsert=True)
 
-        if self.debug_mode:
-            log.info("Event RiskPro Holders Interest Pay - Blockheight: [{0}] amount: {1}".format(
-                d_tx["blockHeight"],
-                d_tx["amount"],
-                ))
+        log.info("Event RiskPro Holders Interest Pay - Blockheight: [{0}] amount: {1}".format(
+            d_tx["blockHeight"],
+            d_tx["amount"],
+            ))
 
         d_tx['post_id'] = post_id
 
@@ -1573,12 +1563,11 @@ class MoCIndexer:
 
         self.update_balance_address(m_client, d_tx["address"], block_height)
 
-        if self.debug_mode:
-            log.info("Tx Transfer {0} From: [{1}] To: [{2}] Amount: {3}".format(
-                token_involved,
-                tx_event.e_from,
-                tx_event.e_to,
-                tx_event.value))
+        log.info("Tx Transfer {0} From: [{1}] To: [{2}] Amount: {3}".format(
+            token_involved,
+            tx_event.e_from,
+            tx_event.e_to,
+            tx_event.value))
 
     def logs_process_transfer(self, tx_receipt, m_client, block_height, block_height_current):
         """ Process events transfers"""
@@ -1719,10 +1708,9 @@ class MoCIndexer:
             upsert=True)
         d_user_balance['post_id'] = post_id
 
-        if self.debug_mode:
-            log.info("Update UserState: [{0}] block_height: [{1}] ".format(
-                account_address,
-                block_height))
+        log.info("[UPDATE USERSTATE]: [{0}] BLOCKHEIGHT: [{1}] ".format(
+            account_address,
+            block_height))
 
         return d_user_balance
 
@@ -1740,14 +1728,16 @@ class MoCIndexer:
         if block_height <= 0:
             block_height = last_block
 
-        log.info("Starting to index MoC State on block height: {0}".format(block_height))
+        if self.debug_mode:
+            log.info("Starting to index MoC State on block height: {0}".format(block_height))
 
         # get collection moc_state from mongo
         collection_moc_state = self.mm.collection_moc_state(m_client)
 
         exist_moc_state = collection_moc_state.find_one({"lastUpdateHeight": block_height})
         if exist_moc_state:
-            log.info("Not time to run moc state, already exist")
+            if self.debug_mode:
+                log.info("Not time to run moc state, already exist")
             return
 
         start_time = time.time()
@@ -1799,7 +1789,7 @@ class MoCIndexer:
             upsert=True)
 
         duration = time.time() - start_time
-        log.info("Index MoC State done! Done in {0} seconds".format(duration))
+        log.info("[SCAN MOC STATE] BLOCKHEIGHT: [{0}] Done in {1} seconds.".format(block_height, duration))
 
     def scan_moc_blocks(self,
                         scan_transfer=True):
@@ -1830,7 +1820,8 @@ class MoCIndexer:
                 from_block = config_from_block
 
         if from_block >= last_block:
-            log.info("Its not the time to run indexer no new blocks avalaible!")
+            if self.debug_mode:
+                log.info("Its not the time to run indexer no new blocks avalaible!")
             return
 
         to_block = config_to_block
@@ -1848,13 +1839,15 @@ class MoCIndexer:
 
         current_block = from_block
 
-        log.info("Starting to Scan Transactions: {0} To Block: {1} ...".format(from_block, to_block))
+        if self.debug_mode:
+            log.info("Starting to Scan Transactions: {0} To Block: {1} ...".format(from_block, to_block))
 
         start_time = time.time()
         while current_block <= to_block:
 
-            log.info("Starting to scan MOC transactions block height: [{0}] last block height: [{1}]".format(
-                current_block, block_reference))
+            if self.debug_mode:
+                log.info("Starting to scan MOC transactions block height: [{0}] last block height: [{1}]".format(
+                    current_block, block_reference))
 
             # get moc contracts adressess
             moc_addresses = self.moc_contract_addresses()
@@ -1896,7 +1889,8 @@ class MoCIndexer:
 
                     self.logs_process_transfer(tx_receipt, m_client, current_block, block_reference)
 
-            log.info("Done scan transaction block height: [{0}]".format(current_block))
+            if self.debug_mode:
+                log.info("Done scan transaction block height: [{0}]".format(current_block))
 
             collection_moc_indexer.update_one({},
                                               {'$set': {'last_moc_block': current_block,
@@ -1906,7 +1900,7 @@ class MoCIndexer:
             current_block += 1
 
         duration = time.time() - start_time
-        log.info("Scan transactions done! Succesfull!! Done in {0} seconds".format(duration))
+        log.info("[SCAN TX] LAST BLOCK HEIGHT: [{0}] Done in {1} seconds".format(current_block, duration))
 
     def is_confirmed_block(self, block_height, block_height_last):
 
@@ -1930,7 +1924,8 @@ class MoCIndexer:
         # get last block from node
         last_block = self.connection_manager.block_number
 
-        log.info("Starting to Scan Transactions status last block: {0} ".format(last_block))
+        if self.debug_mode:
+            log.info("Starting to Scan Transactions status last block: {0} ".format(last_block))
 
         start_time = time.time()
 
@@ -1963,9 +1958,8 @@ class MoCIndexer:
                     {"_id": tx_pending["_id"]},
                     {"$set": d_tx_up})
 
-                if self.debug_mode:
-                    log.info("Setting tx status: {0} hash: {1}".format(d_tx_up['status'],
-                                                                       tx_pending['transactionHash']))
+                log.info("Setting TX STATUS: {0} hash: {1}".format(d_tx_up['status'],
+                                                                   tx_pending['transactionHash']))
 
         # Get confirming tx and check for confirming, confirmed or failed
         tx_pendings = collection_tx.find({'status': 'confirming'})
@@ -1993,9 +1987,8 @@ class MoCIndexer:
                     {"_id": tx_pending["_id"]},
                     {"$set": d_tx_up})
 
-                if self.debug_mode:
-                    log.info("Setting tx status: {0} hash: {1}".format(d_tx_up['status'],
-                                                                       tx_pending['transactionHash']))
+                log.info("Setting TX STATUS: {0} hash: {1}".format(d_tx_up['status'],
+                                                                   tx_pending['transactionHash']))
             else:
                 # no receipt from tx
                 # here problem with eternal confirming
@@ -2013,12 +2006,11 @@ class MoCIndexer:
                             {"_id": tx_pending["_id"]},
                             {"$set": d_tx_up})
 
-                        if self.debug_mode:
-                            log.info("Setting tx status: {0} hash: {1}".format(d_tx_up['status'],
-                                                                               tx_pending['transactionHash']))
+                        log.info("Setting TX STATUS: {0} hash: {1}".format(d_tx_up['status'],
+                                                                           tx_pending['transactionHash']))
 
         duration = time.time() - start_time
-        log.info("Scan transactions status Succesfully!! Done in {0} seconds".format(duration))
+        log.info("[SCAN TX STATUS] Done in {0} seconds.".format(duration))
 
     def scan_moc_prices(self):
 
@@ -2047,7 +2039,8 @@ class MoCIndexer:
                 from_block = config_from_block
 
         if from_block >= last_block:
-            log.info("Its not the time to run indexer no new blocks avalaible!")
+            if self.debug_mode:
+                log.info("Its not the time to run indexer no new blocks avalaible!")
             return
 
         to_block = config_to_block
@@ -2063,13 +2056,15 @@ class MoCIndexer:
         # get collection price from mongo
         collection_price = self.mm.collection_price(m_client)
 
-        log.info("Starting to Scan prices: {0} To Block: {1} ...".format(from_block, to_block))
+        if self.debug_mode:
+            log.info("Starting to Scan prices: {0} To Block: {1} ...".format(from_block, to_block))
 
         start_time = time.time()
         while current_block <= to_block:
 
-            log.info("Starting to scan MOC prices block height: [{0}]".format(
-                current_block))
+            if self.debug_mode:
+                log.info("Starting to scan MOC prices block height: [{0}]".format(
+                    current_block))
 
             last_price_height = collection_price.find_one(
                 filter={"blockHeight": {"$gte": current_block}},
@@ -2077,7 +2072,8 @@ class MoCIndexer:
             )
 
             if last_price_height:
-                log.warning("Not updating prices! Already exist for that block")
+                if self.debug_mode:
+                    log.warning("Not updating prices! Already exist for that block")
                 return
 
             # get all functions from smart contract
@@ -2090,7 +2086,8 @@ class MoCIndexer:
                 {"$set": d_prices},
                 upsert=True)
 
-            log.info("Done scan prices block height: [{0}]".format(current_block))
+            if self.debug_mode:
+                log.info("Done scan prices block height: [{0}]".format(current_block))
 
             collection_moc_indexer.update_one({},
                                               {'$set': {'last_moc_prices_block': current_block,
@@ -2100,4 +2097,4 @@ class MoCIndexer:
             current_block += 1
 
         duration = time.time() - start_time
-        log.info("Scan prices Succesfully!! Done in {0} seconds".format(duration))
+        log.info("[SCAN PRICES] LAST BLOCK HEIGHT: [{0}] Done in {1} seconds.".format(current_block, duration))
