@@ -1829,6 +1829,8 @@ class MoCIndexer:
     def scan_moc_blocks(self,
                         scan_transfer=True):
 
+        start_time = time.time()
+
         # conect to mongo db
         m_client = self.mm.connect()
 
@@ -1877,7 +1879,6 @@ class MoCIndexer:
         if self.debug_mode:
             log.info("Starting to Scan Transactions: {0} To Block: {1} ...".format(from_block, to_block))
 
-        start_time = time.time()
         while current_block <= to_block:
 
             if self.debug_mode:
@@ -1958,6 +1959,18 @@ class MoCIndexer:
 
         # get last block from node
         last_block = self.connection_manager.block_number
+
+        collection_moc_indexer = self.mm.collection_moc_indexer(m_client)
+        moc_index = collection_moc_indexer.find_one(sort=[("updatedAt", -1)])
+        last_moc_status_block = 0
+        if moc_index:
+            if 'last_moc_status_block' in moc_index:
+                last_moc_status_block = int(moc_index['last_moc_status_block'])
+
+        if last_block <= last_moc_status_block:
+            if self.debug_mode:
+                log.info("Its not time to run Scan Transactions status")
+            return
 
         if self.debug_mode:
             log.info("Starting to Scan Transactions status last block: {0} ".format(last_block))
@@ -2044,8 +2057,13 @@ class MoCIndexer:
                         log.info("Setting TX STATUS: {0} hash: {1}".format(d_tx_up['status'],
                                                                            tx_pending['transactionHash']))
 
+        collection_moc_indexer.update_one({},
+                                          {'$set': {'last_moc_status_block': last_block,
+                                                    'updatedAt': datetime.datetime.now()}},
+                                          upsert=True)
+
         duration = time.time() - start_time
-        log.info("[SCAN TX STATUS] Done in {0} seconds.".format(duration))
+        log.info("[SCAN TX STATUS] BLOCK HEIGHT: [{0}] Done in {1} seconds.".format(last_block, duration))
 
     def scan_moc_prices(self):
 
