@@ -11,10 +11,11 @@ from collections import OrderedDict
 from web3.types import BlockIdentifier
 from web3.logs import DISCARD
 from web3.exceptions import TransactionNotFound
+from requests.exceptions import HTTPError
 
 from moneyonchain.manager import ConnectionManager
-from moneyonchain.moc import MoC, MoCState, MoCInrate, MoCSettlement
-from moneyonchain.rdoc import RDOCMoC, RDOCMoCState, RDOCMoCInrate, RDOCMoCSettlement
+from moneyonchain.moc import MoC, MoCState, MoCInrate, MoCSettlement, MoCMedianizer
+from moneyonchain.rdoc import RDOCMoC, RDOCMoCState, RDOCMoCInrate, RDOCMoCSettlement, RDOCMoCMedianizer
 from moneyonchain.events import MoCExchangeRiskProMint, \
     MoCExchangeStableTokenMint, \
     MoCExchangeRiskProxMint, \
@@ -208,6 +209,7 @@ class MoCIndexer:
             self.contract_ReserveToken = RIF(self.connection_manager)
             self.contract_StableToken = RIFDoC(self.connection_manager)
             self.contract_RiskProToken = RIFPro(self.connection_manager)
+            self.contract_MoCMedianizer = RDOCMoCMedianizer(self.connection_manager)
         else:
             self.contract_MoC = MoC(self.connection_manager)
             self.contract_MoCState = MoCState(self.connection_manager)
@@ -215,6 +217,7 @@ class MoCIndexer:
             self.contract_MoCSettlement = MoCSettlement(self.connection_manager)
             self.contract_StableToken = DoCToken(self.connection_manager)
             self.contract_RiskProToken = BProToken(self.connection_manager)
+            self.contract_MoCMedianizer = MoCMedianizer(self.connection_manager)
 
         # initialize mongo db
         self.mm = MongoManager(self.options)
@@ -291,9 +294,21 @@ class MoCIndexer:
         bucket_c0 = str.encode('C0')
 
         d_moc_state = OrderedDict()
-        d_moc_state["bitcoinPrice"] = str(self.contract_MoCState.bitcoin_price(
-            formatted=False,
-            block_identifier=block_identifier))
+
+        #peek = self.contract_MoCMedianizer.peek(formatted=False,
+        #                                        block_identifier=block_identifier)
+        #
+        #d_moc_state["bitcoinPrice"] = str(peek[0])
+        #d_moc_state["isPriceValid"] = str(peek[1])
+
+        try:
+            d_moc_state["bitcoinPrice"] = str(self.contract_MoCState.bitcoin_price(
+                formatted=False,
+                block_identifier=block_identifier))
+        except HTTPError:
+            log.error("No price valid in BLOCKHEIGHT: [{0}] skipping!".format(block_identifier))
+            return
+
         d_moc_state["bproAvailableToMint"] = str(self.contract_MoCState.max_mint_bpro_available(
             formatted=False,
             block_identifier=block_identifier))
@@ -422,9 +437,21 @@ class MoCIndexer:
         bucket_x2 = str.encode('X2')
 
         d_price = OrderedDict()
-        d_price["bitcoinPrice"] = str(self.contract_MoCState.bitcoin_price(
-            formatted=False,
-            block_identifier=block_identifier))
+
+        #peek = self.contract_MoCMedianizer.peek(formatted=False,
+        #                                        block_identifier=block_identifier)
+        #
+        #d_price["bitcoinPrice"] = str(peek[0])
+        #d_price["isPriceValid"] = str(peek[1])
+
+        try:
+            d_price["bitcoinPrice"] = str(self.contract_MoCState.bitcoin_price(
+                formatted=False,
+                block_identifier=block_identifier))
+        except HTTPError:
+            log.error("No price valid in BLOCKHEIGHT: [{0}] skipping!".format(block_identifier))
+            return
+
         d_price["bproPriceInRbtc"] = str(self.contract_MoCState.bpro_tec_price(
             formatted=False,
             block_identifier=block_identifier))
@@ -1779,6 +1806,8 @@ class MoCIndexer:
 
         # get all functions from smart contract
         d_moc_state = self.moc_state_from_sc(block_identifier=block_height)
+        if not d_moc_state:
+            return
 
         # price variation
         old_block_height = last_block - d_moc_state['dayBlockSpan']
@@ -2127,20 +2156,22 @@ class MoCIndexer:
             if last_price_height:
                 if self.debug_mode:
                     log.warning("Not updating prices! Already exist for that block")
-                return
+                continue
 
             # get all functions from smart contract
             d_prices = self.prices_from_sc(block_identifier=current_block)
-            d_prices["blockHeight"] = current_block
-            d_prices["createdAt"] = datetime.datetime.now()
+            if d_prices:
+                # only write if there are prices
+                d_prices["blockHeight"] = current_block
+                d_prices["createdAt"] = datetime.datetime.now()
 
-            collection_price.find_one_and_update(
-                {"blockHeight": current_block},
-                {"$set": d_prices},
-                upsert=True)
+                collection_price.find_one_and_update(
+                    {"blockHeight": current_block},
+                    {"$set": d_prices},
+                    upsert=True)
 
-            if self.debug_mode:
-                log.info("Done scan prices block height: [{0}]".format(current_block))
+                if self.debug_mode:
+                    log.info("Done scan prices block height: [{0}]".format(current_block))
 
             collection_moc_indexer.update_one({},
                                               {'$set': {'last_moc_prices_block': current_block,

@@ -38,7 +38,7 @@ if __name__ == '__main__':
         network = os.environ['APP_NETWORK']
     else:
         if not options.network:
-            network = 'mocTestnetAlpha'
+            network = 'rdocTestnetAlpha'
         else:
             network = options.network
 
