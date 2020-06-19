@@ -9,9 +9,11 @@ RUN mkdir /home/www-data && mkdir /home/www-data/app
 
 WORKDIR /home/www-data/app/
 
+COPY app_run_indexer.py ./
+
 COPY moc_indexer.py ./
 
-COPY config.json ./
+COPY job_indexer.py ./
 
 ENV PATH "$PATH:/home/www-data/app/"
 
