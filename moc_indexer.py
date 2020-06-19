@@ -91,6 +91,18 @@ class MongoManager:
 
         return collection
 
+    def collection_moc_state_status(self, client, start_index=True):
+
+        mongo_db = self.options['mongo']['db']
+        db = client[mongo_db]
+        collection = db['MocState_status']
+
+        # index creation
+        if start_index:
+            collection.create_index([('blockHeight', pymongo.DESCENDING)], unique=True)
+
+        return collection
+
     def collection_price(self, client, start_index=True):
 
         mongo_db = self.options['mongo']['db']
@@ -431,6 +443,27 @@ class MoCIndexer:
             block_identifier=block_identifier)
 
         return d_moc_state
+
+    def state_status_from_sc(self, block_identifier: BlockIdentifier = 'latest'):
+
+        d_status = OrderedDict()
+
+        try:
+            str(self.contract_MoCState.bitcoin_price(
+                formatted=False,
+                block_identifier=block_identifier))
+        except HTTPError:
+            price_active = False
+        else:
+            price_active = True
+
+        d_status['price_active'] = price_active
+        d_status["paused"] = self.contract_MoC.paused(
+            block_identifier=block_identifier)
+        d_status["state"] = self.contract_MoCState.state(
+            block_identifier=block_identifier)
+
+        return d_status
 
     def prices_from_sc(self, block_identifier: BlockIdentifier = 'latest'):
 
@@ -2024,9 +2057,7 @@ class MoCIndexer:
                         tx_receipt['blockNumber'],
                         last_block)
                 elif tx_receipt['status'] == 0:
-                    d_tx_up['status'] = 'error'
-                    d_tx_up['error_string'] = 'Not in a chain'
-                    d_tx_up['error_code'] = 999
+                    d_tx_up['status'] = 'failed'
                     d_tx_up['confirmationTime'] = datetime.datetime.now()
                 else:
                     continue
@@ -2054,8 +2085,6 @@ class MoCIndexer:
                         continue
                 elif tx_receipt['status'] == 0:
                     d_tx_up['status'] = 'failed'
-                    d_tx_up['error_string'] = 'Not in a chain'
-                    d_tx_up['error_code'] = 999
                     d_tx_up['confirmationTime'] = datetime.datetime.now()
                 else:
                     continue
@@ -2075,8 +2104,7 @@ class MoCIndexer:
                     if dte < datetime.datetime.now():
                         d_tx_up = dict()
                         d_tx_up['status'] = 'failed'
-                        d_tx_up['error_string'] = 'Not in a chain'
-                        d_tx_up['error_code'] = 999
+                        d_tx_up['errorCode'] = 'staleTransaction'
                         d_tx_up['confirmationTime'] = datetime.datetime.now()
 
                         collection_tx.find_one_and_update(
@@ -2182,3 +2210,90 @@ class MoCIndexer:
 
         duration = time.time() - start_time
         log.info("[SCAN PRICES] LAST BLOCK HEIGHT: [{0}] Done in {1} seconds.".format(current_block, duration))
+
+    def scan_moc_state_status(self):
+
+        # conect to mongo db
+        m_client = self.mm.connect()
+
+        config_from_block = self.options['scan_moc_state_status']['block_start']
+        config_to_block = self.options['scan_moc_state_status']['block_end']
+        config_blocks_look_behind = self.options['scan_moc_state_status']['blocks_look_behind']
+
+        # get last block from node
+        last_block = self.connection_manager.block_number
+
+        collection_moc_indexer = self.mm.collection_moc_indexer(m_client)
+        moc_index = collection_moc_indexer.find_one(sort=[("updatedAt", -1)])
+        last_block_indexed = 0
+        if moc_index:
+            if 'last_moc_state_status_block' in moc_index:
+                last_block_indexed = moc_index['last_moc_state_status_block']
+
+        from_block = last_block - config_blocks_look_behind
+        if last_block_indexed > 0:
+            from_block = last_block_indexed + 1
+        else:
+            if config_from_block > 0:
+                from_block = config_from_block
+
+        if from_block >= last_block:
+            if self.debug_mode:
+                log.info("Its not the time to run indexer no new blocks avalaible!")
+            return
+
+        to_block = config_to_block
+        if to_block <= 0:
+            to_block = last_block
+
+        if from_block > to_block:
+            log.error("To block > from block!!??")
+            return
+
+        current_block = from_block
+
+        # get collection price from mongo
+        collection_moc_state_status = self.mm.collection_moc_state_status(m_client)
+
+        if self.debug_mode:
+            log.info("Starting to Scan Moc State Status: {0} To Block: {1} ...".format(from_block, to_block))
+
+        start_time = time.time()
+        while current_block <= to_block:
+
+            if self.debug_mode:
+                log.info("Starting to scan Moc State Status block height: [{0}]".format(
+                    current_block))
+
+            last_moc_state_status_height = collection_moc_state_status.find_one(
+                filter={"blockHeight": {"$gte": current_block}},
+                sort=[("blockHeight", -1)]
+            )
+
+            if last_moc_state_status_height:
+                if self.debug_mode:
+                    log.warning("Not updating moc state status! Already exist for that block")
+                continue
+
+            # get all functions from smart contract
+            d_status = self.state_status_from_sc(block_identifier=current_block)
+            d_status["blockHeight"] = current_block
+            d_status["createdAt"] = datetime.datetime.now()
+
+            collection_moc_state_status.find_one_and_update(
+                {"blockHeight": current_block},
+                {"$set": d_status},
+                upsert=True)
+
+            if self.debug_mode:
+                log.info("Done scan state status block height: [{0}]".format(current_block))
+
+            collection_moc_indexer.update_one({},
+                                              {'$set': {'last_moc_state_status_block': current_block,
+                                                        'updatedAt': datetime.datetime.now()}},
+                                              upsert=True)
+            # Go to next block
+            current_block += 1
+
+        duration = time.time() - start_time
+        log.info("[SCAN STATE STATUS] LAST BLOCK HEIGHT: [{0}] Done in {1} seconds.".format(current_block, duration))

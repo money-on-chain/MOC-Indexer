@@ -6,12 +6,13 @@
   "timeout": 60,
   "timeout_wait": 300,
   "gas_price": 60000000,
-  "debug": true,
+  "debug": false,
   "tasks": {
     "scan_moc_blocks": {"interval":  20},
     "scan_moc_prices": {"interval":  25},
     "scan_moc_state": {"interval":  30},
-    "scan_moc_status": {"interval":  10}
+    "scan_moc_status": {"interval":  10},
+    "scan_moc_state_status": {"interval":  10}
   },
   "scan_moc_blocks": {
     "block_start": 0,
@@ -25,6 +26,11 @@
     "block_height": 0
   },
   "scan_moc_prices": {
+    "block_start": 0,
+    "block_end": 0,
+    "blocks_look_behind": 10
+  },
+  "scan_moc_state_status": {
     "block_start": 0,
     "block_end": 0,
     "blocks_look_behind": 10
