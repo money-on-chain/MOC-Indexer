@@ -32,7 +32,8 @@ from moneyonchain.events import MoCExchangeRiskProMint, \
     MoCStateStateTransition, \
     MoCSettlementSettlementStarted, \
     ERC20Approval, \
-    ERC20Transfer
+    ERC20Transfer, \
+    MoCSettlementRedeemRequestProcessed
 from moneyonchain.token import RIF, RIFDoC, RIFPro, DoCToken, BProToken
 
 import logging
@@ -120,6 +121,18 @@ class MongoManager:
         mongo_db = self.options['mongo']['db']
         db = client[mongo_db]
         collection = db['UserState']
+
+        # index creation
+        #if start_index:
+        #    collection.create_index([('block_number', pymongo.DESCENDING)], unique=True)
+
+        return collection
+
+    def collection_users(self, client, start_index=True):
+
+        mongo_db = self.options['mongo']['db']
+        db = client[mongo_db]
+        collection = db['users']
 
         # index creation
         #if start_index:
@@ -544,6 +557,7 @@ class MoCIndexer:
     def filter_transactions(transactions, filter_addresses):
 
         l_transactions = list()
+        d_index_transactions = dict()
         for transaction in transactions:
             tx_to = None
             tx_from = None
@@ -557,15 +571,16 @@ class MoCIndexer:
 
             if tx_to in filter_addresses or tx_from in filter_addresses:
                 l_transactions.append(transaction)
+                d_index_transactions[Web3.toHex(transaction['hash'])] = transaction
 
-        return l_transactions
+        return l_transactions, d_index_transactions
 
     def search_moc_transaction(self, block):
 
         moc_addresses = self.moc_contract_addresses()
 
         f_block = self.connection_manager.get_block(block, full_transactions=True)
-        l_transactions = self.filter_transactions(f_block['transactions'], moc_addresses)
+        l_transactions, d_index_transactions = self.filter_transactions(f_block['transactions'], moc_addresses)
 
         return l_transactions
 
@@ -599,6 +614,7 @@ class MoCIndexer:
 
         d_tx = OrderedDict()
         d_tx["address"] = tx_event.account
+        d_tx["blockNumber"] = tx_event.blockNumber
         d_tx["event"] = 'RiskProMint'
         d_tx["transactionHash"] = tx_hash
         d_tx["RBTCAmount"] = str(tx_event.reserveTotal)
@@ -657,6 +673,7 @@ class MoCIndexer:
 
         d_tx = OrderedDict()
         d_tx["event"] = 'RiskProRedeem'
+        d_tx["blockNumber"] = tx_event.blockNumber
         d_tx["transactionHash"] = tx_hash
         d_tx["address"] = tx_event.account
         d_tx["tokenInvolved"] = 'RISKPRO'
@@ -716,6 +733,7 @@ class MoCIndexer:
 
         d_tx = OrderedDict()
         d_tx["transactionHash"] = tx_hash
+        d_tx["blockNumber"] = tx_event.blockNumber
         d_tx["address"] = tx_event.account
         d_tx["status"] = status
         d_tx["event"] = 'RiskProxMint'
@@ -777,6 +795,7 @@ class MoCIndexer:
 
         d_tx = OrderedDict()
         d_tx["transactionHash"] = tx_hash
+        d_tx["blockNumber"] = tx_event.blockNumber
         d_tx["address"] = tx_event.account
         d_tx["status"] = status
         d_tx["event"] = 'RiskProxRedeem'
@@ -838,6 +857,7 @@ class MoCIndexer:
 
         d_tx = OrderedDict()
         d_tx["transactionHash"] = tx_hash
+        d_tx["blockNumber"] = tx_event.blockNumber
         d_tx["address"] = tx_event.account
         d_tx["status"] = status
         d_tx["event"] = 'StableTokenMint'
@@ -899,6 +919,7 @@ class MoCIndexer:
 
         d_tx = OrderedDict()
         d_tx["address"] = tx_event.account
+        d_tx["blockNumber"] = tx_event.blockNumber
         d_tx["event"] = 'StableTokenRedeem'
         d_tx["transactionHash"] = tx_hash
         d_tx["RBTCAmount"] = str(tx_event.reserveTotal)
@@ -957,6 +978,7 @@ class MoCIndexer:
 
         d_tx = OrderedDict()
         d_tx["transactionHash"] = tx_hash
+        d_tx["blockNumber"] = tx_event.blockNumber
         d_tx["address"] = tx_event.account
         d_tx["status"] = status
         d_tx["event"] = 'FreeStableTokenRedeem'
@@ -996,6 +1018,10 @@ class MoCIndexer:
         return d_tx
 
     def logs_process_moc_exchange(self, tx_receipt, m_client, block_height, block_height_current):
+
+        if not tx_receipt['logs']:
+            # return if there are no logs
+            return
 
         network = self.connection_manager.network
         moc_addresses = self.connection_manager.options['networks'][network]['addresses']
@@ -1101,6 +1127,7 @@ class MoCIndexer:
 
         d_tx = OrderedDict()
         d_tx["transactionHash"] = tx_hash
+        d_tx["blockNumber"] = tx_event.blockNumber
         d_tx["address"] = tx_event.redeemer
         d_tx["status"] = status
         d_tx["event"] = 'RedeemRequestAlter'
@@ -1181,25 +1208,20 @@ class MoCIndexer:
         # SettlementState
         collection_tx = self.mm.collection_settlement_state(m_client)
 
-        exist_tx = collection_tx.find_one(
-            {"startBlockNumber": tx_event.blockNumber}
-        )
-
         d_tx = dict()
         d_tx["inProcess"] = False
         d_tx["startBlockNumber"] = tx_event.blockNumber
 
-        if not exist_tx:
-
-            d_tx["docRedeemCount"] = 0
-            d_tx["deleveragingCount"] = 0
-
-            d_tx["btcxPrice"] = str(tx_event.riskProxPrice)
-            d_tx["btcPrice"] = str(tx_event.reservePrice)
+        d_tx_insert = OrderedDict()
+        d_tx_insert["docRedeemCount"] = 0
+        d_tx_insert["deleveragingCount"] = 0
+        d_tx_insert["btcxPrice"] = str(tx_event.riskProxPrice)
+        d_tx_insert["btcPrice"] = str(tx_event.reservePrice)
 
         post_id = collection_tx.find_one_and_update(
             {"startBlockNumber": tx_event.blockNumber},
-            {"$set": d_tx},
+            {"$set": d_tx,
+             "$setOnInsert": d_tx_insert},
             upsert=True)
 
         d_tx['post_id'] = post_id
@@ -1265,7 +1287,8 @@ class MoCIndexer:
 
         tx_hash = Web3.toHex(tx_receipt['transactionHash'])
 
-        # get all address who has bprox
+        # get all address who has bprox , at the time all users because
+        # we dont know who hast bprox in certain block
         collection_users = self.mm.collection_user_state(m_client)
         users = collection_users.find()
         l_users_riskprox = list()
@@ -1276,11 +1299,16 @@ class MoCIndexer:
 
         d_tx = OrderedDict()
         d_tx["transactionHash"] = tx_hash
+        d_tx["blockNumber"] = tx_event.blockNumber
         d_tx["event"] = 'SettlementDeleveraging'
         d_tx["tokenInvolved"] = 'RISKPROX'
         d_tx["status"] = status
+        d_tx["settlement_status"] = 0
         d_tx["confirmationTime"] = confirmation_time
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
+
+        d_tx_insert = OrderedDict()
+        d_tx_insert["createdAt"] = datetime.datetime.now()
 
         riskprox_price = Web3.fromWei(tx_event.riskProxPrice, 'ether')
         reserve_price = Web3.fromWei(tx_event.reservePrice, 'ether')
@@ -1301,7 +1329,8 @@ class MoCIndexer:
                     {"transactionHash": tx_hash,
                      "address": d_tx["address"],
                      "event": d_tx["event"]},
-                    {"$set": d_tx},
+                    {"$set": d_tx,
+                     "$setOnInsert": d_tx_insert},
                     upsert=True)
 
                 log.info("Tx {0} From: [{1}] Amount: {2} Tx Hash: {3}".format(
@@ -1317,10 +1346,69 @@ class MoCIndexer:
 
         return l_transactions
 
+    def moc_settlement_redeem_request_processed(self,
+                                                tx_receipt,
+                                                tx_event,
+                                                m_client,
+                                                block_height,
+                                                block_height_current):
+
+        confirm_blocks = self.options['scan_moc_blocks']['confirm_blocks']
+        if block_height_current - block_height > confirm_blocks:
+            status = 'confirmed'
+            confirmation_time = datetime.datetime.now()
+        else:
+            status = 'confirming'
+            confirmation_time = None
+
+        # get collection transaction
+        collection_tx = self.mm.collection_transaction(m_client)
+
+        tx_hash = Web3.toHex(tx_receipt['transactionHash'])
+
+        d_tx = OrderedDict()
+        d_tx["transactionHash"] = tx_hash
+        d_tx["blockNumber"] = tx_event.blockNumber
+        d_tx["address"] = tx_event.redeemer
+        d_tx["status"] = status
+        d_tx["event"] = 'RedeemRequestProcessed'
+        d_tx["tokenInvolved"] = 'STABLE'
+        d_tx["lastUpdatedAt"] = datetime.datetime.now()
+        d_tx["amount"] = str(tx_event.amount)
+        d_tx["confirmationTime"] = confirmation_time
+        d_tx["isPositive"] = False
+
+        d_tx_insert = OrderedDict()
+        d_tx_insert["createdAt"] = datetime.datetime.now()
+
+        post_id = collection_tx.find_one_and_update(
+            {"transactionHash": tx_hash,
+             "address": d_tx["address"],
+             "event": d_tx["event"]},
+            {"$set": d_tx,
+             "$setOnInsert": d_tx_insert},
+            upsert=True)
+        d_tx['post_id'] = post_id
+
+        log.info("Tx {0} From: [{1}] Amount: {2} Tx Hash: {3}".format(
+            d_tx["event"],
+            d_tx["address"],
+            d_tx["amount"],
+            tx_hash))
+
+        # update user balances
+        self.update_balance_address(m_client, d_tx["address"], block_height)
+
+        return d_tx
+
     def moc_settlement_started(self, tx_receipt, tx_event, m_client):
         pass
 
     def logs_process_moc_settlement(self, tx_receipt, m_client, block_height, block_height_current):
+
+        if not tx_receipt['logs']:
+            # return if there are no logs
+            return
 
         network = self.connection_manager.network
         moc_addresses = self.connection_manager.options['networks'][network]['addresses']
@@ -1345,6 +1433,17 @@ class MoCIndexer:
                                                          m_client,
                                                          block_height,
                                                          block_height_current)
+
+        # RedeemRequestProcessed
+        tx_logs = events.RedeemRequestProcessed().processReceipt(tx_receipt, errors=DISCARD)
+        for tx_log in tx_logs:
+            if str(tx_log['address']).lower() == str(moc_addresses['MoCSettlement']).lower():
+                tx_event = MoCSettlementRedeemRequestProcessed(self.connection_manager, tx_log)
+                self.moc_settlement_redeem_request_processed(tx_receipt,
+                                                             tx_event,
+                                                             m_client,
+                                                             block_height,
+                                                             block_height_current)
 
         # SettlementRedeemStableToken
         tx_logs = events.SettlementRedeemStableToken().processReceipt(tx_receipt, errors=DISCARD)
@@ -1469,6 +1568,10 @@ class MoCIndexer:
 
     def logs_process_moc_inrate(self, tx_receipt, m_client):
 
+        if not tx_receipt['logs']:
+            # return if there are no logs
+            return
+
         network = self.connection_manager.network
         moc_addresses = self.connection_manager.options['networks'][network]['addresses']
 
@@ -1518,6 +1621,10 @@ class MoCIndexer:
 
     def logs_process_moc(self, tx_receipt, m_client):
 
+        if not tx_receipt['logs']:
+            # return if there are no logs
+            return
+
         network = self.connection_manager.network
         moc_addresses = self.connection_manager.options['networks'][network]['addresses']
 
@@ -1558,6 +1665,10 @@ class MoCIndexer:
         return d_tx
 
     def logs_process_moc_state(self, tx_receipt, m_client):
+
+        if not tx_receipt['logs']:
+            # return if there are no logs
+            return
 
         network = self.connection_manager.network
         moc_addresses = self.connection_manager.options['networks'][network]['addresses']
@@ -1607,60 +1718,135 @@ class MoCIndexer:
 
         tx_hash = Web3.toHex(tx_receipt['transactionHash'])
 
-        # FROM
-        d_tx = OrderedDict()
-        d_tx["address"] = tx_event.e_from
-        d_tx["event"] = 'Transfer'
-        d_tx["transactionHash"] = tx_hash
-        d_tx["amount"] = str(tx_event.value)
-        d_tx["confirmationTime"] = confirmation_time
-        d_tx["isPositive"] = False
-        d_tx["lastUpdatedAt"] = datetime.datetime.now()
-        d_tx["otherAddress"] = tx_event.e_to
-        d_tx["createdAt"] = datetime.datetime.now()
-        d_tx["status"] = status
-        d_tx["tokenInvolved"] = token_involved
+        collection_users = self.mm.collection_users(m_client)
 
-        post_id = collection_tx.find_one_and_update(
-            {"transactionHash": tx_hash,
-             "address": d_tx["address"],
-             "event": d_tx["event"]},
-            {"$set": d_tx},
-            upsert=True)
+        exist_user = collection_users.find_one(
+            {"username": tx_event.e_from}
+        )
 
-        self.update_balance_address(m_client, d_tx["address"], block_height)
+        if exist_user:
 
-        # TO
-        d_tx = OrderedDict()
-        d_tx["address"] = tx_event.e_to
-        d_tx["event"] = 'Transfer'
-        d_tx["transactionHash"] = tx_hash
-        d_tx["amount"] = str(tx_event.value)
-        d_tx["confirmationTime"] = confirmation_time
-        d_tx["isPositive"] = True
-        d_tx["lastUpdatedAt"] = datetime.datetime.now()
-        d_tx["otherAddress"] = tx_event.e_from
-        d_tx["createdAt"] = datetime.datetime.now()
-        d_tx["status"] = status
-        d_tx["tokenInvolved"] = token_involved
+            # FROM
+            d_tx = OrderedDict()
+            d_tx["address"] = tx_event.e_from
+            d_tx["blockNumber"] = tx_event.blockNumber
+            d_tx["event"] = 'Transfer'
+            d_tx["transactionHash"] = tx_hash
+            d_tx["amount"] = str(tx_event.value)
+            d_tx["confirmationTime"] = confirmation_time
+            d_tx["isPositive"] = False
+            d_tx["lastUpdatedAt"] = datetime.datetime.now()
+            d_tx["otherAddress"] = tx_event.e_to
+            d_tx["createdAt"] = datetime.datetime.now()
+            d_tx["status"] = status
+            d_tx["tokenInvolved"] = token_involved
 
-        post_id = collection_tx.find_one_and_update(
-            {"transactionHash": tx_hash,
-             "address": d_tx["address"],
-             "event": d_tx["event"]},
-            {"$set": d_tx},
-            upsert=True)
+            post_id = collection_tx.find_one_and_update(
+                {"transactionHash": tx_hash,
+                 "address": d_tx["address"],
+                 "event": d_tx["event"]},
+                {"$set": d_tx},
+                upsert=True)
 
-        self.update_balance_address(m_client, d_tx["address"], block_height)
+            self.update_balance_address(m_client, d_tx["address"], block_height)
 
-        log.info("Tx Transfer {0} From: [{1}] To: [{2}] Amount: {3}".format(
-            token_involved,
-            tx_event.e_from,
-            tx_event.e_to,
-            tx_event.value))
+            log.info("Tx Transfer {0} From: [{1}] To: [{2}] Amount: {3}".format(
+                token_involved,
+                tx_event.e_from,
+                tx_event.e_to,
+                tx_event.value))
+
+        exist_user = collection_users.find_one(
+            {"username": tx_event.e_to}
+        )
+
+        if exist_user:
+            # TO
+            d_tx = OrderedDict()
+            d_tx["address"] = tx_event.e_to
+            d_tx["blockNumber"] = tx_event.blockNumber
+            d_tx["event"] = 'Transfer'
+            d_tx["transactionHash"] = tx_hash
+            d_tx["amount"] = str(tx_event.value)
+            d_tx["confirmationTime"] = confirmation_time
+            d_tx["isPositive"] = True
+            d_tx["lastUpdatedAt"] = datetime.datetime.now()
+            d_tx["otherAddress"] = tx_event.e_from
+            d_tx["createdAt"] = datetime.datetime.now()
+            d_tx["status"] = status
+            d_tx["tokenInvolved"] = token_involved
+
+            post_id = collection_tx.find_one_and_update(
+                {"transactionHash": tx_hash,
+                 "address": d_tx["address"],
+                 "event": d_tx["event"]},
+                {"$set": d_tx},
+                upsert=True)
+
+            self.update_balance_address(m_client, d_tx["address"], block_height)
+
+            log.info("Tx Transfer {0} From: [{1}] To: [{2}] Amount: {3}".format(
+                token_involved,
+                tx_event.e_from,
+                tx_event.e_to,
+                tx_event.value))
+
+    def tx_token_transfer_reserve(self,
+                                  tx_receipt,
+                                  tx_event,
+                                  m_client,
+                                  block_height,
+                                  block_height_current):
+
+        """ Only update balance on transfer reserve"""
+
+        network = self.connection_manager.network
+        address_from_contract = '0x0000000000000000000000000000000000000000'
+        addresses_moc = self.connection_manager.options['networks'][network]['addresses']['MoC']
+        address_not_allowed = [str.lower(address_from_contract), str.lower(addresses_moc)]
+        if str.lower(tx_event.e_from) in address_not_allowed or \
+                str.lower(tx_event.e_to) in address_not_allowed:
+            # Transfer from our Contract we dont add because already done
+            # with ...Mint
+            # if self.debug_mode:
+            #    log.info("Token transfer not processed! From: [{0}] To [{1}]".format(
+            #        tx_event.e_from, tx_event.e_to))
+            return
+
+        collection_users = self.mm.collection_users(m_client)
+
+        exist_user = collection_users.find_one(
+            {"username": tx_event.e_from}
+        )
+
+        if exist_user:
+            self.update_balance_address(m_client, tx_event.e_from, block_height)
+
+            log.info("Tx Transfer {0} From: [{1}] To: [{2}] Amount: {3}".format(
+                'RESERVE',
+                tx_event.e_from,
+                tx_event.e_to,
+                tx_event.value))
+
+        exist_user = collection_users.find_one(
+            {"username": tx_event.e_to}
+        )
+
+        if exist_user:
+            self.update_balance_address(m_client, tx_event.e_to, block_height)
+
+            log.info("Tx Transfer {0} From: [{1}] To: [{2}] Amount: {3}".format(
+                'RESERVE',
+                tx_event.e_from,
+                tx_event.e_to,
+                tx_event.value))
 
     def logs_process_transfer(self, tx_receipt, m_client, block_height, block_height_current):
         """ Process events transfers only from our tokens"""
+
+        if not tx_receipt['logs']:
+            # return if there are no logs
+            return
 
         network = self.connection_manager.network
         moc_addresses = self.connection_manager.options['networks'][network]['addresses']
@@ -1690,6 +1876,20 @@ class MoCIndexer:
                                        block_height,
                                        block_height_current,
                                        token_involved='STABLE')
+
+        # Reserve
+        if self.app_mode == 'RRC20':
+            # To update balance
+            token_reserve = moc_addresses['ReserveToken']
+            tx_logs = self.contract_ReserveToken.events.Transfer().processReceipt(tx_receipt, errors=DISCARD)
+            for tx_log in tx_logs:
+                if str(tx_log['address']).lower() == str(token_reserve).lower():
+                    tx_event = ERC20Transfer(self.connection_manager, tx_log)
+                    self.tx_token_transfer_reserve(tx_receipt,
+                                                   tx_event,
+                                                   m_client,
+                                                   block_height,
+                                                   block_height_current)
 
     def logs_moc_transactions_receipts(self, tx_receipts, m_client, block_height, block_height_current):
         """ To speed it up we only accept from moc contract addressess"""
@@ -1758,6 +1958,10 @@ class MoCIndexer:
 
     def logs_process_reserve_approval(self, tx_receipt, m_client):
 
+        if not tx_receipt['logs']:
+            # return if there are no logs
+            return
+
         network = self.connection_manager.network
         moc_addresses = self.connection_manager.options['networks'][network]['addresses']
 
@@ -1769,6 +1973,27 @@ class MoCIndexer:
             if str(tx_log['address']).lower() == str(moc_addresses['ReserveToken']).lower():
                 tx_event = ERC20Approval(self.connection_manager, tx_log)
                 self.update_user_state_approval(tx_event, m_client)
+
+    def logs_process_transfer_from_reserve(self, tx_receipt, m_client, block_height, block_height_current):
+
+        if not tx_receipt['logs']:
+            # return if there are no logs
+            return
+
+        network = self.connection_manager.network
+        moc_addresses = self.connection_manager.options['networks'][network]['addresses']
+
+        # To update balance
+        token_reserve = moc_addresses['ReserveToken']
+        tx_logs = self.contract_ReserveToken.events.Transfer().processReceipt(tx_receipt, errors=DISCARD)
+        for tx_log in tx_logs:
+            if str(tx_log['address']).lower() == str(token_reserve).lower():
+                tx_event = ERC20Transfer(self.connection_manager, tx_log)
+                self.process_transfer_from_moc_reserve(tx_receipt,
+                                                       tx_event,
+                                                       m_client,
+                                                       block_height,
+                                                       block_height_current)
 
     def update_balance_address(self, m_client, account_address, block_height):
 
@@ -1888,6 +2113,149 @@ class MoCIndexer:
         duration = time.time() - start_time
         log.info("[SCAN MOC STATE] BLOCKHEIGHT: [{0}] Done in {1} seconds.".format(block_height, duration))
 
+    def process_transfer_from_moc_reserve(self,
+                                          tx_receipt,
+                                          tx_event,
+                                          m_client,
+                                          block_height,
+                                          block_height_current):
+
+        """ TX Tranfer from MOC Reserve """
+
+        confirm_blocks = self.options['scan_moc_blocks']['confirm_blocks']
+        if block_height_current - block_height > confirm_blocks:
+            status = 'confirmed'
+            confirmation_time = datetime.datetime.now()
+        else:
+            status = 'confirming'
+            confirmation_time = None
+
+        network = self.connection_manager.network
+        moc_addresses = self.connection_manager.options['networks'][network]['addresses']
+
+        if str.lower(tx_event.e_from) not in [str.lower(moc_addresses['MoC'])]:
+            # If is not from our contract return
+            return
+
+        tx_hash = Web3.toHex(tx_receipt['transactionHash'])
+
+        if tx_event.value <= 0:
+            return
+
+        if self.contract_MoC.project == 'RDoC':
+            reserve_symbol = 'RIF'
+        elif self.contract_MoC.project == 'MoC':
+            reserve_symbol = 'RBTC'
+        else:
+            reserve_symbol = 'RBTC'
+
+        # get last price written in mongo
+        collection_price = self.mm.collection_price(m_client)
+        last_price = collection_price.find_one(filter={"blockHeight": {"$lt": tx_event.blockNumber}},
+                                               sort=[("blockHeight", -1)])
+
+        # get collection transaction
+        collection_tx = self.mm.collection_transaction(m_client)
+
+        # FROM
+        d_tx = OrderedDict()
+        d_tx["address"] = tx_event.e_to
+        d_tx["blockNumber"] = tx_event.blockNumber
+        d_tx["event"] = 'TransferFromMoC'
+        d_tx["transactionHash"] = tx_hash
+        d_tx["amount"] = str(tx_event.value)
+        d_tx["confirmationTime"] = confirmation_time
+        d_tx["isPositive"] = False
+        d_tx["lastUpdatedAt"] = datetime.datetime.now()
+        d_tx["status"] = status
+        d_tx["reserveSymbol"] = reserve_symbol
+
+        usd_amount = Web3.fromWei(tx_event.value, 'ether') * Web3.fromWei(last_price['bitcoinPrice'], 'ether')
+        d_tx["USDAmount"] = str(int(usd_amount * self.precision))
+
+        d_tx_insert = OrderedDict()
+        d_tx_insert["createdAt"] = datetime.datetime.now()
+
+        post_id = collection_tx.find_one_and_update(
+            {"transactionHash": tx_hash,
+             "address": d_tx["address"],
+             "event": d_tx["event"]},
+            {"$set": d_tx,
+             "$setOnInsert": d_tx_insert},
+            upsert=True)
+
+        # update user balances
+        self.update_balance_address(m_client, d_tx["address"], block_height)
+
+    def process_transfer_from_moc(self, tx_receipt, d_moc_transactions, m_client, block_height, block_height_current):
+        """ Process transfer from moc """
+
+        confirm_blocks = self.options['scan_moc_blocks']['confirm_blocks']
+        if block_height_current - block_height > confirm_blocks:
+            status = 'confirmed'
+            confirmation_time = datetime.datetime.now()
+        else:
+            status = 'confirming'
+            confirmation_time = None
+
+        network = self.connection_manager.network
+        moc_addresses = self.connection_manager.options['networks'][network]['addresses']
+
+        if str.lower(tx_receipt['from']) not in [str.lower(moc_addresses['MoC'])]:
+            # If is not from our contract return
+            return
+
+        tx_hash = Web3.toHex(tx_receipt['transactionHash'])
+        moc_tx = d_moc_transactions[tx_hash]
+
+        if moc_tx['value'] <= 0:
+            return
+
+        if self.contract_MoC.project == 'RDoC':
+            reserve_symbol = 'RIF'
+        elif self.contract_MoC.project == 'MoC':
+            reserve_symbol = 'RBTC'
+        else:
+            reserve_symbol = 'RBTC'
+
+        # get last price written in mongo
+        collection_price = self.mm.collection_price(m_client)
+        last_price = collection_price.find_one(filter={"blockHeight": {"$lt": moc_tx['blockNumber']}},
+                                               sort=[("blockHeight", -1)])
+
+        # get collection transaction
+        collection_tx = self.mm.collection_transaction(m_client)
+
+        # FROM
+        d_tx = OrderedDict()
+        d_tx["address"] = moc_tx['to']
+        d_tx["blockNumber"] = moc_tx['blockNumber']
+        d_tx["event"] = 'TransferFromMoC'
+        d_tx["transactionHash"] = tx_hash
+        d_tx["amount"] = str(moc_tx['value'])
+        d_tx["confirmationTime"] = confirmation_time
+        d_tx["isPositive"] = False
+        d_tx["lastUpdatedAt"] = datetime.datetime.now()
+        d_tx["status"] = status
+        d_tx["reserveSymbol"] = reserve_symbol
+
+        usd_amount = Web3.fromWei(moc_tx['value'], 'ether') * Web3.fromWei(last_price['bitcoinPrice'], 'ether')
+        d_tx["USDAmount"] = str(int(usd_amount * self.precision))
+
+        d_tx_insert = OrderedDict()
+        d_tx_insert["createdAt"] = datetime.datetime.now()
+
+        post_id = collection_tx.find_one_and_update(
+            {"transactionHash": tx_hash,
+             "address": d_tx["address"],
+             "event": d_tx["event"]},
+            {"$set": d_tx,
+             "$setOnInsert": d_tx_insert},
+            upsert=True)
+
+        # update user balances
+        self.update_balance_address(m_client, d_tx["address"], block_height)
+
     def scan_moc_blocks(self,
                         scan_transfer=True):
 
@@ -1955,16 +2323,15 @@ class MoCIndexer:
             all_transactions = f_block['transactions']
 
             # From MOC Contract transactions
-            moc_transactions = self.filter_transactions(all_transactions, moc_addresses)
+            moc_transactions, d_moc_transactions = self.filter_transactions(all_transactions, moc_addresses)
 
             # get transactions receipts
             moc_transactions_receipts = self.transactions_receipt(moc_transactions)
 
             # process only MoC contract transactions
             for tx_receipt in moc_transactions_receipts:
-                if not tx_receipt['logs']:
-                    continue
 
+                # MOC Events process
                 self.logs_process_moc_exchange(tx_receipt, m_client, current_block, block_reference)
                 self.logs_process_moc_settlement(tx_receipt, m_client, current_block, block_reference)
                 self.logs_process_moc_inrate(tx_receipt, m_client)
@@ -1972,6 +2339,10 @@ class MoCIndexer:
                 self.logs_process_moc_state(tx_receipt, m_client)
                 if self.app_mode == "RRC20":
                     self.logs_process_reserve_approval(tx_receipt, m_client)
+                    self.logs_process_transfer_from_reserve(tx_receipt, m_client, current_block, block_reference)
+
+                # Process transfer for MOC 2020-06-23
+                self.process_transfer_from_moc(tx_receipt, d_moc_transactions, m_client, current_block, block_reference)
 
             # process all transactions looking for transfers
             if scan_transfer:
@@ -1981,9 +2352,6 @@ class MoCIndexer:
 
                 all_transactions_receipts = self.transactions_receipt(all_transactions)
                 for tx_receipt in all_transactions_receipts:
-
-                    if not tx_receipt['logs']:
-                        continue
 
                     self.logs_process_transfer(tx_receipt, m_client, current_block, block_reference)
 
@@ -2072,7 +2440,12 @@ class MoCIndexer:
         # Get confirming tx and check for confirming, confirmed or failed
         tx_pendings = collection_tx.find({'status': 'confirming'})
         for tx_pending in tx_pendings:
-            tx_receipt = self.connection_manager.web3.eth.getTransactionReceipt(tx_pending['transactionHash'])
+
+            try:
+                tx_receipt = self.connection_manager.web3.eth.getTransactionReceipt(tx_pending['transactionHash'])
+            except TransactionNotFound:
+                tx_receipt = None
+
             if tx_receipt:
                 d_tx_up = dict()
                 if tx_receipt['status'] == 1:

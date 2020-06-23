@@ -6,7 +6,7 @@
   "timeout": 60,
   "timeout_wait": 300,
   "gas_price": 60000000,
-  "debug": false,
+  "debug": true,
   "tasks": {
     "scan_moc_blocks": {"interval":  20},
     "scan_moc_prices": {"interval":  25},
@@ -39,8 +39,8 @@
     "develop": {
       "app_mode": "MoC",
       "project": "MoC",
-      "uri": ["https://public-node.testnet.rsk.co"],
-      "chain_id": 31,
+      "uri": ["http://192.168.56.2:8545"],
+      "chain_id": 123456,
       "accounts": [
         {
           "address": "0xAb242e50E95C2f539242763A4eD5Db1aEE5ce461",
@@ -48,22 +48,18 @@
         }
       ],
       "addresses": {
-        "governor": "0x9258531274B945eB628656F4b30e8216938A619C",
-        "oracle": "0x78c892Dc5b7139d0Ec1eF513C9E28eDfAA44f2d4",
-        "MoCMedianizer": "0x78c892Dc5b7139d0Ec1eF513C9E28eDfAA44f2d4",
-        "upgradeDelegator": "0x00a47D7d7B9bD22e0A862908EC493bDE893f627B",
-        "MoC": "0xE02f9AE8fe5Da307b6C7cd928AEa380392f5a395",
-        "MoCInrate": "0xe1DD7DB674d8F218CF7bA0BD8C5Ea17C06b4478d",
-        "MoCState": "0xe91d665b9A20BF72fF67E96d26F91E3de2beaF94",
-        "MoCConverter": "0x8b643f77e6b19858F5fB3Ab895d40462472609c9",
-        "MoCExchange": "0x2706e5611FCb5ef52FCe3FA09c4F85A89ad43302",
-        "MoCConnector": "0x8E95fd289a5ACA617602B0A6993D618Af9725508",
-        "MoCHelperLib": "0xaF495D7f05e84b589122dA410eAda0188E1b12A5",
-        "MoCBProxManager": "0x2cF92DA59D690fBd2506a9A3a2439625F00f2dc8",
-        "MoCSettlement": "0xa0dA80B5E5bdf96F9e99630Fa333821fB741A308",
-        "MoCBurnout": "0x23c85d7036bFBdB760A353F29CeEF0E001cc56d4",
-        "BProToken": "0x5C67868399aF25C9A31c2ce047d68B34162c9E14",
-        "DoCToken": "0xb2D705097d9f80d47289efB2a25bc78FEe9d3E80"
+        "governor": "0xB6940561FF36A04151F2a68C1ECC7D9789464233",
+        "oracle": "0x3983599E4c523Df65383D0151398db08f4bc9bd1",
+        "MoCMedianizer": "0x3983599E4c523Df65383D0151398db08f4bc9bd1",
+        "upgradeDelegator": "0x7025EfAd368bc5A9028Eb0248F2e98fD8fB91035",
+        "MoC": "0x8cD5bf14c0Fbaa9483b7829e3ec8cfE79eFCe335",
+        "MoCExchange": "0x502E8e62B5F19d986e9F92cC3d26d401460e3074",
+        "MoCConnector": "0x28dd5759Ff8B2d0F81cc371F7a15b0A05E188d99",
+        "MoCSettlement": "0xbca7521C73756ce176740cC94a98863E0E6970d4",
+        "MoCInrate": "0x664Cb1986C5c88d29D71b45864df59ec6d1CED41",
+        "MoCState": "0xFCBf9fe44B27A754727207a592f3b3BCD42847Ca",
+        "BProToken": "0xD7466C80001d23a26B71B3bE42c1151c6CbEdc7a",
+        "DoCToken": "0x03452061D05A56f13C53E0a622CFd31314e45ADe"
       }
 
     }
