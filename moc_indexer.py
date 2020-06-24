@@ -588,8 +588,14 @@ class MoCIndexer:
 
         l_tx_receipt = list()
         for tx in transactions:
-            tx_receipt = self.connection_manager.web3.eth.getTransactionReceipt(tx['hash'])
-            l_tx_receipt.append(tx_receipt)
+            try:
+                tx_receipt = self.connection_manager.web3.eth.getTransactionReceipt(tx['hash'])
+            except TransactionNotFound:
+                log.error("No transaction receipt for hash: [{0}]".format(Web3.toHex(tx['hash'])))
+                tx_receipt = None
+            if tx_receipt:
+                l_tx_receipt.append(tx_receipt)
+
         return l_tx_receipt
 
     def moc_exchange_risk_pro_mint(self,

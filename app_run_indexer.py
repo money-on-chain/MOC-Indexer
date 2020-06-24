@@ -30,7 +30,7 @@ if __name__ == '__main__':
         if not options.config:
             config_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                        'settings',
-                                       'settings-develop-moc.json')
+                                       'settings-moc-alpha-testnet.json')
         else:
             config_path = options.config
 
@@ -40,7 +40,7 @@ if __name__ == '__main__':
         network = os.environ['APP_NETWORK']
     else:
         if not options.network:
-            network = 'develop'
+            network = 'mocTestnetAlpha'
         else:
             network = options.network
 
