@@ -19,4 +19,4 @@ ENV PATH "$PATH:/home/www-data/app/"
 
 ENV PYTHONPATH "${PYTONPATH}:/home/www-data/app/"
 
-CMD [ "python", "./moc_indexer.py" ]
+CMD [ "python", "./app_run_indexer.py" ]

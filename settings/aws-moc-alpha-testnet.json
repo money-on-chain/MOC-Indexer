@@ -1,7 +1,7 @@
 {
   "mongo": {
-    "uri": "mongodb://192.168.56.2:27017/",
-    "db": "local_alpha_testnet"
+    "uri": "mongodb://alphaUserMoc:mutinyheraldroundupanimator@moc-mongotest-rs1.moneyonchain.com:3001,moc-mongotest-rs2.moneyonchain.com:3002,moc-mongotest-rs3.moneyonchain.com:3003/alpha?authSource=alpha&replicaSet=rsalphatest",
+    "db": "alpha"
   },
   "timeout": 60,
   "timeout_wait": 300,
@@ -19,7 +19,7 @@
     "block_end": 0,
     "block_reference": 0,
     "confirm_blocks": 10,
-    "blocks_look_behind": 10,
+    "blocks_look_behind": 60,
     "seconds_not_in_chain_error": 600
   },
   "scan_moc_state": {
@@ -28,18 +28,18 @@
   "scan_moc_prices": {
     "block_start": 0,
     "block_end": 0,
-    "blocks_look_behind": 10
+    "blocks_look_behind": 60
   },
   "scan_moc_state_status": {
     "block_start": 0,
     "block_end": 0,
-    "blocks_look_behind": 10
+    "blocks_look_behind": 60
   },
   "networks": {
     "mocTestnetAlpha": {
       "app_mode": "MoC",
       "project": "MoC",
-      "uri": ["https://public-node.testnet.rsk.co"],
+      "uri": ["http://10.0.0.73:4444"],
       "chain_id": 31,
       "accounts": [
         {
