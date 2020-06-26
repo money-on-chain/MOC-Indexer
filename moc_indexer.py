@@ -2377,8 +2377,7 @@ class MoCIndexer:
 
                     self.logs_process_transfer(tx_receipt, m_client, current_block, block_reference)
 
-            if self.debug_mode:
-                log.info("Done scan transaction block height: [{0}]".format(current_block))
+            log.info("[RUNNING SCAN TX] DONE BLOCK HEIGHT: [{0}] / [{1}]".format(current_block, to_block))
 
             collection_moc_indexer.update_one({},
                                               {'$set': {'last_moc_block': current_block,
