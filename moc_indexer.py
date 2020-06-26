@@ -171,8 +171,8 @@ class MongoManager:
         collection = db['InRateIncome']
 
         # index creation
-        if start_index:
-            collection.create_index([('blockHeight', pymongo.ASCENDING)], unique=True)
+        #if start_index:
+        #    collection.create_index([('blockHeight', pymongo.ASCENDING)], unique=True)
 
         return collection
 
