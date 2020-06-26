@@ -1479,6 +1479,14 @@ class MoCIndexer:
 
         collection_inrate = self.mm.collection_inrate_income(m_client)
 
+        exist_tx = collection_inrate.find_one(
+            {"blockHeight": tx_event.blockNumber}
+        )
+        if exist_tx:
+            log.warning("Event [Inrate Daily Pay] already exist for blockNumber: [{0}] Not Writting...".format(
+                tx_event.blockNumber))
+            return
+
         d_tx = OrderedDict()
         d_tx["blockHeight"] = tx_event.blockNumber
         d_tx["ratePayAmount"] = str(tx_event.amount)
@@ -1526,6 +1534,14 @@ class MoCIndexer:
     def moc_inrate_risk_pro_holders_interest_pay(self, tx_receipt, tx_event, m_client):
 
         collection_inrate = self.mm.collection_bitpro_holders_interest(m_client)
+
+        exist_tx = collection_inrate.find_one(
+            {"blockHeight": tx_event.blockNumber}
+        )
+        if exist_tx:
+            log.warning("Event [RiskPro Holders Interest Pay] already exist for blockNumber: [{0}] Not Writting...".format(
+                tx_event.blockNumber))
+            return
 
         d_tx = OrderedDict()
         d_tx["blockHeight"] = tx_event.blockNumber
