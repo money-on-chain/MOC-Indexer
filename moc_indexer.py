@@ -147,8 +147,8 @@ class MongoManager:
         collection = db['BitProHoldersInterest']
 
         # index creation
-        if start_index:
-            collection.create_index([('blockHeight', pymongo.ASCENDING)], unique=True)
+        #if start_index:
+        #    collection.create_index([('blockHeight', pymongo.ASCENDING)], unique=True)
 
         return collection
 
@@ -1141,7 +1141,15 @@ class MoCIndexer:
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
         d_tx["amount"] = str(tx_event.delta)
         d_tx["confirmationTime"] = confirmation_time
-        d_tx["isPositive"] = tx_event.isAddition
+
+        is_addition = tx_event.isAddition
+        if isinstance(is_addition, str):
+            if is_addition == 'True':
+                is_addition = True
+            else:
+                is_addition = False
+
+        d_tx["isPositive"] = is_addition
 
         d_tx_insert = OrderedDict()
         d_tx_insert["createdAt"] = datetime.datetime.now()
@@ -1223,6 +1231,7 @@ class MoCIndexer:
         d_tx_insert["deleveragingCount"] = 0
         d_tx_insert["btcxPrice"] = str(tx_event.riskProxPrice)
         d_tx_insert["btcPrice"] = str(tx_event.reservePrice)
+        d_tx_insert["createdAt"] = datetime.datetime.now()
 
         post_id = collection_tx.find_one_and_update(
             {"startBlockNumber": tx_event.blockNumber},
@@ -1257,6 +1266,7 @@ class MoCIndexer:
         #d_tx["btcxPrice"] = str(int(adjust_price * self.precision))
         d_tx["btcxPrice"] = str(tx_event.riskProxPrice)
         d_tx["btcPrice"] = str(tx_event.reservePrice)
+        d_tx["createdAt"] = datetime.datetime.now()
 
         if not exist_tx:
             post_id = collection_tx.insert_one(d_tx).inserted_id
@@ -2395,11 +2405,13 @@ class MoCIndexer:
         if block_height_last - block_height > confirm_blocks:
             status = 'confirmed'
             confirmation_time = datetime.datetime.now()
+            confirming_percent = 100
         else:
             status = 'confirming'
             confirmation_time = None
+            confirming_percent = (block_height_last - block_height) * 10
 
-        return status, confirmation_time
+        return status, confirmation_time, confirming_percent
 
     def scan_transaction_status(self):
 
@@ -2442,7 +2454,8 @@ class MoCIndexer:
             if tx_receipt:
                 d_tx_up = dict()
                 if tx_receipt['status'] == 1:
-                    d_tx_up['status'], d_tx_up['confirmationTime'] = self.is_confirmed_block(
+                    d_tx_up['status'], d_tx_up['confirmationTime'], d_tx_up['confirmingPercent'] = \
+                        self.is_confirmed_block(
                         tx_receipt['blockNumber'],
                         last_block)
                 elif tx_receipt['status'] == 0:
@@ -2470,13 +2483,14 @@ class MoCIndexer:
             if tx_receipt:
                 d_tx_up = dict()
                 if tx_receipt['status'] == 1:
-                    d_tx_up['status'], d_tx_up['confirmationTime'] = self.is_confirmed_block(
+                    d_tx_up['status'], d_tx_up['confirmationTime'], d_tx_up['confirmingPercent'] = \
+                        self.is_confirmed_block(
                         tx_receipt['blockNumber'],
                         last_block)
-                    if d_tx_up['status'] == 'confirming':
-                        # is already on confirming status
-                        # not write to db
-                        continue
+                    #if d_tx_up['status'] == 'confirming':
+                    #    # is already on confirming status
+                    #    # not write to db
+                    #    continue
                 elif tx_receipt['status'] == 0:
                     d_tx_up['status'] = 'failed'
                     d_tx_up['confirmationTime'] = datetime.datetime.now()
