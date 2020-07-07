@@ -12,7 +12,8 @@
     "scan_moc_prices": {"interval":  25},
     "scan_moc_state": {"interval":  30},
     "scan_moc_status": {"interval":  10},
-    "scan_moc_state_status": {"interval":  10}
+    "scan_moc_state_status": {"interval":  10},
+    "scan_user_state_update": {"interval":  10}
   },
   "scan_moc_blocks": {
     "block_start": 0,
