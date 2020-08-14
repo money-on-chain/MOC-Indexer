@@ -16,6 +16,7 @@ COPY moc_indexer.py ./
 COPY job_indexer.py ./
 
 ENV PATH "$PATH:/home/www-data/app/"
+ENV AWS_DEFAULT_REGION=us-west-1
 
 ENV PYTHONPATH "${PYTONPATH}:/home/www-data/app/"
 
