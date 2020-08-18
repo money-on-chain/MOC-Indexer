@@ -33,7 +33,8 @@ from moneyonchain.events import MoCExchangeRiskProMint, \
     MoCSettlementSettlementStarted, \
     ERC20Approval, \
     ERC20Transfer, \
-    MoCSettlementRedeemRequestProcessed
+    MoCSettlementRedeemRequestProcessed, \
+    MoCSettlementSettlementCompleted
 from moneyonchain.token import RIF, RIFDoC, RIFPro, DoCToken, BProToken
 
 import logging
@@ -653,6 +654,11 @@ class MoCIndexer:
         gas_fee = tx_receipt['gasUsed'] * Web3.fromWei(moc_tx['gasPrice'], 'ether')
         d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         d_tx["gasFeeUSD"] = str(int(gas_fee * Web3.fromWei(tx_event.reservePrice, 'ether') * self.precision))
+        rbtc_total = tx_event.reserveTotal + tx_event.commission + int(gas_fee * self.precision)
+        d_tx["RBTCTotal"] = str(rbtc_total)
+        usd_total = Web3.fromWei(rbtc_total, 'ether') * Web3.fromWei(tx_event.reservePrice, 'ether')
+        d_tx["USDTotal"] = str(int(usd_total * self.precision))
+        d_tx["processLogs"] = True
 
         d_tx_insert = OrderedDict()
         d_tx_insert["createdAt"] = datetime.datetime.now()
@@ -721,6 +727,11 @@ class MoCIndexer:
         gas_fee = tx_receipt['gasUsed'] * Web3.fromWei(moc_tx['gasPrice'], 'ether')
         d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         d_tx["gasFeeUSD"] = str(int(gas_fee * Web3.fromWei(tx_event.reservePrice, 'ether') * self.precision))
+        rbtc_total = tx_event.reserveTotal - int(gas_fee * self.precision)
+        d_tx["RBTCTotal"] = str(rbtc_total)
+        usd_total = Web3.fromWei(rbtc_total, 'ether') * Web3.fromWei(tx_event.reservePrice, 'ether')
+        d_tx["USDTotal"] = str(int(usd_total * self.precision))
+        d_tx["processLogs"] = True
 
         d_tx_insert = OrderedDict()
         d_tx_insert["createdAt"] = datetime.datetime.now()
@@ -793,6 +804,11 @@ class MoCIndexer:
         gas_fee = tx_receipt['gasUsed'] * Web3.fromWei(moc_tx['gasPrice'], 'ether')
         d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         d_tx["gasFeeUSD"] = str(int(gas_fee * Web3.fromWei(tx_event.reservePrice, 'ether') * self.precision))
+        rbtc_total = tx_event.reserveTotal + tx_event.commission + tx_event.interests + int(gas_fee * self.precision)
+        d_tx["RBTCTotal"] = str(rbtc_total)
+        usd_total = Web3.fromWei(rbtc_total, 'ether') * Web3.fromWei(tx_event.reservePrice, 'ether')
+        d_tx["USDTotal"] = str(int(usd_total * self.precision))
+        d_tx["processLogs"] = True
 
         d_tx_insert = OrderedDict()
         d_tx_insert["createdAt"] = datetime.datetime.now()
@@ -865,6 +881,11 @@ class MoCIndexer:
         gas_fee = tx_receipt['gasUsed'] * Web3.fromWei(moc_tx['gasPrice'], 'ether')
         d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         d_tx["gasFeeUSD"] = str(int(gas_fee * Web3.fromWei(tx_event.reservePrice, 'ether') * self.precision))
+        rbtc_total = tx_event.reserveTotal + tx_event.interests - int(gas_fee * self.precision)
+        d_tx["RBTCTotal"] = str(rbtc_total)
+        usd_total = Web3.fromWei(rbtc_total, 'ether') * Web3.fromWei(tx_event.reservePrice, 'ether')
+        d_tx["USDTotal"] = str(int(usd_total * self.precision))
+        d_tx["processLogs"] = True
 
         d_tx_insert = OrderedDict()
         d_tx_insert["createdAt"] = datetime.datetime.now()
@@ -935,6 +956,11 @@ class MoCIndexer:
         gas_fee = tx_receipt['gasUsed'] * Web3.fromWei(moc_tx['gasPrice'], 'ether')
         d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         d_tx["gasFeeUSD"] = str(int(gas_fee * Web3.fromWei(tx_event.reservePrice, 'ether') * self.precision))
+        rbtc_total = tx_event.reserveTotal + tx_event.commission + int(gas_fee * self.precision)
+        d_tx["RBTCTotal"] = str(rbtc_total)
+        usd_total = Web3.fromWei(rbtc_total, 'ether') * Web3.fromWei(tx_event.reservePrice, 'ether')
+        d_tx["USDTotal"] = str(int(usd_total * self.precision))
+        d_tx["processLogs"] = True
 
         d_tx_insert = OrderedDict()
         d_tx_insert["createdAt"] = datetime.datetime.now()
@@ -1002,6 +1028,11 @@ class MoCIndexer:
         gas_fee = tx_receipt['gasUsed'] * Web3.fromWei(moc_tx['gasPrice'], 'ether')
         d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         d_tx["gasFeeUSD"] = str(int(gas_fee * Web3.fromWei(tx_event.reservePrice, 'ether') * self.precision))
+        rbtc_total = tx_event.reserveTotal - int(gas_fee * self.precision)
+        d_tx["RBTCTotal"] = str(rbtc_total)
+        usd_total = Web3.fromWei(rbtc_total, 'ether') * Web3.fromWei(tx_event.reservePrice, 'ether')
+        d_tx["USDTotal"] = str(int(usd_total * self.precision))
+        d_tx["processLogs"] = True
 
         d_tx_insert = OrderedDict()
         d_tx_insert["createdAt"] = datetime.datetime.now()
@@ -1023,6 +1054,9 @@ class MoCIndexer:
 
         # update user balances
         self.update_balance_address(m_client, d_tx["address"], block_height)
+
+        # Update the queue operation to delete
+        collection_tx.remove({'address': d_tx["address"], 'event': 'QueueDOC'})
 
         return d_tx
 
@@ -1073,6 +1107,11 @@ class MoCIndexer:
         gas_fee = tx_receipt['gasUsed'] * Web3.fromWei(moc_tx['gasPrice'], 'ether')
         d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         d_tx["gasFeeUSD"] = str(int(gas_fee * Web3.fromWei(tx_event.reservePrice, 'ether') * self.precision))
+        rbtc_total = tx_event.reserveTotal - tx_event.commission - int(gas_fee * self.precision)
+        d_tx["RBTCTotal"] = str(rbtc_total)
+        usd_total = Web3.fromWei(rbtc_total, 'ether') * Web3.fromWei(tx_event.reservePrice, 'ether')
+        d_tx["USDTotal"] = str(int(usd_total * self.precision))
+        d_tx["processLogs"] = True
 
         d_tx_insert = OrderedDict()
         d_tx_insert["createdAt"] = datetime.datetime.now()
@@ -1226,6 +1265,7 @@ class MoCIndexer:
         d_tx["confirmationTime"] = confirmation_time
         gas_fee = tx_receipt['gasUsed'] * Web3.fromWei(moc_tx['gasPrice'], 'ether')
         d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
+        d_tx["processLogs"] = True
 
         is_addition = tx_event.isAddition
         if isinstance(is_addition, str):
@@ -1255,7 +1295,43 @@ class MoCIndexer:
             tx_hash))
 
         # update user balances
-        self.update_balance_address(m_client, d_tx["address"], block_height)
+        info_balance = self.update_balance_address(m_client, d_tx["address"], block_height)
+
+        # QUEUE DOC
+        # Is the operation of sending or cancel doc to queue is
+        # always the absolute value
+        # first we need to delete previous queue doc
+        collection_tx.remove({'address': tx_event.redeemer, 'event': 'QueueDOC'})
+
+        d_tx = OrderedDict()
+        d_tx["transactionHash"] = tx_hash
+        d_tx["blockNumber"] = tx_event.blockNumber
+        d_tx["address"] = tx_event.redeemer
+        d_tx["status"] = status
+        d_tx["event"] = 'QueueDOC'
+        d_tx["tokenInvolved"] = 'STABLE'
+        d_tx["lastUpdatedAt"] = datetime.datetime.now()
+        d_tx["amount"] = str(info_balance['docToRedeem'])
+        d_tx["confirmationTime"] = confirmation_time
+        d_tx["isPositive"] = False
+        gas_fee = tx_receipt['gasUsed'] * Web3.fromWei(moc_tx['gasPrice'], 'ether')
+        d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
+        d_tx["processLogs"] = True
+        d_tx["createdAt"] = datetime.datetime.now()
+
+        post_id = collection_tx.find_one_and_update(
+            {"transactionHash": tx_hash,
+             "address": d_tx["address"],
+             "event": d_tx["event"]},
+            {"$set": d_tx},
+            upsert=True)
+        d_tx['post_id'] = post_id
+
+        log.info("Tx {0} From: [{1}] Amount: {2} Tx Hash: {3}".format(
+            d_tx["event"],
+            d_tx["address"],
+            d_tx["amount"],
+            tx_hash))
 
         return d_tx
 
@@ -1286,6 +1362,7 @@ class MoCIndexer:
         d_tx["accumCommissions"] = str(tx_event.accumCommissions)
         d_tx["reservePrice"] = str(tx_event.reservePrice)
         d_tx["timestamp"] = tx_event.timestamp
+        d_tx["processLogs"] = True
 
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash, "event": event_name, "logIndex": log_index},
@@ -1311,6 +1388,7 @@ class MoCIndexer:
         d_tx = dict()
         d_tx["inProcess"] = False
         d_tx["startBlockNumber"] = tx_event.blockNumber
+        d_tx["processLogs"] = True
 
         d_tx_insert = OrderedDict()
         d_tx_insert["docRedeemCount"] = 0
@@ -1353,6 +1431,7 @@ class MoCIndexer:
         d_tx["btcxPrice"] = str(tx_event.riskProxPrice)
         d_tx["btcPrice"] = str(tx_event.reservePrice)
         d_tx["createdAt"] = datetime.datetime.now()
+        d_tx["processLogs"] = True
 
         if not exist_tx:
             post_id = collection_tx.insert_one(d_tx).inserted_id
@@ -1413,6 +1492,7 @@ class MoCIndexer:
         gas_fee = tx_receipt['gasUsed'] * Web3.fromWei(moc_tx['gasPrice'], 'ether')
         d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         d_tx["gasFeeUSD"] = str(int(gas_fee * Web3.fromWei(tx_event.reservePrice, 'ether') * self.precision))
+        d_tx["processLogs"] = True
 
         d_tx_insert = OrderedDict()
         d_tx_insert["createdAt"] = datetime.datetime.now()
@@ -1430,8 +1510,13 @@ class MoCIndexer:
                 d_tx["address"] = user_riskprox["address"]
                 d_tx["amount"] = str(d_user_balances["bprox2Balance"])
                 d_tx["USDAmount"] = str(riskprox_price * reserve_price * int(d_user_balances["bprox2Balance"]))
-                d_tx["RBTCAmount"] = str(riskprox_price * int(d_user_balances["bprox2Balance"]))
+                rbtc_amount = riskprox_price * int(d_user_balances["bprox2Balance"])
+                d_tx["RBTCAmount"] = str(rbtc_amount)
                 d_tx["reservePrice_deleveraging"] = str(reserve_price)
+                rbtc_total = rbtc_amount - int(gas_fee * self.precision)
+                d_tx["RBTCTotal"] = str(rbtc_total)
+                usd_total = Web3.fromWei(rbtc_total, 'ether') * reserve_price
+                d_tx["USDTotal"] = str(int(usd_total * self.precision))
 
                 post_id = collection_tx.find_one_and_update(
                     {"transactionHash": tx_hash,
@@ -1489,6 +1574,7 @@ class MoCIndexer:
         d_tx["isPositive"] = False
         gas_fee = tx_receipt['gasUsed'] * Web3.fromWei(moc_tx['gasPrice'], 'ether')
         d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
+        d_tx["processLogs"] = True
 
         d_tx_insert = OrderedDict()
         d_tx_insert["createdAt"] = datetime.datetime.now()
@@ -1515,6 +1601,16 @@ class MoCIndexer:
 
     def moc_settlement_started(self, tx_receipt, tx_event, m_client):
         pass
+
+    def moc_settlement_completed(self, tx_receipt, tx_event, m_client):
+        # on settlement completed, remove alter queue cause
+        # redeem of doc on settlement already ocurrs
+
+        # get collection transaction
+        collection_tx = self.mm.collection_transaction(m_client)
+
+        # remove all RedeemRequestAlter
+        collection_tx.remove({"event": "RedeemRequestAlter"})
 
     def logs_process_moc_settlement(self, tx_receipt, m_client, block_height, block_height_current, d_moc_transactions):
 
@@ -1585,6 +1681,13 @@ class MoCIndexer:
                                                  d_moc_transactions)
                 self.set_settlement_state(tx_event, m_client)
 
+        # SettlementCompleted
+        tx_logs = events.SettlementCompleted().processReceipt(tx_receipt, errors=DISCARD)
+        for tx_log in tx_logs:
+            if str(tx_log['address']).lower() == str(moc_addresses['MoCSettlement']).lower():
+                tx_event = MoCSettlementSettlementCompleted(self.connection_manager, tx_log)
+                self.moc_settlement_completed(tx_receipt, tx_event, m_client)
+
     def moc_inrate_daily_pay(self, tx_receipt, tx_event, m_client):
 
         collection_inrate = self.mm.collection_inrate_income(m_client)
@@ -1603,6 +1706,7 @@ class MoCIndexer:
         d_tx["nBTCBitProOfBucketZero"] = str(tx_event.nReserveBucketC0)
         d_tx["timestamp"] = tx_event.timestamp
         d_tx["createdAt"] = datetime.datetime.now()
+        d_tx["processLogs"] = True
 
         post_id = collection_inrate.find_one_and_update(
             {"blockHeight": tx_event.blockNumber},
@@ -1632,6 +1736,7 @@ class MoCIndexer:
         d_tx["amount"] = str(tx_event.amount)
         d_tx["daysToSettlement"] = str(tx_event.daysToSettlement)
         d_tx["timestamp"] = tx_event.timestamp
+        d_tx["processLogs"] = True
 
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash, "event": event_name, "logIndex": log_index},
@@ -1659,6 +1764,7 @@ class MoCIndexer:
         d_tx["nBtcBucketC0BeforePay"] = str(tx_event.nReserveBucketC0BeforePay)
         d_tx["timestamp"] = tx_event.timestamp
         d_tx["createdAt"] = datetime.datetime.now()
+        d_tx["processLogs"] = True
 
         post_id = collection_inrate.find_one_and_update(
             {"blockHeight": tx_event.blockNumber},
@@ -1688,6 +1794,7 @@ class MoCIndexer:
         d_tx["amount"] = str(tx_event.amount)
         d_tx["nBtcBucketC0BeforePay"] = str(tx_event.nReserveBucketC0BeforePay)
         d_tx["timestamp"] = tx_event.timestamp
+        d_tx["processLogs"] = True
 
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash, "event": event_name, "logIndex": log_index},
@@ -1741,6 +1848,7 @@ class MoCIndexer:
         d_tx["logIndex"] = log_index
         d_tx["bucket"] = Web3.toText(hexstr=tx_event.bucket)
         d_tx["timestamp"] = tx_event.timestamp
+        d_tx["processLogs"] = True
 
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash, "event": event_name, "logIndex": log_index},
@@ -1786,6 +1894,7 @@ class MoCIndexer:
         d_tx["logIndex"] = log_index
         d_tx["newState"] = d_states[tx_event.newState]
         d_tx["timestamp"] = tx_event.timestamp
+        d_tx["processLogs"] = True
 
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash, "event": event_name, "logIndex": log_index},
@@ -1872,6 +1981,7 @@ class MoCIndexer:
             d_tx["createdAt"] = datetime.datetime.now()
             d_tx["status"] = status
             d_tx["tokenInvolved"] = token_involved
+            d_tx["processLogs"] = True
 
             post_id = collection_tx.find_one_and_update(
                 {"transactionHash": tx_hash,
@@ -1907,6 +2017,7 @@ class MoCIndexer:
             d_tx["createdAt"] = datetime.datetime.now()
             d_tx["status"] = status
             d_tx["tokenInvolved"] = token_involved
+            d_tx["processLogs"] = True
 
             post_id = collection_tx.find_one_and_update(
                 {"transactionHash": tx_hash,
@@ -2301,6 +2412,7 @@ class MoCIndexer:
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
         d_tx["status"] = status
         d_tx["reserveSymbol"] = reserve_symbol
+        d_tx["processLogs"] = True
 
         usd_amount = Web3.fromWei(tx_event.value, 'ether') * Web3.fromWei(last_price['bitcoinPrice'], 'ether')
         d_tx["USDAmount"] = str(int(usd_amount * self.precision))
@@ -2370,6 +2482,7 @@ class MoCIndexer:
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
         d_tx["status"] = status
         d_tx["reserveSymbol"] = reserve_symbol
+        d_tx["processLogs"] = True
 
         usd_amount = Web3.fromWei(moc_tx['value'], 'ether') * Web3.fromWei(last_price['bitcoinPrice'], 'ether')
         d_tx["USDAmount"] = str(int(usd_amount * self.precision))
