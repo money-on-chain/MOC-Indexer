@@ -1301,37 +1301,37 @@ class MoCIndexer:
         # Is the operation of sending or cancel doc to queue is
         # always the absolute value
         # first we need to delete previous queue doc
-        collection_tx.remove({'address': tx_event.redeemer, 'event': 'QueueDOC'})
-
-        d_tx = OrderedDict()
-        d_tx["transactionHash"] = tx_hash
-        d_tx["blockNumber"] = tx_event.blockNumber
-        d_tx["address"] = tx_event.redeemer
-        d_tx["status"] = status
-        d_tx["event"] = 'QueueDOC'
-        d_tx["tokenInvolved"] = 'STABLE'
-        d_tx["lastUpdatedAt"] = datetime.datetime.now()
-        d_tx["amount"] = str(info_balance['docToRedeem'])
-        d_tx["confirmationTime"] = confirmation_time
-        d_tx["isPositive"] = False
-        gas_fee = tx_receipt['gasUsed'] * Web3.fromWei(moc_tx['gasPrice'], 'ether')
-        d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
-        d_tx["processLogs"] = True
-        d_tx["createdAt"] = datetime.datetime.now()
-
-        post_id = collection_tx.find_one_and_update(
-            {"transactionHash": tx_hash,
-             "address": d_tx["address"],
-             "event": d_tx["event"]},
-            {"$set": d_tx},
-            upsert=True)
-        d_tx['post_id'] = post_id
-
-        log.info("Tx {0} From: [{1}] Amount: {2} Tx Hash: {3}".format(
-            d_tx["event"],
-            d_tx["address"],
-            d_tx["amount"],
-            tx_hash))
+        # collection_tx.remove({'address': tx_event.redeemer, 'event': 'QueueDOC'})
+        #
+        # d_tx = OrderedDict()
+        # d_tx["transactionHash"] = tx_hash
+        # d_tx["blockNumber"] = tx_event.blockNumber
+        # d_tx["address"] = tx_event.redeemer
+        # d_tx["status"] = status
+        # d_tx["event"] = 'QueueDOC'
+        # d_tx["tokenInvolved"] = 'STABLE'
+        # d_tx["lastUpdatedAt"] = datetime.datetime.now()
+        # d_tx["amount"] = str(info_balance['docToRedeem'])
+        # d_tx["confirmationTime"] = confirmation_time
+        # d_tx["isPositive"] = False
+        # gas_fee = tx_receipt['gasUsed'] * Web3.fromWei(moc_tx['gasPrice'], 'ether')
+        # d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
+        # d_tx["processLogs"] = True
+        # d_tx["createdAt"] = datetime.datetime.now()
+        #
+        # post_id = collection_tx.find_one_and_update(
+        #     {"transactionHash": tx_hash,
+        #      "address": d_tx["address"],
+        #      "event": d_tx["event"]},
+        #     {"$set": d_tx},
+        #     upsert=True)
+        # d_tx['post_id'] = post_id
+        #
+        # log.info("Tx {0} From: [{1}] Amount: {2} Tx Hash: {3}".format(
+        #     d_tx["event"],
+        #     d_tx["address"],
+        #     d_tx["amount"],
+        #     tx_hash))
 
         return d_tx
 
@@ -1602,7 +1602,7 @@ class MoCIndexer:
     def moc_settlement_started(self, tx_receipt, tx_event, m_client):
         pass
 
-    def moc_settlement_completed(self, tx_receipt, tx_event, m_client):
+    def moc_settlement_completed(self, tx_receipt, tx_event, m_client, block_height):
         # on settlement completed, remove alter queue cause
         # redeem of doc on settlement already ocurrs
 
@@ -1610,7 +1610,11 @@ class MoCIndexer:
         collection_tx = self.mm.collection_transaction(m_client)
 
         # remove all RedeemRequestAlter
-        collection_tx.remove({"event": "RedeemRequestAlter"})
+        collection_tx.remove({"event": "RedeemRequestAlter", "blockHeight": {"$lte": block_height}})
+
+        # also delete with created at < 31 days
+        old_records = datetime.datetime.now() - datetime.timedelta(days=31)
+        collection_tx.remove({"event": "RedeemRequestAlter", "createdAt": {"$lte": old_records}})
 
     def logs_process_moc_settlement(self, tx_receipt, m_client, block_height, block_height_current, d_moc_transactions):
 
@@ -1686,7 +1690,10 @@ class MoCIndexer:
         for tx_log in tx_logs:
             if str(tx_log['address']).lower() == str(moc_addresses['MoCSettlement']).lower():
                 tx_event = MoCSettlementSettlementCompleted(self.connection_manager, tx_log)
-                self.moc_settlement_completed(tx_receipt, tx_event, m_client)
+                self.moc_settlement_completed(tx_receipt,
+                                              tx_event,
+                                              m_client,
+                                              block_height)
 
     def moc_inrate_daily_pay(self, tx_receipt, tx_event, m_client):
 
@@ -2501,6 +2508,51 @@ class MoCIndexer:
         # update user balances
         self.update_balance_address(m_client, d_tx["address"], block_height)
 
+    def scan_moc_block(self, current_block, block_reference, m_client, scan_transfer=True):
+
+        if self.debug_mode:
+            log.info("Starting to scan MOC transactions block height: [{0}] last block height: [{1}]".format(
+                current_block, block_reference))
+
+        # get moc contracts adressess
+        moc_addresses = self.moc_contract_addresses()
+
+        # get block and full transactions
+        f_block = self.connection_manager.get_block(current_block, full_transactions=True)
+        all_transactions = f_block['transactions']
+
+        # From MOC Contract transactions
+        moc_transactions, d_moc_transactions = self.filter_transactions(all_transactions, moc_addresses)
+
+        # get transactions receipts
+        moc_transactions_receipts = self.transactions_receipt(moc_transactions)
+
+        # process only MoC contract transactions
+        for tx_receipt in moc_transactions_receipts:
+
+            # MOC Events process
+            self.logs_process_moc_exchange(tx_receipt, m_client, current_block, block_reference, d_moc_transactions)
+            self.logs_process_moc_settlement(tx_receipt, m_client, current_block, block_reference, d_moc_transactions)
+            self.logs_process_moc_inrate(tx_receipt, m_client)
+            self.logs_process_moc(tx_receipt, m_client)
+            self.logs_process_moc_state(tx_receipt, m_client)
+            if self.app_mode == "RRC20":
+                self.logs_process_reserve_approval(tx_receipt, m_client)
+                self.logs_process_transfer_from_reserve(tx_receipt, m_client, current_block, block_reference)
+
+            # Process transfer for MOC 2020-06-23
+            self.process_transfer_from_moc(tx_receipt, d_moc_transactions, m_client, current_block, block_reference)
+
+        # process all transactions looking for transfers
+        if scan_transfer:
+            if self.debug_mode:
+                log.info("Starting to scan Transfer transactions block height: [{0}] last block height: [{1}]".format(
+                    current_block, block_reference))
+
+            all_transactions_receipts = self.transactions_receipt(all_transactions)
+            for tx_receipt in all_transactions_receipts:
+                self.logs_process_transfer(tx_receipt, m_client, current_block, block_reference)
+
     def scan_moc_blocks(self,
                         scan_transfer=True):
 
@@ -2556,52 +2608,9 @@ class MoCIndexer:
 
         while current_block <= to_block:
 
-            if self.debug_mode:
-                log.info("Starting to scan MOC transactions block height: [{0}] last block height: [{1}]".format(
-                    current_block, block_reference))
-
-            # get moc contracts adressess
-            moc_addresses = self.moc_contract_addresses()
-
-            # get block and full transactions
-            f_block = self.connection_manager.get_block(current_block, full_transactions=True)
-            all_transactions = f_block['transactions']
-
-            # From MOC Contract transactions
-            moc_transactions, d_moc_transactions = self.filter_transactions(all_transactions, moc_addresses)
-
-            # get transactions receipts
-            moc_transactions_receipts = self.transactions_receipt(moc_transactions)
-
-            # process only MoC contract transactions
-            for tx_receipt in moc_transactions_receipts:
-
-                # MOC Events process
-                self.logs_process_moc_exchange(tx_receipt, m_client, current_block, block_reference, d_moc_transactions)
-                self.logs_process_moc_settlement(tx_receipt, m_client, current_block, block_reference, d_moc_transactions)
-                self.logs_process_moc_inrate(tx_receipt, m_client)
-                self.logs_process_moc(tx_receipt, m_client)
-                self.logs_process_moc_state(tx_receipt, m_client)
-                if self.app_mode == "RRC20":
-                    self.logs_process_reserve_approval(tx_receipt, m_client)
-                    self.logs_process_transfer_from_reserve(tx_receipt, m_client, current_block, block_reference)
-
-                # Process transfer for MOC 2020-06-23
-                self.process_transfer_from_moc(tx_receipt, d_moc_transactions, m_client, current_block, block_reference)
-
-            # process all transactions looking for transfers
-            if scan_transfer:
-                if self.debug_mode:
-                    log.info("Starting to scan Transfer transactions block height: [{0}] last block height: [{1}]".format(
-                        current_block, block_reference))
-
-                all_transactions_receipts = self.transactions_receipt(all_transactions)
-                for tx_receipt in all_transactions_receipts:
-
-                    self.logs_process_transfer(tx_receipt, m_client, current_block, block_reference)
+            self.scan_moc_block(current_block, block_reference, m_client, scan_transfer=scan_transfer)
 
             log.info("[RUNNING SCAN TX] DONE BLOCK HEIGHT: [{0}] / [{1}]".format(current_block, to_block))
-
             collection_moc_indexer.update_one({},
                                               {'$set': {'last_moc_block': current_block,
                                                         'updatedAt': datetime.datetime.now()}},
@@ -2952,3 +2961,43 @@ class MoCIndexer:
 
         duration = time.time() - start_time
         log.info("[SCAN USER STATE UPDATE] BLOCK HEIGHT: [{0}] Done in {1} seconds.".format(last_block, duration))
+
+    def scan_moc_blocks_not_processed(self):
+
+        if self.debug_mode:
+            log.info("Starting to scan blocks Not processed ")
+
+        start_time = time.time()
+
+        # get last block from node
+        last_block = self.connection_manager.block_number
+
+        # conect to mongo db
+        m_client = self.mm.connect()
+
+        collection_tx = self.mm.collection_transaction(m_client)
+
+        # we need to query tx with processLogs=None and in the last 60 minutes
+        only_new_ones = datetime.datetime.now() - datetime.timedelta(minutes=300)
+        moc_txs = collection_tx.find({"processLogs": None,
+                                      "status": "confirmed",
+                                      "createdAt": {"$gte": only_new_ones}},
+                                     sort=[("createdAt", -1)])
+
+        if moc_txs:
+            for moc_tx in moc_txs:
+                log.info("[SCAN BLOCK NOT PROCESSED] PROCESSING HASH: [{0}]".format(moc_tx['transactionHash']))
+                try:
+                    tx_receipt = self.connection_manager.web3.eth.getTransactionReceipt(moc_tx['transactionHash'])
+                except TransactionNotFound:
+                    log.error("[SCAN BLOCK NOT PROCESSED] TX NOT FOUND: [{0}]".format(moc_tx['transactionHash']))
+                    continue
+
+                log.info("[SCAN BLOCK NOT PROCESSED] PROCESSING HASH: [{0}]".format(moc_tx['transactionHash']))
+
+                self.scan_moc_block(tx_receipt['blockNumber'], last_block, m_client)
+
+        duration = time.time() - start_time
+
+        log.info("[SCAN BLOCK NOT PROCESSED] Done in {0} seconds.".format(duration))
+

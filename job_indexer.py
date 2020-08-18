@@ -104,6 +104,14 @@ class JobsIndexer:
             log.error(e, exc_info=True)
             self.aws_put_metric_heart_beat(1)
 
+    def task_scan_moc_blocks_not_processed(self):
+
+        try:
+            self.moc_indexer.scan_moc_blocks_not_processed()
+        except Exception as e:
+            log.error(e, exc_info=True)
+            self.aws_put_metric_heart_beat(1)
+
     def add_jobs(self):
 
         log.info("Starting adding jobs...")
@@ -140,6 +148,11 @@ class JobsIndexer:
         log.info("Jobs add scan_user_state_update")
         interval = self.options['tasks']['scan_user_state_update']['interval']
         self.tl._add_job(self.task_scan_user_state_update, datetime.timedelta(seconds=interval))
+
+        # scan_moc_blocks_not_processed
+        log.info("Jobs add scan_moc_blocks_not_processed")
+        interval = self.options['tasks']['scan_moc_blocks_not_processed']['interval']
+        self.tl._add_job(self.task_scan_moc_blocks_not_processed, datetime.timedelta(seconds=interval))
 
     def time_loop_start(self):
 
