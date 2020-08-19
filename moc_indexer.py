@@ -296,13 +296,18 @@ class MoCIndexer:
             address,
             formatted=False,
             block_identifier=block_height))
-        d_user_balance["potentialBprox2MaxInterest"] = str(
-            self.contract_MoCInrate.calc_mint_interest_value(
-                int(d_user_balance["rbtcBalance"]),
-                formatted=False,
-                precision=False
+        try:
+            d_user_balance["potentialBprox2MaxInterest"] = str(
+                self.contract_MoCInrate.calc_mint_interest_value(
+                    int(d_user_balance["rbtcBalance"]),
+                    formatted=False,
+                    precision=False
+                )
             )
-        )
+        except HTTPError:
+            log.error("[WARNING] potentialBprox2MaxInterest Exception!")
+            d_user_balance["potentialBprox2MaxInterest"] = '0'
+
         d_user_balance["estimateGasMintBpro"] = str(self.contract_MoC.mint_bpro_gas_estimated(
             int(d_user_balance["rbtcBalance"]))
         )
@@ -444,9 +449,14 @@ class MoCIndexer:
             bucket_x2,
             formatted=False,
             block_identifier=block_identifier))
-        d_moc_state["spotInrate"] = str(self.contract_MoCInrate.spot_inrate(
-            formatted=False,
-            block_identifier=block_identifier))
+        try:
+            d_moc_state["spotInrate"] = str(self.contract_MoCInrate.spot_inrate(
+                formatted=False,
+                block_identifier=block_identifier))
+        except HTTPError:
+            log.error("[WARNING] spotInrate Exception")
+            d_moc_state["spotInrate"] = '0'
+
         d_moc_state["commissionRate"] = str(self.contract_MoCInrate.commission_rate(
             formatted=False,
             block_identifier=block_identifier))
@@ -517,9 +527,15 @@ class MoCIndexer:
         d_price["bproPriceInUsd"] = str(self.contract_MoCState.bpro_price(
             formatted=False,
             block_identifier=block_identifier))
-        d_price["bproDiscountPrice"] = str(self.contract_MoCState.bpro_discount_price(
-            formatted=False,
-            block_identifier=block_identifier))
+
+        try:
+            d_price["bproDiscountPrice"] = str(self.contract_MoCState.bpro_discount_price(
+                formatted=False,
+                block_identifier=block_identifier))
+        except HTTPError:
+            log.error("No bproDiscountPrice valid in BLOCKHEIGHT: [{0}] skipping!".format(block_identifier))
+            return
+
         d_price["bprox2PriceInRbtc"] = str(self.contract_MoCState.btc2x_tec_price(
             bucket_x2,
             formatted=False,
@@ -2914,10 +2930,11 @@ class MoCIndexer:
                 sort=[("blockHeight", -1)]
             )
 
-            if last_price_height:
-                if self.debug_mode:
-                    log.warning("Not updating prices! Already exist for that block")
-                continue
+            # disabling to update blocks already done
+            #if last_price_height:
+            #    if self.debug_mode:
+            #        log.warning("Not updating prices! Already exist for that block")
+            #    continue
 
             # get all functions from smart contract
             d_prices = self.prices_from_sc(block_identifier=current_block)
@@ -3003,10 +3020,11 @@ class MoCIndexer:
                 sort=[("blockHeight", -1)]
             )
 
-            if last_moc_state_status_height:
-                if self.debug_mode:
-                    log.warning("Not updating moc state status! Already exist for that block")
-                continue
+            # disabling to update blocks already done
+            #if last_moc_state_status_height:
+            #    if self.debug_mode:
+            #        log.warning("Not updating moc state status! Already exist for that block")
+            #    continue
 
             # get all functions from smart contract
             d_status = self.state_status_from_sc(block_identifier=current_block)
