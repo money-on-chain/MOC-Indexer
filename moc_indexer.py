@@ -1728,12 +1728,15 @@ class MoCIndexer:
         d_tx["ratePayAmount"] = str(tx_event.amount)
         d_tx["nBTCBitProOfBucketZero"] = str(tx_event.nReserveBucketC0)
         d_tx["timestamp"] = tx_event.timestamp
-        d_tx["createdAt"] = datetime.datetime.now()
         d_tx["processLogs"] = True
+
+        d_tx_insert = OrderedDict()
+        d_tx_insert["createdAt"] = datetime.datetime.now()
 
         post_id = collection_inrate.find_one_and_update(
             {"blockHeight": tx_event.blockNumber},
-            {"$set": d_tx},
+            {"$set": d_tx,
+             "$setOnInsert": d_tx_insert},
             upsert=True)
 
         log.info("Event Inrate Daily Pay - Blockheight: [{0}] ratePayAmount: {1}".format(
@@ -1786,12 +1789,15 @@ class MoCIndexer:
         d_tx["amount"] = str(tx_event.amount)
         d_tx["nBtcBucketC0BeforePay"] = str(tx_event.nReserveBucketC0BeforePay)
         d_tx["timestamp"] = tx_event.timestamp
-        d_tx["createdAt"] = datetime.datetime.now()
         d_tx["processLogs"] = True
+
+        d_tx_insert = OrderedDict()
+        d_tx_insert["createdAt"] = datetime.datetime.now()
 
         post_id = collection_inrate.find_one_and_update(
             {"blockHeight": tx_event.blockNumber},
-            {"$set": d_tx},
+            {"$set": d_tx,
+             "$setOnInsert": d_tx_insert},
             upsert=True)
 
         log.info("Event RiskPro Holders Interest Pay - Blockheight: [{0}] amount: {1}".format(
@@ -2084,16 +2090,19 @@ class MoCIndexer:
             d_tx["isPositive"] = False
             d_tx["lastUpdatedAt"] = datetime.datetime.now()
             d_tx["otherAddress"] = tx_event.e_to
-            d_tx["createdAt"] = datetime.datetime.now()
             d_tx["status"] = status
             d_tx["tokenInvolved"] = token_involved
             d_tx["processLogs"] = True
+
+            d_tx_insert = OrderedDict()
+            d_tx_insert["createdAt"] = datetime.datetime.now()
 
             post_id = collection_tx.find_one_and_update(
                 {"transactionHash": tx_hash,
                  "address": d_tx["address"],
                  "event": d_tx["event"]},
-                {"$set": d_tx},
+                {"$set": d_tx,
+                 "$setOnInsert": d_tx_insert},
                 upsert=True)
 
             self.update_balance_address(m_client, d_tx["address"], block_height)
@@ -2120,16 +2129,19 @@ class MoCIndexer:
             d_tx["isPositive"] = True
             d_tx["lastUpdatedAt"] = datetime.datetime.now()
             d_tx["otherAddress"] = tx_event.e_from
-            d_tx["createdAt"] = datetime.datetime.now()
             d_tx["status"] = status
             d_tx["tokenInvolved"] = token_involved
             d_tx["processLogs"] = True
+
+            d_tx_insert = OrderedDict()
+            d_tx_insert["createdAt"] = datetime.datetime.now()
 
             post_id = collection_tx.find_one_and_update(
                 {"transactionHash": tx_hash,
                  "address": d_tx["address"],
                  "event": d_tx["event"]},
-                {"$set": d_tx},
+                {"$set": d_tx,
+                 "$setOnInsert": d_tx_insert},
                 upsert=True)
 
             self.update_balance_address(m_client, d_tx["address"], block_height)
