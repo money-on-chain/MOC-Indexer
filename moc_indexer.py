@@ -1839,8 +1839,81 @@ class MoCIndexer:
                 self.moc_inrate_risk_pro_holders_interest_pay(tx_receipt, tx_event, m_client)
                 self.moc_inrate_risk_pro_holders_interest_pay_notification(tx_receipt, tx_log, tx_event, m_client)
 
-    def moc_bucket_liquidation(self, tx_receipt, tx_event, m_client):
-        pass
+    def moc_bucket_liquidation(self,
+                               tx_receipt,
+                               tx_event,
+                               m_client,
+                               block_height,
+                               block_height_current,
+                               d_moc_transactions):
+
+        confirm_blocks = self.options['scan_moc_blocks']['confirm_blocks']
+        if block_height_current - block_height > confirm_blocks:
+            status = 'confirmed'
+            confirmation_time = datetime.datetime.now()
+        else:
+            status = 'confirming'
+            confirmation_time = None
+
+        # get collection transaction
+        collection_tx = self.mm.collection_transaction(m_client)
+
+        tx_hash = Web3.toHex(tx_receipt['transactionHash'])
+        moc_tx = d_moc_transactions[tx_hash]
+
+        # get all address who has bprox , at the time all users because
+        # we dont know who hast bprox in certain block
+        collection_users = self.mm.collection_user_state(m_client)
+        users = collection_users.find()
+        l_users_riskprox = list()
+        for user in users:
+            l_users_riskprox.append(user)
+            # if float(user['bprox2Balance']) > 0.0:
+            #    l_users_riskprox.append(user)
+
+        d_tx = OrderedDict()
+        d_tx["transactionHash"] = tx_hash
+        d_tx["blockNumber"] = tx_event.blockNumber
+        d_tx["event"] = 'BucketLiquidation'
+        d_tx["tokenInvolved"] = 'RISKPROX'
+        d_tx["bucket"] = Web3.toText(hexstr=tx_event.bucket)
+        d_tx["status"] = status
+        d_tx["confirmationTime"] = confirmation_time
+        d_tx["lastUpdatedAt"] = datetime.datetime.now()
+        gas_fee = tx_receipt['gasUsed'] * Web3.fromWei(moc_tx['gasPrice'], 'ether')
+        d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
+        d_tx["processLogs"] = True
+
+        d_tx_insert = OrderedDict()
+        d_tx_insert["createdAt"] = datetime.datetime.now()
+
+        prior_block_to_liquidation = tx_event.blockNumber - 1
+        l_transactions = list()
+        for user_riskprox in l_users_riskprox:
+            d_user_balances = self.riskprox_balances_from_address(user_riskprox["address"],
+                                                                  prior_block_to_liquidation)
+            if float(d_user_balances["bprox2Balance"]) > 0.0:
+                d_tx["address"] = user_riskprox["address"]
+                d_tx["amount"] = str(d_user_balances["bprox2Balance"])
+
+                post_id = collection_tx.find_one_and_update(
+                    {"transactionHash": tx_hash,
+                     "address": d_tx["address"],
+                     "event": d_tx["event"]},
+                    {"$set": d_tx,
+                     "$setOnInsert": d_tx_insert},
+                    upsert=True)
+
+                log.info("Tx {0} From: [{1}] Amount: {2} Tx Hash: {3}".format(
+                    d_tx["event"],
+                    d_tx["address"],
+                    d_tx["amount"],
+                    tx_hash))
+
+                # update user balances
+                self.update_balance_address(m_client, d_tx["address"], block_height)
+
+                l_transactions.append(d_tx)
 
     def moc_bucket_liquidation_notification(self, tx_receipt, tx_event, tx_log, m_client):
 
@@ -1866,7 +1939,12 @@ class MoCIndexer:
 
         return d_tx
 
-    def logs_process_moc(self, tx_receipt, m_client):
+    def logs_process_moc(self,
+                         tx_receipt,
+                         m_client,
+                         block_height,
+                         block_height_current,
+                         d_moc_transactions):
 
         if not tx_receipt['logs']:
             # return if there are no logs
@@ -1882,7 +1960,12 @@ class MoCIndexer:
         for tx_log in tx_logs:
             if str(tx_log['address']).lower() == str(moc_addresses['MoC']).lower():
                 tx_event = MoCBucketLiquidation(self.connection_manager, tx_log)
-                self.moc_bucket_liquidation(tx_receipt, tx_event, m_client)
+                self.moc_bucket_liquidation(tx_receipt,
+                                            tx_event,
+                                            m_client,
+                                            block_height,
+                                            block_height_current,
+                                            d_moc_transactions)
                 self.moc_bucket_liquidation_notification(tx_receipt, tx_event, tx_log, m_client)
 
     def moc_state_transition(self, tx_receipt, tx_event, m_client):
@@ -2270,6 +2353,7 @@ class MoCIndexer:
             d_user_balance["lastNotificationCheckAt"] = datetime.datetime.now()
             d_user_balance["showTermsAndConditions"] = True
             d_user_balance["showTutorialNoMore"] = False
+            d_user_balance["createdBlockHeight"] = block_height
 
         # update or insert
         post_id = collection_user_state.find_one_and_update(
@@ -2531,17 +2615,36 @@ class MoCIndexer:
         for tx_receipt in moc_transactions_receipts:
 
             # MOC Events process
-            self.logs_process_moc_exchange(tx_receipt, m_client, current_block, block_reference, d_moc_transactions)
-            self.logs_process_moc_settlement(tx_receipt, m_client, current_block, block_reference, d_moc_transactions)
+            self.logs_process_moc_exchange(tx_receipt,
+                                           m_client,
+                                           current_block,
+                                           block_reference,
+                                           d_moc_transactions)
+            self.logs_process_moc_settlement(tx_receipt,
+                                             m_client,
+                                             current_block,
+                                             block_reference,
+                                             d_moc_transactions)
             self.logs_process_moc_inrate(tx_receipt, m_client)
-            self.logs_process_moc(tx_receipt, m_client)
+            self.logs_process_moc(tx_receipt,
+                                  m_client,
+                                  current_block,
+                                  block_reference,
+                                  d_moc_transactions)
             self.logs_process_moc_state(tx_receipt, m_client)
             if self.app_mode == "RRC20":
                 self.logs_process_reserve_approval(tx_receipt, m_client)
-                self.logs_process_transfer_from_reserve(tx_receipt, m_client, current_block, block_reference)
+                self.logs_process_transfer_from_reserve(tx_receipt,
+                                                        m_client,
+                                                        current_block,
+                                                        block_reference)
 
             # Process transfer for MOC 2020-06-23
-            self.process_transfer_from_moc(tx_receipt, d_moc_transactions, m_client, current_block, block_reference)
+            self.process_transfer_from_moc(tx_receipt,
+                                           d_moc_transactions,
+                                           m_client,
+                                           current_block,
+                                           block_reference)
 
         # process all transactions looking for transfers
         if scan_transfer:
