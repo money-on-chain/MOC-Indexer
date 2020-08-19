@@ -1876,7 +1876,7 @@ class MoCIndexer:
         d_tx["blockNumber"] = tx_event.blockNumber
         d_tx["event"] = 'BucketLiquidation'
         d_tx["tokenInvolved"] = 'RISKPROX'
-        d_tx["bucket"] = Web3.toText(hexstr=tx_event.bucket)
+        d_tx["bucket"] = 'X2'
         d_tx["status"] = status
         d_tx["confirmationTime"] = confirmation_time
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
@@ -1926,7 +1926,7 @@ class MoCIndexer:
         d_tx["event"] = event_name
         d_tx["transactionHash"] = tx_hash
         d_tx["logIndex"] = log_index
-        d_tx["bucket"] = Web3.toText(hexstr=tx_event.bucket)
+        d_tx["bucket"] = 'X2'
         d_tx["timestamp"] = tx_event.timestamp
         d_tx["processLogs"] = True
 
