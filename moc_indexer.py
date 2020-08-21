@@ -2669,15 +2669,17 @@ class MoCIndexer:
         # conect to mongo db
         m_client = self.mm.connect()
 
+        from_block = self.options['scan_moc_history']['from_block']
+        to_block = self.options['scan_moc_history']['to_block']
+        force_start = self.options['scan_moc_history']['force_start']
+
         collection_moc_indexer_history = self.mm.collection_moc_indexer_history(m_client)
         moc_index = collection_moc_indexer_history.find_one(sort=[("updatedAt", -1)])
         last_block_indexed = 0
-        if moc_index:
+        if moc_index and not force_start:
             if 'last_moc_state_block' in moc_index:
                 last_block_indexed = moc_index['last_moc_state_block']
 
-        from_block = self.options['scan_moc_history']['from_block']
-        to_block = self.options['scan_moc_history']['to_block']
         if last_block_indexed > 0:
             from_block = last_block_indexed + 1
 
@@ -2864,15 +2866,17 @@ class MoCIndexer:
         # conect to mongo db
         m_client = self.mm.connect()
 
+        from_block = self.options['scan_moc_history']['from_block']
+        to_block = self.options['scan_moc_history']['to_block']
+        force_start = self.options['scan_moc_history']['force_start']
+
         collection_moc_indexer_history = self.mm.collection_moc_indexer_history(m_client)
         moc_index = collection_moc_indexer_history.find_one(sort=[("updatedAt", -1)])
         last_block_indexed = 0
-        if moc_index:
+        if moc_index and not force_start:
             if 'last_moc_block' in moc_index:
                 last_block_indexed = moc_index['last_moc_block']
 
-        from_block = self.options['scan_moc_history']['from_block']
-        to_block = self.options['scan_moc_history']['to_block']
         if last_block_indexed > 0:
             from_block = last_block_indexed + 1
 
@@ -3141,11 +3145,12 @@ class MoCIndexer:
 
         from_block = self.options['scan_moc_history']['from_block']
         to_block = self.options['scan_moc_history']['to_block']
+        force_start = self.options['scan_moc_history']['force_start']
 
         collection_moc_indexer_history = self.mm.collection_moc_indexer_history(m_client)
         moc_index = collection_moc_indexer_history.find_one(sort=[("updatedAt", -1)])
         last_block_indexed = 0
-        if moc_index:
+        if moc_index and not force_start:
             if 'last_moc_prices_block' in moc_index:
                 last_block_indexed = moc_index['last_moc_prices_block']
 
@@ -3268,11 +3273,12 @@ class MoCIndexer:
 
         from_block = self.options['scan_moc_history']['from_block']
         to_block = self.options['scan_moc_history']['to_block']
+        force_start = self.options['scan_moc_history']['force_start']
 
         collection_moc_indexer_history = self.mm.collection_moc_indexer_history(m_client)
         moc_index = collection_moc_indexer_history.find_one(sort=[("updatedAt", -1)])
         last_block_indexed = 0
-        if moc_index:
+        if moc_index and not force_start:
             if 'last_moc_state_status_block' in moc_index:
                 last_block_indexed = moc_index['last_moc_state_status_block']
 

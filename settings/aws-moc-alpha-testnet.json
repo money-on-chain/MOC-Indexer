@@ -24,7 +24,8 @@
   },
   "scan_moc_history": {
     "from_block": 1104666,
-    "to_block": 1106533
+    "to_block": 1106533,
+    "force_start": true
   },
   "scan_moc_blocks": {
     "confirm_blocks": 10,
