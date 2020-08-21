@@ -225,6 +225,14 @@ class MongoManager:
 
         return collection
 
+    def collection_moc_indexer_history(self, client, start_index=True):
+
+        mongo_db = self.options['mongo']['db']
+        db = client[mongo_db]
+        collection = db['moc_indexer_history']
+
+        return collection
+
 
 class MoCIndexer:
 
@@ -335,6 +343,9 @@ class MoCIndexer:
 
         bucket_x2 = str.encode('X2')
         bucket_c0 = str.encode('C0')
+
+        # get block time from node
+        block_ts = self.connection_manager.block_timestamp(block_identifier)
 
         d_moc_state = OrderedDict()
 
@@ -464,7 +475,7 @@ class MoCIndexer:
             int(d_moc_state["bprox2PriceInRbtc"]) * int(d_moc_state["bitcoinPrice"]) / int(
                 d_moc_state["reservePrecision"]))
         #d_moc_state["lastUpdateHeight"] = lastUpdateHeight
-        d_moc_state["createdAt"] = datetime.datetime.now()
+        d_moc_state["createdAt"] = block_ts
         d_moc_state["dayBlockSpan"] = self.contract_MoCState.day_block_span(
             block_identifier=block_identifier)
         d_moc_state["blockSpan"] = self.contract_MoCSettlement.block_span(
@@ -504,6 +515,9 @@ class MoCIndexer:
     def prices_from_sc(self, block_identifier: BlockIdentifier = 'latest'):
 
         bucket_x2 = str.encode('X2')
+
+        # get block time from node
+        block_ts = self.connection_manager.block_timestamp(block_identifier)
 
         d_price = OrderedDict()
 
@@ -550,7 +564,7 @@ class MoCIndexer:
         d_price["bprox2PriceInUsd"] = str(
             int(d_price["bprox2PriceInRbtc"]) * int(d_price["bitcoinPrice"]) / int(
                 d_price["reservePrecision"]))
-        d_price["createdAt"] = datetime.datetime.now()
+        d_price["createdAt"] = block_ts
 
         return d_price
 
@@ -2412,85 +2426,6 @@ class MoCIndexer:
 
         return d_user_balance
 
-    def scan_moc_state(self):
-
-        config_block_height = self.options['scan_moc_state']['block_height']
-
-        # conect to mongo db
-        m_client = self.mm.connect()
-
-        # get last block from node
-        last_block = self.connection_manager.block_number
-
-        block_height = config_block_height
-        if block_height <= 0:
-            block_height = last_block
-
-        if self.debug_mode:
-            log.info("Starting to index MoC State on block height: {0}".format(block_height))
-
-        # get collection moc_state from mongo
-        collection_moc_state = self.mm.collection_moc_state(m_client)
-
-        exist_moc_state = collection_moc_state.find_one({"lastUpdateHeight": block_height})
-        if exist_moc_state:
-            if self.debug_mode:
-                log.info("Not time to run moc state, already exist")
-            return
-
-        start_time = time.time()
-
-        # get all functions from smart contract
-        d_moc_state = self.moc_state_from_sc(block_identifier=block_height)
-        if not d_moc_state:
-            return
-
-        # price variation
-        old_block_height = last_block - d_moc_state['dayBlockSpan']
-
-        # get last price written in mongo
-        collection_price = self.mm.collection_price(m_client)
-        daily_last_price = collection_price.find_one(filter={"blockHeight": {"$lt": old_block_height}},
-                                                     sort=[("blockHeight", -1)])
-
-        # price variation on settlement day
-        d_moc_state["isDailyVariation"] = True
-        if d_moc_state["blockSpan"] - d_moc_state['blocksToSettlement'] <= d_moc_state['dayBlockSpan']:
-            # Price Variation is built in-app and not retrieved from blockchain.
-            # For leveraged coin, variation must be against the BTC price
-            # stated at the last settlement period.
-
-            collection_settlement = self.mm.collection_settlement_state(m_client)
-
-            last_settlement = collection_settlement.find_one(
-                {},
-                sort=[("startBlockNumber", -1)]
-            )
-            if last_settlement:
-                daily_last_price['bprox2PriceInUsd'] = last_settlement['btcPrice']
-                d_moc_state["isDailyVariation"] = False
-
-        d_moc_state["lastUpdateHeight"] = block_height
-        d_price_variation = dict()
-        d_price_variation['daily'] = daily_last_price
-        d_moc_state["priceVariation"] = d_price_variation
-
-        # update or insert the new info on mocstate
-        collection_moc_state.find_one_and_update(
-            {},
-            {"$set": d_moc_state},
-            upsert=True)
-
-        # history
-        collection_moc_state_history = self.mm.collection_moc_state_history(m_client)
-        collection_moc_state_history.find_one_and_update(
-            {"blockHeight": block_height},
-            {"$set": d_moc_state},
-            upsert=True)
-
-        duration = time.time() - start_time
-        log.info("[SCAN MOC STATE] BLOCKHEIGHT: [{0}] Done in {1} seconds.".format(block_height, duration))
-
     def process_transfer_from_moc_reserve(self,
                                           tx_receipt,
                                           tx_event,
@@ -2636,10 +2571,143 @@ class MoCIndexer:
         # update user balances
         self.update_balance_address(m_client, d_tx["address"], block_height)
 
+    def scan_moc_state(self):
+
+        config_block_height = self.options['scan_moc_state']['block_height']
+
+        # conect to mongo db
+        m_client = self.mm.connect()
+
+        # get last block from node
+        last_block = self.connection_manager.block_number
+
+        block_height = config_block_height
+        if block_height <= 0:
+            block_height = last_block
+
+        if self.debug_mode:
+            log.info("[SCAN MOC STATE]  Starting to index MoC State on block height: {0}".format(block_height))
+
+        # get collection moc_state from mongo
+        collection_moc_state = self.mm.collection_moc_state(m_client)
+
+        exist_moc_state = collection_moc_state.find_one({"lastUpdateHeight": block_height})
+        if exist_moc_state:
+            if self.debug_mode:
+                log.info("[SCAN MOC STATE]  Not time to run moc state, already exist")
+            return
+
+        start_time = time.time()
+
+        # get all functions from smart contract
+        d_moc_state = self.moc_state_from_sc(block_identifier=block_height)
+        if not d_moc_state:
+            return
+
+        # price variation
+        old_block_height = last_block - d_moc_state['dayBlockSpan']
+
+        # get last price written in mongo
+        collection_price = self.mm.collection_price(m_client)
+        daily_last_price = collection_price.find_one(filter={"blockHeight": {"$lt": old_block_height}},
+                                                     sort=[("blockHeight", -1)])
+
+        # price variation on settlement day
+        d_moc_state["isDailyVariation"] = True
+        if d_moc_state["blockSpan"] - d_moc_state['blocksToSettlement'] <= d_moc_state['dayBlockSpan']:
+            # Price Variation is built in-app and not retrieved from blockchain.
+            # For leveraged coin, variation must be against the BTC price
+            # stated at the last settlement period.
+
+            collection_settlement = self.mm.collection_settlement_state(m_client)
+
+            last_settlement = collection_settlement.find_one(
+                {},
+                sort=[("startBlockNumber", -1)]
+            )
+            if last_settlement:
+                daily_last_price['bprox2PriceInUsd'] = last_settlement['btcPrice']
+                d_moc_state["isDailyVariation"] = False
+
+        d_moc_state["lastUpdateHeight"] = block_height
+        d_price_variation = dict()
+        d_price_variation['daily'] = daily_last_price
+        d_moc_state["priceVariation"] = d_price_variation
+
+        # update or insert the new info on mocstate
+        collection_moc_state.find_one_and_update(
+            {},
+            {"$set": d_moc_state},
+            upsert=True)
+
+        # history
+        collection_moc_state_history = self.mm.collection_moc_state_history(m_client)
+        collection_moc_state_history.find_one_and_update(
+            {"blockHeight": block_height},
+            {"$set": d_moc_state},
+            upsert=True)
+
+        duration = time.time() - start_time
+        log.info("[SCAN MOC STATE] BLOCKHEIGHT: [{0}] Done in {1} seconds.".format(block_height, duration))
+
+    def scan_moc_state_history(self):
+
+        # conect to mongo db
+        m_client = self.mm.connect()
+
+        collection_moc_indexer_history = self.mm.collection_moc_indexer_history(m_client)
+        moc_index = collection_moc_indexer_history.find_one(sort=[("updatedAt", -1)])
+        last_block_indexed = 0
+        if moc_index:
+            if 'last_moc_state_block' in moc_index:
+                last_block_indexed = moc_index['last_moc_state_block']
+
+        from_block = self.options['scan_moc_history']['from_block']
+        to_block = self.options['scan_moc_history']['to_block']
+        if last_block_indexed > 0:
+            from_block = last_block_indexed + 1
+
+        if from_block >= to_block:
+            if self.debug_mode:
+                log.info("[SCAN MOC STATE HISTORY] Its not the time to run indexer no new blocks avalaible!")
+            return
+
+        # start with from block
+        current_block = from_block
+
+        if self.debug_mode:
+            log.info("[SCAN MOC STATE HISTORY] Starting to index MoC State: {0} To Block: {1} ...".format(
+                from_block, to_block))
+
+        start_time = time.time()
+
+        while current_block <= to_block:
+
+            # get all functions from smart contract
+            d_moc_state = self.moc_state_from_sc(block_identifier=current_block)
+            if not d_moc_state:
+                continue
+
+            d_moc_state["lastUpdateHeight"] = current_block
+            d_moc_state["priceVariation"] = None
+
+            # history
+            collection_moc_state_history = self.mm.collection_moc_state_history(m_client)
+            collection_moc_state_history.find_one_and_update(
+                {"blockHeight": current_block},
+                {"$set": d_moc_state},
+                upsert=True)
+
+            if self.debug_mode:
+                log.info("[SCAN MOC STATE HISTORY] [{0}]".format(current_block))
+
+        duration = time.time() - start_time
+        log.info("[SCAN MOC STATE HISTORY] Done in {0} seconds".format(duration))
+
     def scan_moc_block(self, current_block, block_reference, m_client, scan_transfer=True):
 
         if self.debug_mode:
-            log.info("Starting to scan MOC transactions block height: [{0}] last block height: [{1}]".format(
+            log.info("[SCAN TX] Starting to scan MOC transactions block height: [{0}] last block height: [{1}]".format(
                 current_block, block_reference))
 
         # get block time from node
@@ -2698,7 +2766,7 @@ class MoCIndexer:
         # process all transactions looking for transfers
         if scan_transfer:
             if self.debug_mode:
-                log.info("Starting to scan Transfer transactions block height: [{0}] last block height: [{1}]".format(
+                log.info("[SCAN TX] Starting to scan Transfer transactions block height: [{0}] last block height: [{1}]".format(
                     current_block, block_reference))
 
             all_transactions_receipts = self.transactions_receipt(all_transactions)
@@ -2713,11 +2781,6 @@ class MoCIndexer:
         # conect to mongo db
         m_client = self.mm.connect()
 
-        config_from_block = self.options['scan_moc_blocks']['block_start']
-        config_to_block = self.options['scan_moc_blocks']['block_end']
-        config_block_reference = self.options['scan_moc_blocks']['block_reference']
-        config_blocks_look_behind = self.options['scan_moc_blocks']['blocks_look_behind']
-
         # get last block from node
         last_block = self.connection_manager.block_number
 
@@ -2728,41 +2791,36 @@ class MoCIndexer:
             if 'last_moc_block' in moc_index:
                 last_block_indexed = moc_index['last_moc_block']
 
+        config_blocks_look_behind = self.options['scan_moc_blocks']['blocks_look_behind']
         from_block = last_block - config_blocks_look_behind
         if last_block_indexed > 0:
             from_block = last_block_indexed + 1
-        else:
-            if config_from_block > 0:
-                from_block = config_from_block
 
         if from_block >= last_block:
             if self.debug_mode:
-                log.info("Its not the time to run indexer no new blocks avalaible!")
+                log.info("[SCAN TX] Its not the time to run indexer no new blocks avalaible!")
             return
 
-        to_block = config_to_block
-        if to_block <= 0:
-            to_block = last_block
+        to_block = last_block
 
         if from_block > to_block:
-            log.error("To block > from block!!??")
+            log.error("[SCAN TX] To block > from block!!??")
             return
 
         # block reference is the last block, is to compare to... except you specified in the settings
-        block_reference = config_block_reference
-        if block_reference <= 0:
-            block_reference = last_block
+        block_reference = last_block
 
+        # start with from block
         current_block = from_block
 
         if self.debug_mode:
-            log.info("Starting to Scan Transactions: {0} To Block: {1} ...".format(from_block, to_block))
+            log.info("[SCAN TX] Starting to Scan Transactions: {0} To Block: {1} ...".format(from_block, to_block))
 
         while current_block <= to_block:
 
             self.scan_moc_block(current_block, block_reference, m_client, scan_transfer=scan_transfer)
 
-            log.info("[RUNNING SCAN TX] DONE BLOCK HEIGHT: [{0}] / [{1}]".format(current_block, to_block))
+            log.info("[SCAN TX] DONE BLOCK HEIGHT: [{0}] / [{1}]".format(current_block, to_block))
             collection_moc_indexer.update_one({},
                                               {'$set': {'last_moc_block': current_block,
                                                         'updatedAt': datetime.datetime.now()}},
@@ -2772,6 +2830,55 @@ class MoCIndexer:
 
         duration = time.time() - start_time
         log.info("[SCAN TX] LAST BLOCK HEIGHT: [{0}] Done in {1} seconds".format(current_block, duration))
+
+    def scan_moc_blocks_history(self,
+                                scan_transfer=True):
+
+        start_time = time.time()
+
+        # conect to mongo db
+        m_client = self.mm.connect()
+
+        collection_moc_indexer_history = self.mm.collection_moc_indexer_history(m_client)
+        moc_index = collection_moc_indexer_history.find_one(sort=[("updatedAt", -1)])
+        last_block_indexed = 0
+        if moc_index:
+            if 'last_moc_block' in moc_index:
+                last_block_indexed = moc_index['last_moc_block']
+
+        from_block = self.options['scan_moc_history']['from_block']
+        to_block = self.options['scan_moc_history']['to_block']
+        if last_block_indexed > 0:
+            from_block = last_block_indexed + 1
+
+        if from_block >= to_block:
+            if self.debug_mode:
+                log.info("[SCAN TX HISTORY] Its not the time to run indexer no new blocks avalaible!")
+            return
+
+        # block reference is the last block, is to compare to... except you specified in the settings
+        block_reference = from_block
+
+        # start with from block
+        current_block = from_block
+
+        if self.debug_mode:
+            log.info("[SCAN TX HISTORY] Starting to Scan Transactions: {0} To Block: {1} ...".format(from_block,
+                                                                                                     to_block))
+
+        while current_block <= to_block:
+            self.scan_moc_block(current_block, block_reference, m_client, scan_transfer=scan_transfer)
+
+            log.info("[SCAN TX HISTORY] DONE BLOCK HEIGHT: [{0}] / [{1}]".format(current_block, to_block))
+            collection_moc_indexer_history.update_one({},
+                                              {'$set': {'last_moc_block': current_block,
+                                                        'updatedAt': datetime.datetime.now()}},
+                                              upsert=True)
+            # Go to next block
+            current_block += 1
+
+        duration = time.time() - start_time
+        log.info("[SCAN TX HISTORY] LAST BLOCK HEIGHT: [{0}] Done in {1} seconds".format(current_block, duration))
 
     def is_confirmed_block(self, block_height, block_height_last, block_height_last_ts):
 
@@ -2787,9 +2894,98 @@ class MoCIndexer:
 
         return status, confirmation_time, confirming_percent
 
-    def scan_transaction_status(self):
+    def scan_transaction_status_block(self, m_client, block_height, block_height_ts):
+
+        collection_tx = self.mm.collection_transaction(m_client)
 
         seconds_not_in_chain_error = self.options['scan_moc_blocks']['seconds_not_in_chain_error']
+
+        # Get pendings tx and check for confirming, confirmed or failed
+        tx_pendings = collection_tx.find({'status': 'pending'})
+        for tx_pending in tx_pendings:
+
+            try:
+                tx_receipt = self.connection_manager.web3.eth.getTransactionReceipt(tx_pending['transactionHash'])
+            except TransactionNotFound:
+                tx_receipt = None
+
+            if tx_receipt:
+                d_tx_up = dict()
+                if tx_receipt['status'] == 1:
+                    d_tx_up['status'], d_tx_up['confirmationTime'], d_tx_up['confirmingPercent'] = \
+                        self.is_confirmed_block(
+                            tx_receipt['blockNumber'],
+                            block_height,
+                            block_height_ts)
+                elif tx_receipt['status'] == 0:
+                    d_tx_up['status'] = 'failed'
+                    d_tx_up['confirmationTime'] = block_height_ts
+                else:
+                    continue
+
+                collection_tx.find_one_and_update(
+                    {"_id": tx_pending["_id"]},
+                    {"$set": d_tx_up})
+
+                log.info("[SCAN TX STATUS] Setting TX STATUS: {0} hash: {1}".format(
+                    d_tx_up['status'],
+                    tx_pending['transactionHash']))
+
+        # Get confirming tx and check for confirming, confirmed or failed
+        tx_pendings = collection_tx.find({'status': 'confirming'})
+        for tx_pending in tx_pendings:
+
+            try:
+                tx_receipt = self.connection_manager.web3.eth.getTransactionReceipt(tx_pending['transactionHash'])
+            except TransactionNotFound:
+                tx_receipt = None
+
+            if tx_receipt:
+                d_tx_up = dict()
+                if tx_receipt['status'] == 1:
+                    d_tx_up['status'], d_tx_up['confirmationTime'], d_tx_up['confirmingPercent'] = \
+                        self.is_confirmed_block(
+                            tx_receipt['blockNumber'],
+                            block_height,
+                            block_height_ts)
+                    # if d_tx_up['status'] == 'confirming':
+                    #    # is already on confirming status
+                    #    # not write to db
+                    #    continue
+                elif tx_receipt['status'] == 0:
+                    d_tx_up['status'] = 'failed'
+                    d_tx_up['confirmationTime'] = block_height_ts
+                else:
+                    continue
+
+                collection_tx.find_one_and_update(
+                    {"_id": tx_pending["_id"]},
+                    {"$set": d_tx_up})
+
+                log.info("[SCAN TX STATUS] Setting TX STATUS: {0} hash: {1}".format(
+                    d_tx_up['status'],
+                    tx_pending['transactionHash']))
+            else:
+                # no receipt from tx
+                # here problem with eternal confirming
+                created_at = tx_pending['createdAt']
+                if created_at:
+                    dte = created_at + datetime.timedelta(seconds=seconds_not_in_chain_error)
+                    if dte < block_height_ts:
+                        d_tx_up = dict()
+                        d_tx_up['status'] = 'failed'
+                        d_tx_up['errorCode'] = 'staleTransaction'
+                        d_tx_up['confirmationTime'] = block_height_ts
+
+                        collection_tx.find_one_and_update(
+                            {"_id": tx_pending["_id"]},
+                            {"$set": d_tx_up})
+
+                        log.info("[SCAN TX STATUS] Setting TX STATUS: {0} hash: {1}".format(
+                            d_tx_up['status'],
+                            tx_pending['transactionHash']))
+
+    def scan_transaction_status(self):
 
         # conect to mongo db
         m_client = self.mm.connect()
@@ -2809,113 +3005,99 @@ class MoCIndexer:
 
         if last_block <= last_moc_status_block:
             if self.debug_mode:
-                log.info("Its not time to run Scan Transactions status")
+                log.info("[SCAN TX STATUS] Its not time to run Scan Transactions status")
             return
 
         if self.debug_mode:
-            log.info("Starting to Scan Transactions status last block: {0} ".format(last_block))
+            log.info("[SCAN TX STATUS] Starting to Scan Transactions status last block: {0} ".format(last_block))
 
         start_time = time.time()
-
-        collection_tx = self.mm.collection_transaction(m_client)
-
-        # Get pendings tx and check for confirming, confirmed or failed
-        tx_pendings = collection_tx.find({'status': 'pending'})
-        for tx_pending in tx_pendings:
-
-            try:
-                tx_receipt = self.connection_manager.web3.eth.getTransactionReceipt(tx_pending['transactionHash'])
-            except TransactionNotFound:
-                tx_receipt = None
-
-            if tx_receipt:
-                d_tx_up = dict()
-                if tx_receipt['status'] == 1:
-                    d_tx_up['status'], d_tx_up['confirmationTime'], d_tx_up['confirmingPercent'] = \
-                        self.is_confirmed_block(
-                        tx_receipt['blockNumber'],
-                        last_block,
-                        last_block_ts)
-                elif tx_receipt['status'] == 0:
-                    d_tx_up['status'] = 'failed'
-                    d_tx_up['confirmationTime'] = last_block_ts
-                else:
-                    continue
-
-                collection_tx.find_one_and_update(
-                    {"_id": tx_pending["_id"]},
-                    {"$set": d_tx_up})
-
-                log.info("Setting TX STATUS: {0} hash: {1}".format(d_tx_up['status'],
-                                                                   tx_pending['transactionHash']))
-
-        # Get confirming tx and check for confirming, confirmed or failed
-        tx_pendings = collection_tx.find({'status': 'confirming'})
-        for tx_pending in tx_pendings:
-
-            try:
-                tx_receipt = self.connection_manager.web3.eth.getTransactionReceipt(tx_pending['transactionHash'])
-            except TransactionNotFound:
-                tx_receipt = None
-
-            if tx_receipt:
-                d_tx_up = dict()
-                if tx_receipt['status'] == 1:
-                    d_tx_up['status'], d_tx_up['confirmationTime'], d_tx_up['confirmingPercent'] = \
-                        self.is_confirmed_block(
-                            tx_receipt['blockNumber'],
-                            last_block,
-                            last_block_ts)
-                    #if d_tx_up['status'] == 'confirming':
-                    #    # is already on confirming status
-                    #    # not write to db
-                    #    continue
-                elif tx_receipt['status'] == 0:
-                    d_tx_up['status'] = 'failed'
-                    d_tx_up['confirmationTime'] = last_block_ts
-                else:
-                    continue
-
-                collection_tx.find_one_and_update(
-                    {"_id": tx_pending["_id"]},
-                    {"$set": d_tx_up})
-
-                log.info("Setting TX STATUS: {0} hash: {1}".format(d_tx_up['status'],
-                                                                   tx_pending['transactionHash']))
-            else:
-                # no receipt from tx
-                # here problem with eternal confirming
-                created_at = tx_pending['createdAt']
-                if created_at:
-                    dte = created_at + datetime.timedelta(seconds=seconds_not_in_chain_error)
-                    if dte < last_block_ts:
-                        d_tx_up = dict()
-                        d_tx_up['status'] = 'failed'
-                        d_tx_up['errorCode'] = 'staleTransaction'
-                        d_tx_up['confirmationTime'] = last_block_ts
-
-                        collection_tx.find_one_and_update(
-                            {"_id": tx_pending["_id"]},
-                            {"$set": d_tx_up})
-
-                        log.info("Setting TX STATUS: {0} hash: {1}".format(d_tx_up['status'],
-                                                                           tx_pending['transactionHash']))
 
         collection_moc_indexer.update_one({},
                                           {'$set': {'last_moc_status_block': last_block,
                                                     'updatedAt': datetime.datetime.now()}},
                                           upsert=True)
 
+        self.scan_transaction_status_block(m_client, last_block, last_block_ts)
+
         duration = time.time() - start_time
         log.info("[SCAN TX STATUS] BLOCK HEIGHT: [{0}] Done in {1} seconds.".format(last_block, duration))
+
+    def scan_moc_prices_block(self, collection_price, current_block):
+
+        # get block time from node
+        block_ts = self.connection_manager.block_timestamp(current_block)
+
+        # get all functions from smart contract
+        d_prices = self.prices_from_sc(block_identifier=current_block)
+        if d_prices:
+            # only write if there are prices
+            d_prices["blockHeight"] = current_block
+            d_prices["createdAt"] = block_ts
+
+            collection_price.find_one_and_update(
+                {"blockHeight": current_block},
+                {"$set": d_prices},
+                upsert=True)
+
+            if self.debug_mode:
+                log.info("[SCAN PRICES] Done scan prices block height: [{0}]".format(current_block))
 
     def scan_moc_prices(self):
 
         # conect to mongo db
         m_client = self.mm.connect()
 
-        config_from_block = self.options['scan_moc_prices']['block_start']
-        config_to_block = self.options['scan_moc_prices']['block_end']
+        from_block = self.options['scan_moc_history']['from_block']
+        to_block = self.options['scan_moc_history']['to_block']
+
+        collection_moc_indexer_history = self.mm.collection_moc_indexer_history(m_client)
+        moc_index = collection_moc_indexer_history.find_one(sort=[("updatedAt", -1)])
+        last_block_indexed = 0
+        if moc_index:
+            if 'last_moc_prices_block' in moc_index:
+                last_block_indexed = moc_index['last_moc_prices_block']
+
+        if last_block_indexed > 0:
+            from_block = last_block_indexed + 1
+
+        if from_block >= to_block:
+            if self.debug_mode:
+                log.info("[SCAN PRICES] Its not the time to run indexer no new blocks avalaible!")
+            return
+
+        current_block = from_block
+
+        # get collection price from mongo
+        collection_price = self.mm.collection_price(m_client)
+
+        if self.debug_mode:
+            log.info("[SCAN PRICES] Starting to Scan prices: {0} To Block: {1} ...".format(from_block, to_block))
+
+        start_time = time.time()
+        while current_block <= to_block:
+
+            if self.debug_mode:
+                log.info("[SCAN PRICES] Starting to scan MOC prices block height: [{0}]".format(
+                    current_block))
+
+            self.scan_moc_prices_block(collection_price, current_block)
+
+            collection_moc_indexer_history.update_one({},
+                                              {'$set': {'last_moc_prices_block': current_block,
+                                                        'updatedAt': datetime.datetime.now()}},
+                                              upsert=True)
+            # Go to next block
+            current_block += 1
+
+        duration = time.time() - start_time
+        log.info("[SCAN PRICES] LAST BLOCK HEIGHT: [{0}] Done in {1} seconds.".format(current_block, duration))
+
+    def scan_moc_prices_history(self):
+
+        # conect to mongo db
+        m_client = self.mm.connect()
+
         config_blocks_look_behind = self.options['scan_moc_blocks']['blocks_look_behind']
 
         # get last block from node
@@ -2931,21 +3113,15 @@ class MoCIndexer:
         from_block = last_block - config_blocks_look_behind
         if last_block_indexed > 0:
             from_block = last_block_indexed + 1
-        else:
-            if config_from_block > 0:
-                from_block = config_from_block
 
         if from_block >= last_block:
             if self.debug_mode:
-                log.info("Its not the time to run indexer no new blocks avalaible!")
+                log.info("[SCAN PRICES HISTORY] Its not the time to run indexer no new blocks avalaible!")
             return
 
-        to_block = config_to_block
-        if to_block <= 0:
-            to_block = last_block
-
+        to_block = last_block
         if from_block > to_block:
-            log.error("To block > from block!!??")
+            log.error("[SCAN PRICES HISTORY] To block > from block!!??")
             return
 
         current_block = from_block
@@ -2954,43 +3130,17 @@ class MoCIndexer:
         collection_price = self.mm.collection_price(m_client)
 
         if self.debug_mode:
-            log.info("Starting to Scan prices: {0} To Block: {1} ...".format(from_block, to_block))
+            log.info("[SCAN PRICES HISTORY] Starting to Scan prices: {0} To Block: {1} ...".format(
+                from_block, to_block))
 
         start_time = time.time()
         while current_block <= to_block:
 
             if self.debug_mode:
-                log.info("Starting to scan MOC prices block height: [{0}]".format(
+                log.info("[SCAN PRICES HISTORY] Starting to scan MOC prices block height: [{0}]".format(
                     current_block))
 
-            last_price_height = collection_price.find_one(
-                filter={"blockHeight": {"$gte": current_block}},
-                sort=[("blockHeight", -1)]
-            )
-
-            # disabling to update blocks already done
-            #if last_price_height:
-            #    if self.debug_mode:
-            #        log.warning("Not updating prices! Already exist for that block")
-            #    continue
-
-            # get block time from node
-            block_ts = self.connection_manager.block_timestamp(current_block)
-
-            # get all functions from smart contract
-            d_prices = self.prices_from_sc(block_identifier=current_block)
-            if d_prices:
-                # only write if there are prices
-                d_prices["blockHeight"] = current_block
-                d_prices["createdAt"] = block_ts
-
-                collection_price.find_one_and_update(
-                    {"blockHeight": current_block},
-                    {"$set": d_prices},
-                    upsert=True)
-
-                if self.debug_mode:
-                    log.info("Done scan prices block height: [{0}]".format(current_block))
+            self.scan_moc_prices_block(collection_price, current_block)
 
             collection_moc_indexer.update_one({},
                                               {'$set': {'last_moc_prices_block': current_block,
@@ -3000,15 +3150,31 @@ class MoCIndexer:
             current_block += 1
 
         duration = time.time() - start_time
-        log.info("[SCAN PRICES] LAST BLOCK HEIGHT: [{0}] Done in {1} seconds.".format(current_block, duration))
+        log.info("[SCAN PRICES HISTORY] LAST BLOCK HEIGHT: [{0}] Done in {1} seconds.".format(current_block, duration))
+
+    def scan_moc_state_status_block(self, collection_moc_state_status, current_block):
+
+        # get block time from node
+        block_ts = self.connection_manager.block_timestamp(current_block)
+
+        # get all functions from smart contract
+        d_status = self.state_status_from_sc(block_identifier=current_block)
+        d_status["blockHeight"] = current_block
+        d_status["createdAt"] = block_ts
+
+        collection_moc_state_status.find_one_and_update(
+            {"blockHeight": current_block},
+            {"$set": d_status},
+            upsert=True)
+
+        if self.debug_mode:
+            log.info("Done scan state status block height: [{0}]".format(current_block))
 
     def scan_moc_state_status(self):
 
         # conect to mongo db
         m_client = self.mm.connect()
 
-        config_from_block = self.options['scan_moc_state_status']['block_start']
-        config_to_block = self.options['scan_moc_state_status']['block_end']
         config_blocks_look_behind = self.options['scan_moc_state_status']['blocks_look_behind']
 
         # get last block from node
@@ -3024,21 +3190,15 @@ class MoCIndexer:
         from_block = last_block - config_blocks_look_behind
         if last_block_indexed > 0:
             from_block = last_block_indexed + 1
-        else:
-            if config_from_block > 0:
-                from_block = config_from_block
 
         if from_block >= last_block:
             if self.debug_mode:
-                log.info("Its not the time to run indexer no new blocks avalaible!")
+                log.info("[SCAN STATE STATUS] Its not the time to run indexer no new blocks avalaible!")
             return
 
-        to_block = config_to_block
-        if to_block <= 0:
-            to_block = last_block
-
+        to_block = last_block
         if from_block > to_block:
-            log.error("To block > from block!!??")
+            log.error("[SCAN STATE STATUS] To block > from block!!??")
             return
 
         current_block = from_block
@@ -3047,41 +3207,17 @@ class MoCIndexer:
         collection_moc_state_status = self.mm.collection_moc_state_status(m_client)
 
         if self.debug_mode:
-            log.info("Starting to Scan Moc State Status: {0} To Block: {1} ...".format(from_block, to_block))
+            log.info("[SCAN STATE STATUS] Starting to Scan Moc State Status: {0} To Block: {1} ...".format(
+                from_block, to_block))
 
         start_time = time.time()
         while current_block <= to_block:
 
             if self.debug_mode:
-                log.info("Starting to scan Moc State Status block height: [{0}]".format(
+                log.info("[SCAN STATE STATUS] Starting to scan Moc State Status block height: [{0}]".format(
                     current_block))
 
-            last_moc_state_status_height = collection_moc_state_status.find_one(
-                filter={"blockHeight": {"$gte": current_block}},
-                sort=[("blockHeight", -1)]
-            )
-
-            # disabling to update blocks already done
-            #if last_moc_state_status_height:
-            #    if self.debug_mode:
-            #        log.warning("Not updating moc state status! Already exist for that block")
-            #    continue
-
-            # get block time from node
-            block_ts = self.connection_manager.block_timestamp(current_block)
-
-            # get all functions from smart contract
-            d_status = self.state_status_from_sc(block_identifier=current_block)
-            d_status["blockHeight"] = current_block
-            d_status["createdAt"] = block_ts
-
-            collection_moc_state_status.find_one_and_update(
-                {"blockHeight": current_block},
-                {"$set": d_status},
-                upsert=True)
-
-            if self.debug_mode:
-                log.info("Done scan state status block height: [{0}]".format(current_block))
+            self.scan_moc_state_status_block(collection_moc_state_status, current_block)
 
             collection_moc_indexer.update_one({},
                                               {'$set': {'last_moc_state_status_block': current_block,
@@ -3092,6 +3228,58 @@ class MoCIndexer:
 
         duration = time.time() - start_time
         log.info("[SCAN STATE STATUS] LAST BLOCK HEIGHT: [{0}] Done in {1} seconds.".format(current_block, duration))
+
+    def scan_moc_state_status_history(self):
+
+        # conect to mongo db
+        m_client = self.mm.connect()
+
+        from_block = self.options['scan_moc_history']['from_block']
+        to_block = self.options['scan_moc_history']['to_block']
+
+        collection_moc_indexer_history = self.mm.collection_moc_indexer_history(m_client)
+        moc_index = collection_moc_indexer_history.find_one(sort=[("updatedAt", -1)])
+        last_block_indexed = 0
+        if moc_index:
+            if 'last_moc_state_status_block' in moc_index:
+                last_block_indexed = moc_index['last_moc_state_status_block']
+
+        if last_block_indexed > 0:
+            from_block = last_block_indexed + 1
+
+        if from_block >= to_block:
+            if self.debug_mode:
+                log.info("Its not the time to run indexer no new blocks avalaible!")
+            return
+
+        current_block = from_block
+
+        # get collection price from mongo
+        collection_moc_state_status = self.mm.collection_moc_state_status(m_client)
+
+        if self.debug_mode:
+            log.info("[SCAN STATE STATUS HISTORY] Starting to Scan Moc State Status: {0} To Block: {1} ...".format(
+                from_block, to_block))
+
+        start_time = time.time()
+        while current_block <= to_block:
+
+            if self.debug_mode:
+                log.info("[SCAN STATE STATUS HISTORY] Starting to scan Moc State Status block height: [{0}]".format(
+                    current_block))
+
+            self.scan_moc_state_status_block(collection_moc_state_status, current_block)
+
+            collection_moc_indexer_history.update_one({},
+                                              {'$set': {'last_moc_state_status_block': current_block,
+                                                        'updatedAt': datetime.datetime.now()}},
+                                              upsert=True)
+            # Go to next block
+            current_block += 1
+
+        duration = time.time() - start_time
+        log.info("[SCAN STATE STATUS HISTORY] LAST BLOCK HEIGHT: [{0}] Done in {1} seconds.".format(
+            current_block, duration))
 
     def scan_user_state_update(self):
 
@@ -3105,7 +3293,7 @@ class MoCIndexer:
         users_pending_update = collection_user_state_update.find({})
 
         if self.debug_mode:
-            log.info("Starting to update user balance on block: {0} ".format(last_block))
+            log.info("[SCAN USER STATE UPDATE] Starting to update user balance on block: {0} ".format(last_block))
 
         start_time = time.time()
 
@@ -3120,7 +3308,7 @@ class MoCIndexer:
             collection_user_state_update.remove({'account': user_update['account']})
 
             if self.debug_mode:
-                log.info("UPDATING ACCOUNT BALANCE: {0} BLOCKHEIGHT: {1}".format(
+                log.info("[SCAN USER STATE UPDATE] UPDATING ACCOUNT BALANCE: {0} BLOCKHEIGHT: {1}".format(
                     user_update['account'],
                     block_height))
 
@@ -3130,7 +3318,7 @@ class MoCIndexer:
     def scan_moc_blocks_not_processed(self):
 
         if self.debug_mode:
-            log.info("Starting to scan blocks Not processed ")
+            log.info("[SCAN BLOCK NOT PROCESSED] Starting to scan blocks Not processed ")
 
         start_time = time.time()
 
