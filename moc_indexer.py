@@ -2702,6 +2702,7 @@ class MoCIndexer:
             # get all functions from smart contract
             d_moc_state = self.moc_state_from_sc(block_identifier=current_block)
             if not d_moc_state:
+                current_block += 1
                 continue
 
             d_moc_state["lastUpdateHeight"] = current_block
