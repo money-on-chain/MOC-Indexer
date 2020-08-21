@@ -64,6 +64,14 @@ class JobsIndexer:
             log.error(e, exc_info=True)
             self.aws_put_metric_heart_beat(1)
 
+    def task_scan_moc_blocks_history(self):
+
+        try:
+            self.moc_indexer.scan_moc_blocks_history()
+        except Exception as e:
+            log.error(e, exc_info=True)
+            self.aws_put_metric_heart_beat(1)
+
     def task_scan_moc_prices(self):
 
         try:
@@ -72,10 +80,26 @@ class JobsIndexer:
             log.error(e, exc_info=True)
             self.aws_put_metric_heart_beat(1)
 
+    def task_scan_moc_prices_history(self):
+
+        try:
+            self.moc_indexer.scan_moc_prices_history()
+        except Exception as e:
+            log.error(e, exc_info=True)
+            self.aws_put_metric_heart_beat(1)
+
     def task_scan_moc_state(self):
 
         try:
             self.moc_indexer.scan_moc_state()
+        except Exception as e:
+            log.error(e, exc_info=True)
+            self.aws_put_metric_heart_beat(1)
+
+    def task_scan_moc_state_history(self):
+
+        try:
+            self.moc_indexer.scan_moc_state_history()
         except Exception as e:
             log.error(e, exc_info=True)
             self.aws_put_metric_heart_beat(1)
@@ -92,6 +116,14 @@ class JobsIndexer:
 
         try:
             self.moc_indexer.scan_moc_state_status()
+        except Exception as e:
+            log.error(e, exc_info=True)
+            self.aws_put_metric_heart_beat(1)
+
+    def task_scan_moc_state_status_history(self):
+
+        try:
+            self.moc_indexer.scan_moc_state_status_history()
         except Exception as e:
             log.error(e, exc_info=True)
             self.aws_put_metric_heart_beat(1)
@@ -154,9 +186,42 @@ class JobsIndexer:
         interval = self.options['tasks']['scan_moc_blocks_not_processed']['interval']
         self.tl._add_job(self.task_scan_moc_blocks_not_processed, datetime.timedelta(seconds=interval))
 
+    def add_jobs_history(self):
+
+        log.info("Starting adding history jobs...")
+
+        # creating the alarm
+        self.aws_put_metric_heart_beat(0)
+
+        # task_scan_moc_blocks_history
+        log.info("Jobs add task_scan_moc_blocks_history")
+        interval = self.options['tasks']['scan_moc_blocks']['interval']
+        self.tl._add_job(self.task_scan_moc_blocks_history, datetime.timedelta(seconds=interval))
+
+        # task_scan_moc_prices_history
+        log.info("Jobs add task_scan_moc_prices_history")
+        interval = self.options['tasks']['scan_moc_prices']['interval']
+        self.tl._add_job(self.task_scan_moc_prices_history, datetime.timedelta(seconds=interval))
+
+        # task_scan_moc_state_history
+        log.info("Jobs add task_scan_moc_state_history")
+        interval = self.options['tasks']['scan_moc_state']['interval']
+        self.tl._add_job(self.task_scan_moc_state_history, datetime.timedelta(seconds=interval))
+
+        # task_scan_moc_state_status_history
+        log.info("Jobs add task_scan_moc_state_status_history")
+        interval = self.options['tasks']['scan_moc_state_status']['interval']
+        self.tl._add_job(self.task_scan_moc_state_status_history, datetime.timedelta(seconds=interval))
+
     def time_loop_start(self):
 
-        self.add_jobs()
+        if self.options['index_mode'] in ['normal']:
+            self.add_jobs()
+        elif self.options['index_mode'] in ['history']:
+            self.add_jobs_history()
+        else:
+            raise Exception("Index mode not recognize")
+
         #self.tl.start(block=True)
         self.tl.start()
         while True:
