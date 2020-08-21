@@ -6,13 +6,15 @@
   "timeout": 60,
   "timeout_wait": 300,
   "gas_price": 60000000,
-  "debug": false,
+  "debug": true,
   "tasks": {
     "scan_moc_blocks": {"interval":  20},
     "scan_moc_prices": {"interval":  25},
     "scan_moc_state": {"interval":  30},
     "scan_moc_status": {"interval":  10},
-    "scan_moc_state_status": {"interval":  10}
+    "scan_moc_state_status": {"interval":  10},
+    "scan_user_state_update": {"interval":  10},
+    "scan_moc_blocks_not_processed": {"interval":  120}
   },
   "scan_moc_blocks": {
     "block_start": 0,
@@ -39,7 +41,7 @@
     "mocTestnetAlpha": {
       "app_mode": "MoC",
       "project": "MoC",
-      "uri": ["http://10.0.0.73:4444"],
+      "uri": ["http://moc-rsk-node-testnet.moneyonchain.com:4454"],
       "chain_id": 31,
       "accounts": [
         {

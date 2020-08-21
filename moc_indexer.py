@@ -633,12 +633,13 @@ class MoCIndexer:
                                    m_client,
                                    block_height,
                                    block_height_current,
-                                   d_moc_transactions):
+                                   d_moc_transactions,
+                                   block_ts):
 
         confirm_blocks = self.options['scan_moc_blocks']['confirm_blocks']
         if block_height_current - block_height > confirm_blocks:
             status = 'confirmed'
-            confirmation_time = datetime.datetime.now()
+            confirmation_time = block_ts
         else:
             status = 'confirming'
             confirmation_time = None
@@ -675,16 +676,13 @@ class MoCIndexer:
         usd_total = Web3.fromWei(rbtc_total, 'ether') * Web3.fromWei(tx_event.reservePrice, 'ether')
         d_tx["USDTotal"] = str(int(usd_total * self.precision))
         d_tx["processLogs"] = True
-
-        d_tx_insert = OrderedDict()
-        d_tx_insert["createdAt"] = datetime.datetime.now()
+        d_tx["createdAt"] = block_ts
 
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash,
              "address": d_tx["address"],
              "event": d_tx["event"]},
-            {"$set": d_tx,
-             "$setOnInsert": d_tx_insert},
+            {"$set": d_tx},
             upsert=True)
         d_tx['post_id'] = post_id
 
@@ -705,12 +703,13 @@ class MoCIndexer:
                                      m_client,
                                      block_height,
                                      block_height_current,
-                                     d_moc_transactions):
+                                     d_moc_transactions,
+                                     block_ts):
 
         confirm_blocks = self.options['scan_moc_blocks']['confirm_blocks']
         if block_height_current - block_height > confirm_blocks:
             status = 'confirmed'
-            confirmation_time = datetime.datetime.now()
+            confirmation_time = block_ts
         else:
             status = 'confirming'
             confirmation_time = None
@@ -748,16 +747,13 @@ class MoCIndexer:
         usd_total = Web3.fromWei(rbtc_total, 'ether') * Web3.fromWei(tx_event.reservePrice, 'ether')
         d_tx["USDTotal"] = str(int(usd_total * self.precision))
         d_tx["processLogs"] = True
-
-        d_tx_insert = OrderedDict()
-        d_tx_insert["createdAt"] = datetime.datetime.now()
+        d_tx["createdAt"] = block_ts
 
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash,
              "address": d_tx["address"],
              "event": d_tx["event"]},
-            {"$set": d_tx,
-             "$setOnInsert": d_tx_insert},
+            {"$set": d_tx},
             upsert=True)
         d_tx['post_id'] = post_id
 
@@ -778,12 +774,13 @@ class MoCIndexer:
                                     m_client,
                                     block_height,
                                     block_height_current,
-                                    d_moc_transactions):
+                                    d_moc_transactions,
+                                    block_ts):
 
         confirm_blocks = self.options['scan_moc_blocks']['confirm_blocks']
         if block_height_current - block_height > confirm_blocks:
             status = 'confirmed'
-            confirmation_time = datetime.datetime.now()
+            confirmation_time = block_ts
         else:
             status = 'confirming'
             confirmation_time = None
@@ -825,16 +822,13 @@ class MoCIndexer:
         usd_total = Web3.fromWei(rbtc_total, 'ether') * Web3.fromWei(tx_event.reservePrice, 'ether')
         d_tx["USDTotal"] = str(int(usd_total * self.precision))
         d_tx["processLogs"] = True
-
-        d_tx_insert = OrderedDict()
-        d_tx_insert["createdAt"] = datetime.datetime.now()
+        d_tx["createdAt"] = block_ts
 
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash,
              "address": d_tx["address"],
              "event": d_tx["event"]},
-            {"$set": d_tx,
-             "$setOnInsert": d_tx_insert},
+            {"$set": d_tx},
             upsert=True)
         d_tx['post_id'] = post_id
 
@@ -855,12 +849,13 @@ class MoCIndexer:
                                       m_client,
                                       block_height,
                                       block_height_current,
-                                      d_moc_transactions):
+                                      d_moc_transactions,
+                                      block_ts):
 
         confirm_blocks = self.options['scan_moc_blocks']['confirm_blocks']
         if block_height_current - block_height > confirm_blocks:
             status = 'confirmed'
-            confirmation_time = datetime.datetime.now()
+            confirmation_time = block_ts
         else:
             status = 'confirming'
             confirmation_time = None
@@ -902,16 +897,13 @@ class MoCIndexer:
         usd_total = Web3.fromWei(rbtc_total, 'ether') * Web3.fromWei(tx_event.reservePrice, 'ether')
         d_tx["USDTotal"] = str(int(usd_total * self.precision))
         d_tx["processLogs"] = True
-
-        d_tx_insert = OrderedDict()
-        d_tx_insert["createdAt"] = datetime.datetime.now()
+        d_tx["createdAt"] = block_ts
 
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash,
              "address": d_tx["address"],
              "event": d_tx["event"]},
-            {"$set": d_tx,
-             "$setOnInsert": d_tx_insert},
+            {"$set": d_tx},
             upsert=True)
         d_tx['post_id'] = post_id
 
@@ -932,12 +924,13 @@ class MoCIndexer:
                                        m_client,
                                        block_height,
                                        block_height_current,
-                                       d_moc_transactions):
+                                       d_moc_transactions,
+                                       block_ts):
 
         confirm_blocks = self.options['scan_moc_blocks']['confirm_blocks']
         if block_height_current - block_height > confirm_blocks:
             status = 'confirmed'
-            confirmation_time = datetime.datetime.now()
+            confirmation_time = block_ts
         else:
             status = 'confirming'
             confirmation_time = None
@@ -977,16 +970,13 @@ class MoCIndexer:
         usd_total = Web3.fromWei(rbtc_total, 'ether') * Web3.fromWei(tx_event.reservePrice, 'ether')
         d_tx["USDTotal"] = str(int(usd_total * self.precision))
         d_tx["processLogs"] = True
-
-        d_tx_insert = OrderedDict()
-        d_tx_insert["createdAt"] = datetime.datetime.now()
+        d_tx["createdAt"] = block_ts
 
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash,
              "address": d_tx["address"],
              "event": d_tx["event"]},
-            {"$set": d_tx,
-             "$setOnInsert": d_tx_insert},
+            {"$set": d_tx},
             upsert=True)
         d_tx['post_id'] = post_id
 
@@ -1007,12 +997,13 @@ class MoCIndexer:
                                          m_client,
                                          block_height,
                                          block_height_current,
-                                         d_moc_transactions):
+                                         d_moc_transactions,
+                                         block_ts):
 
         confirm_blocks = self.options['scan_moc_blocks']['confirm_blocks']
         if block_height_current - block_height > confirm_blocks:
             status = 'confirmed'
-            confirmation_time = datetime.datetime.now()
+            confirmation_time = block_ts
         else:
             status = 'confirming'
             confirmation_time = None
@@ -1049,16 +1040,13 @@ class MoCIndexer:
         usd_total = Web3.fromWei(rbtc_total, 'ether') * Web3.fromWei(tx_event.reservePrice, 'ether')
         d_tx["USDTotal"] = str(int(usd_total * self.precision))
         d_tx["processLogs"] = True
-
-        d_tx_insert = OrderedDict()
-        d_tx_insert["createdAt"] = datetime.datetime.now()
+        d_tx["createdAt"] = block_ts
 
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash,
              "address": d_tx["address"],
              "event": d_tx["event"]},
-            {"$set": d_tx,
-             "$setOnInsert": d_tx_insert},
+            {"$set": d_tx},
             upsert=True)
         d_tx['post_id'] = post_id
 
@@ -1082,12 +1070,13 @@ class MoCIndexer:
                                               m_client,
                                               block_height,
                                               block_height_current,
-                                              d_moc_transactions):
+                                              d_moc_transactions,
+                                              block_ts):
 
         confirm_blocks = self.options['scan_moc_blocks']['confirm_blocks']
         if block_height_current - block_height > confirm_blocks:
             status = 'confirmed'
-            confirmation_time = datetime.datetime.now()
+            confirmation_time = block_ts
         else:
             status = 'confirming'
             confirmation_time = None
@@ -1128,16 +1117,13 @@ class MoCIndexer:
         usd_total = Web3.fromWei(rbtc_total, 'ether') * Web3.fromWei(tx_event.reservePrice, 'ether')
         d_tx["USDTotal"] = str(int(usd_total * self.precision))
         d_tx["processLogs"] = True
-
-        d_tx_insert = OrderedDict()
-        d_tx_insert["createdAt"] = datetime.datetime.now()
+        d_tx["createdAt"] = block_ts
 
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash,
              "address": d_tx["address"],
              "event": d_tx["event"]},
-            {"$set": d_tx,
-             "$setOnInsert": d_tx_insert},
+            {"$set": d_tx},
             upsert=True)
         d_tx['post_id'] = post_id
 
@@ -1152,7 +1138,13 @@ class MoCIndexer:
 
         return d_tx
 
-    def logs_process_moc_exchange(self, tx_receipt, m_client, block_height, block_height_current, d_moc_transactions):
+    def logs_process_moc_exchange(self,
+                                  tx_receipt,
+                                  m_client,
+                                  block_height,
+                                  block_height_current,
+                                  d_moc_transactions,
+                                  block_ts):
 
         if not tx_receipt['logs']:
             # return if there are no logs
@@ -1173,7 +1165,8 @@ class MoCIndexer:
                                                 m_client,
                                                 block_height,
                                                 block_height_current,
-                                                d_moc_transactions)
+                                                d_moc_transactions,
+                                                block_ts)
 
         # RiskProRedeem
         tx_logs = events.RiskProRedeem().processReceipt(tx_receipt, errors=DISCARD)
@@ -1185,7 +1178,8 @@ class MoCIndexer:
                                                   m_client,
                                                   block_height,
                                                   block_height_current,
-                                                  d_moc_transactions)
+                                                  d_moc_transactions,
+                                                  block_ts)
 
         # RiskProxMint
         tx_logs = events.RiskProxMint().processReceipt(tx_receipt, errors=DISCARD)
@@ -1197,7 +1191,8 @@ class MoCIndexer:
                                                  m_client,
                                                  block_height,
                                                  block_height_current,
-                                                 d_moc_transactions)
+                                                 d_moc_transactions,
+                                                 block_ts)
 
         # RiskProxRedeem
         tx_logs = events.RiskProxRedeem().processReceipt(tx_receipt, errors=DISCARD)
@@ -1209,7 +1204,8 @@ class MoCIndexer:
                                                    m_client,
                                                    block_height,
                                                    block_height_current,
-                                                   d_moc_transactions)
+                                                   d_moc_transactions,
+                                                   block_ts)
 
         # StableTokenMint
         tx_logs = events.StableTokenMint().processReceipt(tx_receipt, errors=DISCARD)
@@ -1221,7 +1217,8 @@ class MoCIndexer:
                                                     m_client,
                                                     block_height,
                                                     block_height_current,
-                                                    d_moc_transactions)
+                                                    d_moc_transactions,
+                                                    block_ts)
 
         # StableTokenRedeem
         tx_logs = events.StableTokenRedeem().processReceipt(tx_receipt, errors=DISCARD)
@@ -1233,7 +1230,8 @@ class MoCIndexer:
                                                       m_client,
                                                       block_height,
                                                       block_height_current,
-                                                      d_moc_transactions)
+                                                      d_moc_transactions,
+                                                      block_ts)
 
         # FreeStableTokenRedeem
         tx_logs = events.FreeStableTokenRedeem().processReceipt(tx_receipt, errors=DISCARD)
@@ -1245,7 +1243,8 @@ class MoCIndexer:
                                                            m_client,
                                                            block_height,
                                                            block_height_current,
-                                                           d_moc_transactions)
+                                                           d_moc_transactions,
+                                                           block_ts)
 
     def moc_settlement_redeem_request_alter(self,
                                             tx_receipt,
@@ -1253,12 +1252,13 @@ class MoCIndexer:
                                             m_client,
                                             block_height,
                                             block_height_current,
-                                            d_moc_transactions):
+                                            d_moc_transactions,
+                                            block_ts):
 
         confirm_blocks = self.options['scan_moc_blocks']['confirm_blocks']
         if block_height_current - block_height > confirm_blocks:
             status = 'confirmed'
-            confirmation_time = datetime.datetime.now()
+            confirmation_time = block_ts
         else:
             status = 'confirming'
             confirmation_time = None
@@ -1291,16 +1291,13 @@ class MoCIndexer:
                 is_addition = False
 
         d_tx["isPositive"] = is_addition
-
-        d_tx_insert = OrderedDict()
-        d_tx_insert["createdAt"] = datetime.datetime.now()
+        d_tx["createdAt"] = block_ts
 
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash,
              "address": d_tx["address"],
              "event": d_tx["event"]},
-            {"$set": d_tx,
-             "$setOnInsert": d_tx_insert},
+            {"$set": d_tx},
             upsert=True)
         d_tx['post_id'] = post_id
 
@@ -1357,7 +1354,8 @@ class MoCIndexer:
                                            m_client,
                                            block_height,
                                            block_height_current,
-                                           d_moc_transactions):
+                                           d_moc_transactions,
+                                           block_ts):
         # update user balances
         # self.update_balance_address(m_client, d_tx["address"], block_height)
         pass
@@ -1395,7 +1393,7 @@ class MoCIndexer:
 
         return d_tx
 
-    def set_settlement_state(self, tx_event, m_client):
+    def set_settlement_state(self, tx_event, m_client, block_ts):
         """Event: SettlementDeleveraging"""
 
         # SettlementState
@@ -1411,7 +1409,7 @@ class MoCIndexer:
         d_tx_insert["deleveragingCount"] = 0
         d_tx_insert["btcxPrice"] = str(tx_event.riskProxPrice)
         d_tx_insert["btcPrice"] = str(tx_event.reservePrice)
-        d_tx_insert["createdAt"] = datetime.datetime.now()
+        d_tx_insert["createdAt"] = block_ts
 
         post_id = collection_tx.find_one_and_update(
             {"startBlockNumber": tx_event.blockNumber},
@@ -1427,7 +1425,7 @@ class MoCIndexer:
 
         return d_tx
 
-    def update_settlement_state(self, tx_event, m_client):
+    def update_settlement_state(self, tx_event, m_client, block_ts):
         """Event: SettlementStarted"""
 
         # SettlementState
@@ -1446,7 +1444,7 @@ class MoCIndexer:
         #d_tx["btcxPrice"] = str(int(adjust_price * self.precision))
         d_tx["btcxPrice"] = str(tx_event.riskProxPrice)
         d_tx["btcPrice"] = str(tx_event.reservePrice)
-        d_tx["createdAt"] = datetime.datetime.now()
+        d_tx["createdAt"] = block_ts
         d_tx["processLogs"] = True
 
         if not exist_tx:
@@ -1470,12 +1468,13 @@ class MoCIndexer:
                                     m_client,
                                     block_height,
                                     block_height_current,
-                                    d_moc_transactions):
+                                    d_moc_transactions,
+                                    block_ts):
 
         confirm_blocks = self.options['scan_moc_blocks']['confirm_blocks']
         if block_height_current - block_height > confirm_blocks:
             status = 'confirmed'
-            confirmation_time = datetime.datetime.now()
+            confirmation_time = block_ts
         else:
             status = 'confirming'
             confirmation_time = None
@@ -1509,9 +1508,7 @@ class MoCIndexer:
         d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         d_tx["gasFeeUSD"] = str(int(gas_fee * Web3.fromWei(tx_event.reservePrice, 'ether') * self.precision))
         d_tx["processLogs"] = True
-
-        d_tx_insert = OrderedDict()
-        d_tx_insert["createdAt"] = datetime.datetime.now()
+        d_tx["createdAt"] = block_ts
 
         riskprox_price = Web3.fromWei(tx_event.riskProxPrice, 'ether')
         reserve_price = Web3.fromWei(tx_event.reservePrice, 'ether')
@@ -1538,8 +1535,7 @@ class MoCIndexer:
                     {"transactionHash": tx_hash,
                      "address": d_tx["address"],
                      "event": d_tx["event"]},
-                    {"$set": d_tx,
-                     "$setOnInsert": d_tx_insert},
+                    {"$set": d_tx},
                     upsert=True)
 
                 log.info("Tx {0} From: [{1}] Amount: {2} Tx Hash: {3}".format(
@@ -1561,12 +1557,13 @@ class MoCIndexer:
                                                 m_client,
                                                 block_height,
                                                 block_height_current,
-                                                d_moc_transactions):
+                                                d_moc_transactions,
+                                                block_ts):
 
         confirm_blocks = self.options['scan_moc_blocks']['confirm_blocks']
         if block_height_current - block_height > confirm_blocks:
             status = 'confirmed'
-            confirmation_time = datetime.datetime.now()
+            confirmation_time = block_ts
         else:
             status = 'confirming'
             confirmation_time = None
@@ -1591,16 +1588,13 @@ class MoCIndexer:
         gas_fee = tx_receipt['gasUsed'] * Web3.fromWei(moc_tx['gasPrice'], 'ether')
         d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         d_tx["processLogs"] = True
-
-        d_tx_insert = OrderedDict()
-        d_tx_insert["createdAt"] = datetime.datetime.now()
+        d_tx["createdAt"] = block_ts
 
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash,
              "address": d_tx["address"],
              "event": d_tx["event"]},
-            {"$set": d_tx,
-             "$setOnInsert": d_tx_insert},
+            {"$set": d_tx},
             upsert=True)
         d_tx['post_id'] = post_id
 
@@ -1618,7 +1612,12 @@ class MoCIndexer:
     def moc_settlement_started(self, tx_receipt, tx_event, m_client):
         pass
 
-    def moc_settlement_completed(self, tx_receipt, tx_event, m_client, block_height):
+    def moc_settlement_completed(self,
+                                 tx_receipt,
+                                 tx_event,
+                                 m_client,
+                                 block_height,
+                                 block_ts):
         # on settlement completed, remove alter queue cause
         # redeem of doc on settlement already ocurrs
 
@@ -1629,10 +1628,16 @@ class MoCIndexer:
         collection_tx.remove({"event": "RedeemRequestAlter", "blockHeight": {"$lte": block_height}})
 
         # also delete with created at < 31 days
-        old_records = datetime.datetime.now() - datetime.timedelta(days=31)
+        old_records = block_ts - datetime.timedelta(days=31)
         collection_tx.remove({"event": "RedeemRequestAlter", "createdAt": {"$lte": old_records}})
 
-    def logs_process_moc_settlement(self, tx_receipt, m_client, block_height, block_height_current, d_moc_transactions):
+    def logs_process_moc_settlement(self,
+                                    tx_receipt,
+                                    m_client,
+                                    block_height,
+                                    block_height_current,
+                                    d_moc_transactions,
+                                    block_ts):
 
         if not tx_receipt['logs']:
             # return if there are no logs
@@ -1649,7 +1654,7 @@ class MoCIndexer:
             if str(tx_log['address']).lower() == str(moc_addresses['MoCSettlement']).lower():
                 tx_event = MoCSettlementSettlementStarted(self.connection_manager, tx_log)
                 self.moc_settlement_started(tx_receipt, tx_event, m_client)
-                self.update_settlement_state(tx_event, m_client)
+                self.update_settlement_state(tx_event, m_client, block_ts)
 
         # RedeemRequestAlter
         tx_logs = events.RedeemRequestAlter().processReceipt(tx_receipt, errors=DISCARD)
@@ -1661,7 +1666,8 @@ class MoCIndexer:
                                                          m_client,
                                                          block_height,
                                                          block_height_current,
-                                                         d_moc_transactions)
+                                                         d_moc_transactions,
+                                                         block_ts)
 
         # RedeemRequestProcessed
         tx_logs = events.RedeemRequestProcessed().processReceipt(tx_receipt, errors=DISCARD)
@@ -1673,7 +1679,8 @@ class MoCIndexer:
                                                              m_client,
                                                              block_height,
                                                              block_height_current,
-                                                             d_moc_transactions)
+                                                             d_moc_transactions,
+                                                             block_ts)
 
         # SettlementRedeemStableToken
         tx_logs = events.SettlementRedeemStableToken().processReceipt(tx_receipt, errors=DISCARD)
@@ -1685,7 +1692,8 @@ class MoCIndexer:
                                                         m_client,
                                                         block_height,
                                                         block_height_current,
-                                                        d_moc_transactions)
+                                                        d_moc_transactions,
+                                                        block_ts)
                 self.moc_settlement_redeem_stable_token_notification(tx_receipt, tx_event, tx_log, m_client)
 
         # SettlementDeleveraging
@@ -1698,8 +1706,9 @@ class MoCIndexer:
                                                  m_client,
                                                  block_height,
                                                  block_height_current,
-                                                 d_moc_transactions)
-                self.set_settlement_state(tx_event, m_client)
+                                                 d_moc_transactions,
+                                                 block_ts)
+                self.set_settlement_state(tx_event, m_client, block_ts)
 
         # SettlementCompleted
         tx_logs = events.SettlementCompleted().processReceipt(tx_receipt, errors=DISCARD)
@@ -1709,9 +1718,10 @@ class MoCIndexer:
                 self.moc_settlement_completed(tx_receipt,
                                               tx_event,
                                               m_client,
-                                              block_height)
+                                              block_height,
+                                              block_ts)
 
-    def moc_inrate_daily_pay(self, tx_receipt, tx_event, m_client):
+    def moc_inrate_daily_pay(self, tx_receipt, tx_event, m_client, block_ts):
 
         collection_inrate = self.mm.collection_inrate_income(m_client)
 
@@ -1729,14 +1739,11 @@ class MoCIndexer:
         d_tx["nBTCBitProOfBucketZero"] = str(tx_event.nReserveBucketC0)
         d_tx["timestamp"] = tx_event.timestamp
         d_tx["processLogs"] = True
-
-        d_tx_insert = OrderedDict()
-        d_tx_insert["createdAt"] = datetime.datetime.now()
+        d_tx["createdAt"] = block_ts
 
         post_id = collection_inrate.find_one_and_update(
             {"blockHeight": tx_event.blockNumber},
-            {"$set": d_tx,
-             "$setOnInsert": d_tx_insert},
+            {"$set": d_tx},
             upsert=True)
 
         log.info("Event Inrate Daily Pay - Blockheight: [{0}] ratePayAmount: {1}".format(
@@ -1772,7 +1779,11 @@ class MoCIndexer:
 
         return d_tx
 
-    def moc_inrate_risk_pro_holders_interest_pay(self, tx_receipt, tx_event, m_client):
+    def moc_inrate_risk_pro_holders_interest_pay(self,
+                                                 tx_receipt,
+                                                 tx_event,
+                                                 m_client,
+                                                 block_ts):
 
         collection_inrate = self.mm.collection_bitpro_holders_interest(m_client)
 
@@ -1790,14 +1801,11 @@ class MoCIndexer:
         d_tx["nBtcBucketC0BeforePay"] = str(tx_event.nReserveBucketC0BeforePay)
         d_tx["timestamp"] = tx_event.timestamp
         d_tx["processLogs"] = True
-
-        d_tx_insert = OrderedDict()
-        d_tx_insert["createdAt"] = datetime.datetime.now()
+        d_tx["createdAt"] = block_ts
 
         post_id = collection_inrate.find_one_and_update(
             {"blockHeight": tx_event.blockNumber},
-            {"$set": d_tx,
-             "$setOnInsert": d_tx_insert},
+            {"$set": d_tx},
             upsert=True)
 
         log.info("Event RiskPro Holders Interest Pay - Blockheight: [{0}] amount: {1}".format(
@@ -1834,7 +1842,7 @@ class MoCIndexer:
 
         return d_tx
 
-    def logs_process_moc_inrate(self, tx_receipt, m_client):
+    def logs_process_moc_inrate(self, tx_receipt, m_client, block_ts):
 
         if not tx_receipt['logs']:
             # return if there are no logs
@@ -1850,7 +1858,7 @@ class MoCIndexer:
         for tx_log in tx_logs:
             if str(tx_log['address']).lower() == str(moc_addresses['MoCInrate']).lower():
                 tx_event = MoCInrateDailyPay(self.connection_manager, tx_log)
-                self.moc_inrate_daily_pay(tx_receipt, tx_event, m_client)
+                self.moc_inrate_daily_pay(tx_receipt, tx_event, m_client, block_ts)
                 self.moc_inrate_daily_pay_notification(tx_receipt, tx_event, tx_log, m_client)
 
         # RiskProHoldersInterestPay
@@ -1858,7 +1866,7 @@ class MoCIndexer:
         for tx_log in tx_logs:
             if str(tx_log['address']).lower() == str(moc_addresses['MoCInrate']).lower():
                 tx_event = MoCInrateRiskProHoldersInterestPay(self.connection_manager, tx_log)
-                self.moc_inrate_risk_pro_holders_interest_pay(tx_receipt, tx_event, m_client)
+                self.moc_inrate_risk_pro_holders_interest_pay(tx_receipt, tx_event, m_client, block_ts)
                 self.moc_inrate_risk_pro_holders_interest_pay_notification(tx_receipt, tx_log, tx_event, m_client)
 
     def moc_bucket_liquidation(self,
@@ -1867,12 +1875,13 @@ class MoCIndexer:
                                m_client,
                                block_height,
                                block_height_current,
-                               d_moc_transactions):
+                               d_moc_transactions,
+                               block_ts):
 
         confirm_blocks = self.options['scan_moc_blocks']['confirm_blocks']
         if block_height_current - block_height > confirm_blocks:
             status = 'confirmed'
-            confirmation_time = datetime.datetime.now()
+            confirmation_time = block_ts
         else:
             status = 'confirming'
             confirmation_time = None
@@ -1905,9 +1914,7 @@ class MoCIndexer:
         gas_fee = tx_receipt['gasUsed'] * Web3.fromWei(moc_tx['gasPrice'], 'ether')
         d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         d_tx["processLogs"] = True
-
-        d_tx_insert = OrderedDict()
-        d_tx_insert["createdAt"] = datetime.datetime.now()
+        d_tx["createdAt"] = block_ts
 
         prior_block_to_liquidation = tx_event.blockNumber - 1
         l_transactions = list()
@@ -1922,8 +1929,7 @@ class MoCIndexer:
                     {"transactionHash": tx_hash,
                      "address": d_tx["address"],
                      "event": d_tx["event"]},
-                    {"$set": d_tx,
-                     "$setOnInsert": d_tx_insert},
+                    {"$set": d_tx},
                     upsert=True)
 
                 log.info("Tx {0} From: [{1}] Amount: {2} Tx Hash: {3}".format(
@@ -1966,7 +1972,8 @@ class MoCIndexer:
                          m_client,
                          block_height,
                          block_height_current,
-                         d_moc_transactions):
+                         d_moc_transactions,
+                         block_ts):
 
         if not tx_receipt['logs']:
             # return if there are no logs
@@ -1987,7 +1994,8 @@ class MoCIndexer:
                                             m_client,
                                             block_height,
                                             block_height_current,
-                                            d_moc_transactions)
+                                            d_moc_transactions,
+                                            block_ts)
                 self.moc_bucket_liquidation_notification(tx_receipt, tx_event, tx_log, m_client)
 
     def moc_state_transition(self, tx_receipt, tx_event, m_client):
@@ -2042,12 +2050,13 @@ class MoCIndexer:
                           m_client,
                           block_height,
                           block_height_current,
+                          block_ts,
                           token_involved='RISKPRO'):
 
         confirm_blocks = self.options['scan_moc_blocks']['confirm_blocks']
         if block_height_current - block_height > confirm_blocks:
             status = 'confirmed'
-            confirmation_time = datetime.datetime.now()
+            confirmation_time = block_ts
         else:
             status = 'confirming'
             confirmation_time = None
@@ -2093,16 +2102,13 @@ class MoCIndexer:
             d_tx["status"] = status
             d_tx["tokenInvolved"] = token_involved
             d_tx["processLogs"] = True
-
-            d_tx_insert = OrderedDict()
-            d_tx_insert["createdAt"] = datetime.datetime.now()
+            d_tx["createdAt"] = block_ts
 
             post_id = collection_tx.find_one_and_update(
                 {"transactionHash": tx_hash,
                  "address": d_tx["address"],
                  "event": d_tx["event"]},
-                {"$set": d_tx,
-                 "$setOnInsert": d_tx_insert},
+                {"$set": d_tx},
                 upsert=True)
 
             self.update_balance_address(m_client, d_tx["address"], block_height)
@@ -2132,16 +2138,13 @@ class MoCIndexer:
             d_tx["status"] = status
             d_tx["tokenInvolved"] = token_involved
             d_tx["processLogs"] = True
-
-            d_tx_insert = OrderedDict()
-            d_tx_insert["createdAt"] = datetime.datetime.now()
+            d_tx["createdAt"] = block_ts
 
             post_id = collection_tx.find_one_and_update(
                 {"transactionHash": tx_hash,
                  "address": d_tx["address"],
                  "event": d_tx["event"]},
-                {"$set": d_tx,
-                 "$setOnInsert": d_tx_insert},
+                {"$set": d_tx},
                 upsert=True)
 
             self.update_balance_address(m_client, d_tx["address"], block_height)
@@ -2202,7 +2205,12 @@ class MoCIndexer:
                 tx_event.e_to,
                 tx_event.value))
 
-    def logs_process_transfer(self, tx_receipt, m_client, block_height, block_height_current):
+    def logs_process_transfer(self,
+                              tx_receipt,
+                              m_client,
+                              block_height,
+                              block_height_current,
+                              block_ts):
         """ Process events transfers only from our tokens"""
 
         if not tx_receipt['logs']:
@@ -2224,6 +2232,7 @@ class MoCIndexer:
                                        m_client,
                                        block_height,
                                        block_height_current,
+                                       block_ts,
                                        token_involved='RISKPRO')
 
         # StableToken Transfer
@@ -2236,6 +2245,7 @@ class MoCIndexer:
                                        m_client,
                                        block_height,
                                        block_height_current,
+                                       block_ts,
                                        token_involved='STABLE')
 
         # Reserve
@@ -2335,7 +2345,12 @@ class MoCIndexer:
                 tx_event = ERC20Approval(self.connection_manager, tx_log)
                 self.update_user_state_approval(tx_event, m_client)
 
-    def logs_process_transfer_from_reserve(self, tx_receipt, m_client, block_height, block_height_current):
+    def logs_process_transfer_from_reserve(self,
+                                           tx_receipt,
+                                           m_client,
+                                           block_height,
+                                           block_height_current,
+                                           block_ts):
 
         if not tx_receipt['logs']:
             # return if there are no logs
@@ -2354,7 +2369,8 @@ class MoCIndexer:
                                                        tx_event,
                                                        m_client,
                                                        block_height,
-                                                       block_height_current)
+                                                       block_height_current,
+                                                       block_ts)
 
     def update_balance_address(self, m_client, account_address, block_height):
 
@@ -2480,14 +2496,15 @@ class MoCIndexer:
                                           tx_event,
                                           m_client,
                                           block_height,
-                                          block_height_current):
+                                          block_height_current,
+                                          block_ts):
 
         """ TX Tranfer from MOC Reserve """
 
         confirm_blocks = self.options['scan_moc_blocks']['confirm_blocks']
         if block_height_current - block_height > confirm_blocks:
             status = 'confirmed'
-            confirmation_time = datetime.datetime.now()
+            confirmation_time = block_ts
         else:
             status = 'confirming'
             confirmation_time = None
@@ -2532,31 +2549,33 @@ class MoCIndexer:
         d_tx["status"] = status
         d_tx["reserveSymbol"] = reserve_symbol
         d_tx["processLogs"] = True
-
         usd_amount = Web3.fromWei(tx_event.value, 'ether') * Web3.fromWei(last_price['bitcoinPrice'], 'ether')
         d_tx["USDAmount"] = str(int(usd_amount * self.precision))
-
-        d_tx_insert = OrderedDict()
-        d_tx_insert["createdAt"] = datetime.datetime.now()
+        d_tx["createdAt"] = block_ts
 
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash,
              "address": d_tx["address"],
              "event": d_tx["event"]},
-            {"$set": d_tx,
-             "$setOnInsert": d_tx_insert},
+            {"$set": d_tx},
             upsert=True)
 
         # update user balances
         self.update_balance_address(m_client, d_tx["address"], block_height)
 
-    def process_transfer_from_moc(self, tx_receipt, d_moc_transactions, m_client, block_height, block_height_current):
+    def process_transfer_from_moc(self,
+                                  tx_receipt,
+                                  d_moc_transactions,
+                                  m_client,
+                                  block_height,
+                                  block_height_current,
+                                  block_ts):
         """ Process transfer from moc """
 
         confirm_blocks = self.options['scan_moc_blocks']['confirm_blocks']
         if block_height_current - block_height > confirm_blocks:
             status = 'confirmed'
-            confirmation_time = datetime.datetime.now()
+            confirmation_time = block_ts
         else:
             status = 'confirming'
             confirmation_time = None
@@ -2605,16 +2624,13 @@ class MoCIndexer:
 
         usd_amount = Web3.fromWei(moc_tx['value'], 'ether') * Web3.fromWei(last_price['bitcoinPrice'], 'ether')
         d_tx["USDAmount"] = str(int(usd_amount * self.precision))
-
-        d_tx_insert = OrderedDict()
-        d_tx_insert["createdAt"] = datetime.datetime.now()
+        d_tx["createdAt"] = block_ts
 
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash,
              "address": d_tx["address"],
              "event": d_tx["event"]},
-            {"$set": d_tx,
-             "$setOnInsert": d_tx_insert},
+            {"$set": d_tx},
             upsert=True)
 
         # update user balances
@@ -2625,6 +2641,9 @@ class MoCIndexer:
         if self.debug_mode:
             log.info("Starting to scan MOC transactions block height: [{0}] last block height: [{1}]".format(
                 current_block, block_reference))
+
+        # get block time from node
+        block_ts = self.connection_manager.block_timestamp(current_block)
 
         # get moc contracts adressess
         moc_addresses = self.moc_contract_addresses()
@@ -2647,32 +2666,34 @@ class MoCIndexer:
                                            m_client,
                                            current_block,
                                            block_reference,
-                                           d_moc_transactions)
+                                           d_moc_transactions,
+                                           block_ts)
             self.logs_process_moc_settlement(tx_receipt,
                                              m_client,
                                              current_block,
                                              block_reference,
-                                             d_moc_transactions)
-            self.logs_process_moc_inrate(tx_receipt, m_client)
+                                             d_moc_transactions,
+                                             block_ts)
+            self.logs_process_moc_inrate(tx_receipt, m_client, block_ts)
             self.logs_process_moc(tx_receipt,
                                   m_client,
                                   current_block,
                                   block_reference,
-                                  d_moc_transactions)
+                                  d_moc_transactions, block_ts)
             self.logs_process_moc_state(tx_receipt, m_client)
             if self.app_mode == "RRC20":
                 self.logs_process_reserve_approval(tx_receipt, m_client)
                 self.logs_process_transfer_from_reserve(tx_receipt,
                                                         m_client,
                                                         current_block,
-                                                        block_reference)
+                                                        block_reference, block_ts)
 
             # Process transfer for MOC 2020-06-23
             self.process_transfer_from_moc(tx_receipt,
                                            d_moc_transactions,
                                            m_client,
                                            current_block,
-                                           block_reference)
+                                           block_reference, block_ts)
 
         # process all transactions looking for transfers
         if scan_transfer:
@@ -2682,7 +2703,7 @@ class MoCIndexer:
 
             all_transactions_receipts = self.transactions_receipt(all_transactions)
             for tx_receipt in all_transactions_receipts:
-                self.logs_process_transfer(tx_receipt, m_client, current_block, block_reference)
+                self.logs_process_transfer(tx_receipt, m_client, current_block, block_reference, block_ts)
 
     def scan_moc_blocks(self,
                         scan_transfer=True):
@@ -2752,12 +2773,12 @@ class MoCIndexer:
         duration = time.time() - start_time
         log.info("[SCAN TX] LAST BLOCK HEIGHT: [{0}] Done in {1} seconds".format(current_block, duration))
 
-    def is_confirmed_block(self, block_height, block_height_last):
+    def is_confirmed_block(self, block_height, block_height_last, block_height_last_ts):
 
         confirm_blocks = self.options['scan_moc_blocks']['confirm_blocks']
         if block_height_last - block_height > confirm_blocks:
             status = 'confirmed'
-            confirmation_time = datetime.datetime.now()
+            confirmation_time = block_height_last_ts
             confirming_percent = 100
         else:
             status = 'confirming'
@@ -2775,6 +2796,9 @@ class MoCIndexer:
 
         # get last block from node
         last_block = self.connection_manager.block_number
+
+        # get block time from node
+        last_block_ts = self.connection_manager.block_timestamp(last_block)
 
         collection_moc_indexer = self.mm.collection_moc_indexer(m_client)
         moc_index = collection_moc_indexer.find_one(sort=[("updatedAt", -1)])
@@ -2810,10 +2834,11 @@ class MoCIndexer:
                     d_tx_up['status'], d_tx_up['confirmationTime'], d_tx_up['confirmingPercent'] = \
                         self.is_confirmed_block(
                         tx_receipt['blockNumber'],
-                        last_block)
+                        last_block,
+                        last_block_ts)
                 elif tx_receipt['status'] == 0:
                     d_tx_up['status'] = 'failed'
-                    d_tx_up['confirmationTime'] = datetime.datetime.now()
+                    d_tx_up['confirmationTime'] = last_block_ts
                 else:
                     continue
 
@@ -2838,15 +2863,16 @@ class MoCIndexer:
                 if tx_receipt['status'] == 1:
                     d_tx_up['status'], d_tx_up['confirmationTime'], d_tx_up['confirmingPercent'] = \
                         self.is_confirmed_block(
-                        tx_receipt['blockNumber'],
-                        last_block)
+                            tx_receipt['blockNumber'],
+                            last_block,
+                            last_block_ts)
                     #if d_tx_up['status'] == 'confirming':
                     #    # is already on confirming status
                     #    # not write to db
                     #    continue
                 elif tx_receipt['status'] == 0:
                     d_tx_up['status'] = 'failed'
-                    d_tx_up['confirmationTime'] = datetime.datetime.now()
+                    d_tx_up['confirmationTime'] = last_block_ts
                 else:
                     continue
 
@@ -2862,11 +2888,11 @@ class MoCIndexer:
                 created_at = tx_pending['createdAt']
                 if created_at:
                     dte = created_at + datetime.timedelta(seconds=seconds_not_in_chain_error)
-                    if dte < datetime.datetime.now():
+                    if dte < last_block_ts:
                         d_tx_up = dict()
                         d_tx_up['status'] = 'failed'
                         d_tx_up['errorCode'] = 'staleTransaction'
-                        d_tx_up['confirmationTime'] = datetime.datetime.now()
+                        d_tx_up['confirmationTime'] = last_block_ts
 
                         collection_tx.find_one_and_update(
                             {"_id": tx_pending["_id"]},
@@ -2948,12 +2974,15 @@ class MoCIndexer:
             #        log.warning("Not updating prices! Already exist for that block")
             #    continue
 
+            # get block time from node
+            block_ts = self.connection_manager.block_timestamp(current_block)
+
             # get all functions from smart contract
             d_prices = self.prices_from_sc(block_identifier=current_block)
             if d_prices:
                 # only write if there are prices
                 d_prices["blockHeight"] = current_block
-                d_prices["createdAt"] = datetime.datetime.now()
+                d_prices["createdAt"] = block_ts
 
                 collection_price.find_one_and_update(
                     {"blockHeight": current_block},
@@ -3038,10 +3067,13 @@ class MoCIndexer:
             #        log.warning("Not updating moc state status! Already exist for that block")
             #    continue
 
+            # get block time from node
+            block_ts = self.connection_manager.block_timestamp(current_block)
+
             # get all functions from smart contract
             d_status = self.state_status_from_sc(block_identifier=current_block)
             d_status["blockHeight"] = current_block
-            d_status["createdAt"] = datetime.datetime.now()
+            d_status["createdAt"] = block_ts
 
             collection_moc_state_status.find_one_and_update(
                 {"blockHeight": current_block},
