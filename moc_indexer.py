@@ -2896,6 +2896,7 @@ class MoCIndexer:
                                                                                                      to_block))
 
         while current_block <= to_block:
+            block_reference = current_block
             self.scan_moc_block(current_block, block_reference, m_client, scan_transfer=scan_transfer)
 
             log.info("[SCAN TX HISTORY] DONE BLOCK HEIGHT: [{0}] / [{1}]".format(current_block, to_block))
