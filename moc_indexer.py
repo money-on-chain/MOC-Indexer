@@ -446,26 +446,40 @@ class MoCIndexer:
         d_moc_state["bproDiscountRate"] = str(self.contract_MoCState.bpro_discount_rate(
             formatted=False,
             block_identifier=block_identifier))
-        d_moc_state["maxBproWithDiscount"] = str(self.contract_MoCState.max_bpro_with_discount(
-            formatted=False,
-            block_identifier=block_identifier))
-        d_moc_state["bproDiscountPrice"] = str(self.contract_MoCState.bpro_discount_price(
-            formatted=False,
-            block_identifier=block_identifier))
+        try:
+            d_moc_state["maxBproWithDiscount"] = str(self.contract_MoCState.max_bpro_with_discount(
+                formatted=False,
+                block_identifier=block_identifier))
+        except HTTPError:
+            log.error("[WARNING] maxBproWithDiscount Exception! [{0}]".format(block_identifier))
+            d_moc_state["maxBproWithDiscount"] = '0'
+
+        try:
+            d_moc_state["bproDiscountPrice"] = str(self.contract_MoCState.bpro_discount_price(
+                formatted=False,
+                block_identifier=block_identifier))
+        except HTTPError:
+            log.error("[WARNING] bproDiscountPrice Exception! [{0}]".format(block_identifier))
+            d_moc_state["bproDiscountPrice"] = '0'
+
         d_moc_state["bprox2PriceInRbtc"] = str(self.contract_MoCState.btc2x_tec_price(
             bucket_x2,
             formatted=False,
             block_identifier=block_identifier))
-        d_moc_state["bprox2PriceInBpro"] = str(self.contract_MoCState.bprox_price(
-            bucket_x2,
-            formatted=False,
-            block_identifier=block_identifier))
+        try:
+            d_moc_state["bprox2PriceInBpro"] = str(self.contract_MoCState.bprox_price(
+                bucket_x2,
+                formatted=False,
+                block_identifier=block_identifier))
+        except HTTPError:
+            log.error("[WARNING] bprox2PriceInBpro Exception! [{0}]".format(block_identifier))
+            d_moc_state["bprox2PriceInBpro"] = '0'
         try:
             d_moc_state["spotInrate"] = str(self.contract_MoCInrate.spot_inrate(
                 formatted=False,
                 block_identifier=block_identifier))
         except HTTPError:
-            log.error("[WARNING] spotInrate Exception")
+            log.error("[WARNING] spotInrate Exception [{0}]".format(block_identifier))
             d_moc_state["spotInrate"] = '0'
 
         d_moc_state["commissionRate"] = str(self.contract_MoCInrate.commission_rate(
