@@ -672,6 +672,11 @@ class MoCIndexer:
             status = 'confirming'
             confirmation_time = None
 
+        # already confirmed in history mode
+        if self.options['index_mode'] in ['history']:
+            status = 'confirmed'
+            confirmation_time = block_ts
+
         # get collection transaction
         collection_tx = self.mm.collection_transaction(m_client)
 
@@ -741,6 +746,11 @@ class MoCIndexer:
         else:
             status = 'confirming'
             confirmation_time = None
+
+        # already confirmed in history mode
+        if self.options['index_mode'] in ['history']:
+            status = 'confirmed'
+            confirmation_time = block_ts
 
         # get collection transaction
         collection_tx = self.mm.collection_transaction(m_client)
@@ -812,6 +822,11 @@ class MoCIndexer:
         else:
             status = 'confirming'
             confirmation_time = None
+
+        # already confirmed in history mode
+        if self.options['index_mode'] in ['history']:
+            status = 'confirmed'
+            confirmation_time = block_ts
 
         # get collection transaction
         collection_tx = self.mm.collection_transaction(m_client)
@@ -888,6 +903,11 @@ class MoCIndexer:
             status = 'confirming'
             confirmation_time = None
 
+        # already confirmed in history mode
+        if self.options['index_mode'] in ['history']:
+            status = 'confirmed'
+            confirmation_time = block_ts
+
         # get collection transaction
         collection_tx = self.mm.collection_transaction(m_client)
 
@@ -963,6 +983,11 @@ class MoCIndexer:
             status = 'confirming'
             confirmation_time = None
 
+        # already confirmed in history mode
+        if self.options['index_mode'] in ['history']:
+            status = 'confirmed'
+            confirmation_time = block_ts
+
         # get collection transaction
         collection_tx = self.mm.collection_transaction(m_client)
 
@@ -1036,6 +1061,11 @@ class MoCIndexer:
             status = 'confirming'
             confirmation_time = None
 
+        # already confirmed in history mode
+        if self.options['index_mode'] in ['history']:
+            status = 'confirmed'
+            confirmation_time = block_ts
+
         # get collection transaction
         collection_tx = self.mm.collection_transaction(m_client)
 
@@ -1108,6 +1138,11 @@ class MoCIndexer:
         else:
             status = 'confirming'
             confirmation_time = None
+
+        # already confirmed in history mode
+        if self.options['index_mode'] in ['history']:
+            status = 'confirmed'
+            confirmation_time = block_ts
 
         # get collection transaction
         collection_tx = self.mm.collection_transaction(m_client)
@@ -1290,6 +1325,11 @@ class MoCIndexer:
         else:
             status = 'confirming'
             confirmation_time = None
+
+        # already confirmed in history mode
+        if self.options['index_mode'] in ['history']:
+            status = 'confirmed'
+            confirmation_time = block_ts
 
         # get collection transaction
         collection_tx = self.mm.collection_transaction(m_client)
@@ -1507,6 +1547,11 @@ class MoCIndexer:
             status = 'confirming'
             confirmation_time = None
 
+        # already confirmed in history mode
+        if self.options['index_mode'] in ['history']:
+            status = 'confirmed'
+            confirmation_time = block_ts
+
         # get collection transaction
         collection_tx = self.mm.collection_transaction(m_client)
 
@@ -1595,6 +1640,11 @@ class MoCIndexer:
         else:
             status = 'confirming'
             confirmation_time = None
+
+        # already confirmed in history mode
+        if self.options['index_mode'] in ['history']:
+            status = 'confirmed'
+            confirmation_time = block_ts
 
         # get collection transaction
         collection_tx = self.mm.collection_transaction(m_client)
@@ -1914,6 +1964,11 @@ class MoCIndexer:
             status = 'confirming'
             confirmation_time = None
 
+        # already confirmed in history mode
+        if self.options['index_mode'] in ['history']:
+            status = 'confirmed'
+            confirmation_time = block_ts
+
         # get collection transaction
         collection_tx = self.mm.collection_transaction(m_client)
 
@@ -2088,6 +2143,11 @@ class MoCIndexer:
         else:
             status = 'confirming'
             confirmation_time = None
+
+        # already confirmed in history mode
+        if self.options['index_mode'] in ['history']:
+            status = 'confirmed'
+            confirmation_time = block_ts
 
         network = self.connection_manager.network
         address_from_contract = '0x0000000000000000000000000000000000000000'
@@ -2458,6 +2518,11 @@ class MoCIndexer:
             status = 'confirming'
             confirmation_time = None
 
+        # already confirmed in history mode
+        if self.options['index_mode'] in ['history']:
+            status = 'confirmed'
+            confirmation_time = block_ts
+
         network = self.connection_manager.network
         moc_addresses = self.connection_manager.options['networks'][network]['addresses']
 
@@ -2528,6 +2593,11 @@ class MoCIndexer:
         else:
             status = 'confirming'
             confirmation_time = None
+
+        # already confirmed in history mode
+        if self.options['index_mode'] in ['history']:
+            status = 'confirmed'
+            confirmation_time = block_ts
 
         network = self.connection_manager.network
         moc_addresses = self.connection_manager.options['networks'][network]['addresses']
@@ -2905,12 +2975,6 @@ class MoCIndexer:
                                               {'$set': {'last_moc_block': current_block,
                                                         'updatedAt': datetime.datetime.now()}},
                                               upsert=True)
-
-            # block in the future is
-            block_in_the_future = current_block + 12
-            if block_in_the_future <= last_block:
-                block_in_the_future_ts = self.connection_manager.block_timestamp(block_in_the_future)
-                self.scan_transaction_status_block(m_client, block_in_the_future, block_in_the_future_ts)
 
             # Go to next block
             current_block += 1

@@ -213,12 +213,24 @@ class JobsIndexer:
         interval = self.options['tasks']['scan_moc_state_status']['interval']
         self.tl._add_job(self.task_scan_moc_state_status_history, datetime.timedelta(seconds=interval))
 
+    def add_jobs_tx_history(self):
+
+        log.info("Starting adding tx history jobs...")
+
+        # creating the alarm
+        self.aws_put_metric_heart_beat(0)
+
+        # task_scan_moc_blocks_history
+        log.info("Jobs add task_scan_moc_blocks_history")
+        interval = self.options['tasks']['scan_moc_blocks']['interval']
+        self.tl._add_job(self.task_scan_moc_blocks_history, datetime.timedelta(seconds=interval))
+
     def time_loop_start(self):
 
         if self.options['index_mode'] in ['normal']:
             self.add_jobs()
         elif self.options['index_mode'] in ['history']:
-            self.add_jobs_history()
+            self.add_jobs_tx_history()
         else:
             raise Exception("Index mode not recognize")
 

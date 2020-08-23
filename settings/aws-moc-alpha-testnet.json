@@ -23,8 +23,8 @@
     "scan_moc_state_status_history": {"interval":  60}
   },
   "scan_moc_history": {
-    "from_block": 1104666,
-    "to_block": 1106533,
+    "from_block": 1079251,
+    "to_block": 1104666,
     "force_start": true
   },
   "scan_moc_blocks": {
