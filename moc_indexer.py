@@ -672,6 +672,11 @@ class MoCIndexer:
             status = 'confirming'
             confirmation_time = None
 
+        log.info("BLOCK HEIGHT:")
+        log.info(block_height)
+        log.info("BLOCK CURRENT HEIGHT:")
+        log.info(block_height_current)
+
         # get collection transaction
         collection_tx = self.mm.collection_transaction(m_client)
 
@@ -2498,8 +2503,8 @@ class MoCIndexer:
         d_tx["status"] = status
         d_tx["reserveSymbol"] = reserve_symbol
         d_tx["processLogs"] = True
-        usd_amount = Web3.fromWei(tx_event.value, 'ether') * Web3.fromWei(last_price['bitcoinPrice'], 'ether')
-        d_tx["USDAmount"] = str(int(usd_amount * self.precision))
+        #usd_amount = Web3.fromWei(tx_event.value, 'ether') * Web3.fromWei(last_price['bitcoinPrice'], 'ether')
+        #d_tx["USDAmount"] = str(int(usd_amount * self.precision))
         d_tx["createdAt"] = block_ts
 
         post_id = collection_tx.find_one_and_update(
@@ -2570,9 +2575,8 @@ class MoCIndexer:
         d_tx["status"] = status
         d_tx["reserveSymbol"] = reserve_symbol
         d_tx["processLogs"] = True
-
-        usd_amount = Web3.fromWei(moc_tx['value'], 'ether') * Web3.fromWei(last_price['bitcoinPrice'], 'ether')
-        d_tx["USDAmount"] = str(int(usd_amount * self.precision))
+        #usd_amount = Web3.fromWei(moc_tx['value'], 'ether') * Web3.fromWei(last_price['bitcoinPrice'], 'ether')
+        #d_tx["USDAmount"] = str(int(usd_amount * self.precision))
         d_tx["createdAt"] = block_ts
 
         post_id = collection_tx.find_one_and_update(
@@ -2886,9 +2890,6 @@ class MoCIndexer:
                 log.info("[SCAN TX HISTORY] Its not the time to run indexer no new blocks avalaible!")
             return
 
-        # block reference is the last block, is to compare to... except you specified in the settings
-        block_reference = from_block
-
         # start with from block
         current_block = from_block
 
@@ -2897,8 +2898,7 @@ class MoCIndexer:
                                                                                                      to_block))
 
         while current_block <= to_block:
-            block_reference = current_block
-            self.scan_moc_block(current_block, block_reference, m_client, scan_transfer=scan_transfer)
+            self.scan_moc_block(current_block, last_block, m_client, scan_transfer=scan_transfer)
 
             log.info("[SCAN TX HISTORY] DONE BLOCK HEIGHT: [{0}] / [{1}]".format(current_block, to_block))
             collection_moc_indexer_history.update_one({},
