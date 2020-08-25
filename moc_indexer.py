@@ -2426,6 +2426,8 @@ class MoCIndexer:
         d_user_balance = self.balances_from_address(account_address, block_height)
         d_user_balance['block_height'] = block_height
 
+        log.info(d_user_balance)
+
         if not user_state:
             # if the user not exist in the database created but default info
             d_user_balance["prefLanguage"] = 'en'
