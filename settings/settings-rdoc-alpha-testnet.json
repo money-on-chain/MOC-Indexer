@@ -7,7 +7,7 @@
   "timeout_wait": 300,
   "gas_price": 60000000,
   "debug": true,
-  "index_mode": "history",
+  "index_mode": "normal",
   "tasks": {
     "scan_moc_blocks": {"interval":  20},
     "scan_moc_prices": {"interval":  25},
@@ -23,8 +23,8 @@
     "scan_moc_state_status_history": {"interval":  60}
   },
   "scan_moc_history": {
-    "from_block": 1047640,
-    "to_block": 1047650,
+    "from_block": 943660,
+    "to_block": 943680,
     "force_start": true
   },
   "scan_moc_blocks": {
