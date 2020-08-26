@@ -190,6 +190,10 @@ class JobsIndexer:
 
         log.info("Starting adding history jobs...")
 
+        force_start = self.options['scan_moc_history']['force_start']
+        if force_start:
+            self.moc_indexer.force_start_history()
+
         # creating the alarm
         self.aws_put_metric_heart_beat(0)
 
