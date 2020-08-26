@@ -288,10 +288,17 @@ class MoCIndexer:
             address,
             formatted=False,
             block_identifier=block_height))
-        d_user_balance["rbtcBalance"] = str(self.contract_MoC.rbtc_balance_of(
-            address,
-            formatted=False,
-            block_identifier=block_height))
+        if self.app_mode == "RRC20":
+            d_user_balance["rbtcBalance"] = str(self.contract_MoC.reserve_balance_of(
+                address,
+                formatted=False,
+                block_identifier=block_height))
+        else:
+            d_user_balance["rbtcBalance"] = str(self.contract_MoC.rbtc_balance_of(
+                address,
+                formatted=False,
+                block_identifier=block_height))
+
         d_user_balance["docToRedeem"] = str(self.contract_MoC.doc_amount_to_redeem(
             address,
             formatted=False,
