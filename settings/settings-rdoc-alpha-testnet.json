@@ -25,12 +25,14 @@
   "scan_moc_history": {
     "from_block": 943660,
     "to_block": 943680,
-    "force_start": true
+    "force_start": true,
+    "blocks_recession": 2
   },
   "scan_moc_blocks": {
     "confirm_blocks": 10,
     "blocks_look_behind": 10,
-    "seconds_not_in_chain_error": 600
+    "seconds_not_in_chain_error": 600,
+    "blocks_recession": 2
   },
   "scan_moc_state": {
     "block_height": 0

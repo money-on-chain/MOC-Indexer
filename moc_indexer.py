@@ -2821,8 +2821,12 @@ class MoCIndexer:
         # conect to mongo db
         m_client = self.mm.connect()
 
-        # get last block from node
-        last_block = self.connection_manager.block_number
+        # get the block recesion is a margin of problems to not get the inmediat new instead
+        # 2 older blocks from new.
+        config_blocks_recession = self.options['scan_moc_blocks']['blocks_recession']
+
+        # get last block from node compare 2 blocks older than new
+        last_block = self.connection_manager.block_number - config_blocks_recession
 
         collection_moc_indexer = self.mm.collection_moc_indexer(m_client)
         moc_index = collection_moc_indexer.find_one(sort=[("updatedAt", -1)])
@@ -2876,8 +2880,12 @@ class MoCIndexer:
 
         start_time = time.time()
 
-        # get last block from node
-        last_block = self.connection_manager.block_number
+        # get the block recesion is a margin of problems to not get the inmediat new instead
+        # 2 older blocks from new.
+        config_blocks_recession = self.options['scan_moc_blocks']['blocks_recession']
+
+        # get last block from node compare 2 blocks older than new
+        last_block = self.connection_manager.block_number - config_blocks_recession
 
         # conect to mongo db
         m_client = self.mm.connect()
