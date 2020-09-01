@@ -69,12 +69,12 @@ sudo su builder -s /bin/bash
 
  Where environment could be
 
-* moc-alphatestnet: alpha-testnet.moneyonchain.com
-* moc-testnet: moc-testnet.moneyonchain.com
-* moc-mainnet: alpha.moneyonchain.com
-* rdoc-mainnet: rif.moneyonchain.com
-* rdoc-testnet: rif-testnet.moneyonchain.com
-* rdoc-alpha-testnet: rif-alpha.moneyonchain.com
+* ec2_alphatestnet: alpha-testnet.moneyonchain.com
+* ec2_testnet: moc-testnet.moneyonchain.com
+* ec2_mainnet: alpha.moneyonchain.com
+* ec2_rdoc_mainnet: rif.moneyonchain.com
+* ec2_rdoc_testnet: rif-testnet.moneyonchain.com
+* ec2_rdoc_alphatestnet: rif-alpha.moneyonchain.com
 
 Finally it will build the docker image.
 
@@ -90,7 +90,7 @@ Make sure you have built your image before pushing it. Then execute **./tag_and_
 This script will tag with _latest_ and push to the proper repository.
 
 ```
-$ ./tag_and_push.sh -e moc-alphatestnet
+$ ./tag_and_push.sh -e ec2_alphatestnet
 ```
 
 Result 
