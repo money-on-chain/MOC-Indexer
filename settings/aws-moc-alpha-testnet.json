@@ -7,7 +7,7 @@
   "timeout_wait": 300,
   "gas_price": 60000000,
   "debug": true,
-  "index_mode": "history",
+  "index_mode": "normal",
   "tasks": {
     "scan_moc_blocks": {"interval":  20},
     "scan_moc_prices": {"interval":  25},
@@ -26,13 +26,13 @@
     "from_block": 1079251,
     "to_block": 1104666,
     "force_start": true,
-    "blocks_recession": 2
+    "blocks_recession": 1
   },
   "scan_moc_blocks": {
     "confirm_blocks": 10,
-    "blocks_look_behind": 60,
+    "blocks_look_behind": 100,
     "seconds_not_in_chain_error": 600,
-    "blocks_recession": 2
+    "blocks_recession": 1
   },
   "scan_moc_state": {
     "block_height": 0
@@ -51,12 +51,12 @@
       "chain_id": 31,
       "accounts": [
         {
-          "address": "0xAb242e50E95C2f539242763A4eD5Db1aEE5ce461",
+          "address": "0xB7d4B3c37d17D66B88da41e8A87561323A6DBDA0",
           "private_key": ""
         }
       ],
       "addresses": {
-        "MoC": "0xE02f9AE8fe5Da307b6C7cd928AEa380392f5a395"
+        "MoC": "0x01AD6f8E884ed4DDC089fA3efC075E9ba45C9039"
       }
 
     }
