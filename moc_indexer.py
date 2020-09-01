@@ -248,22 +248,23 @@ class MoCIndexer:
         self.debug_mode = self.options['debug']
 
         if self.app_mode == "RRC20":
-            self.contract_MoC = RDOCMoC(self.connection_manager)
-            self.contract_MoCState = RDOCMoCState(self.connection_manager)
-            self.contract_MoCInrate = RDOCMoCInrate(self.connection_manager)
-            self.contract_MoCSettlement = RDOCMoCSettlement(self.connection_manager)
-            self.contract_ReserveToken = RIF(self.connection_manager)
-            self.contract_StableToken = RIFDoC(self.connection_manager)
-            self.contract_RiskProToken = RIFPro(self.connection_manager)
-            self.contract_MoCMedianizer = RDOCMoCMedianizer(self.connection_manager)
+            self.contract_MoC = RDOCMoC(self.connection_manager, contracts_discovery=True)
         else:
-            self.contract_MoC = MoC(self.connection_manager)
-            self.contract_MoCState = MoCState(self.connection_manager)
-            self.contract_MoCInrate = MoCInrate(self.connection_manager)
-            self.contract_MoCSettlement = MoCSettlement(self.connection_manager)
-            self.contract_StableToken = DoCToken(self.connection_manager)
-            self.contract_RiskProToken = BProToken(self.connection_manager)
-            self.contract_MoCMedianizer = MoCMedianizer(self.connection_manager)
+            self.contract_MoC = MoC(self.connection_manager, contracts_discovery=True)
+
+        self.contract_MoCState = self.contract_MoC.sc_moc_state
+        self.contract_MoCInrate = self.contract_MoC.sc_moc_inrate
+        self.contract_MoCSettlement = self.contract_MoC.sc_moc_settlement
+        self.contract_StableToken = self.contract_MoC.sc_moc_doc_token
+        self.contract_RiskProToken = self.contract_MoC.sc_moc_bpro_token
+
+        if self.app_mode == "RRC20":
+            self.contract_MoCMedianizer = RDOCMoCMedianizer(self.connection_manager,
+                                                            contract_address=self.contract_MoCState.price_provider())
+            self.contract_ReserveToken = self.contract_MoC.sc_reserve_token
+        else:
+            self.contract_MoCMedianizer = MoCMedianizer(self.connection_manager,
+                                                        contract_address=self.contract_MoCState.price_provider())
 
         # initialize mongo db
         self.mm = MongoManager(self.options)

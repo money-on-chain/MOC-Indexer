@@ -1,45 +1,53 @@
 {
   "mongo": {
-    "uri": "mongodb://192.168.56.2:27017/",
-    "db": "local_rdoc_alpha_testnet"
+    "uri": "mongodb://rdocAlphaTestnetUserMoc:tributarytransposemassagerfaceplate@moc-mongotest-rs1.moneyonchain.com:3001,moc-mongotest-rs2.moneyonchain.com:3002,moc-mongotest-rs3.moneyonchain.com:3003/rdoc_alpha_testnet?authSource=rdoc_alpha_testnet&replicaSet=rsalphatest",
+    "db": "rdoc_alpha_testnet"
   },
   "timeout": 60,
   "timeout_wait": 300,
   "gas_price": 60000000,
-  "debug": false,
+  "debug": true,
+  "index_mode": "normal",
   "tasks": {
     "scan_moc_blocks": {"interval":  20},
     "scan_moc_prices": {"interval":  25},
     "scan_moc_state": {"interval":  30},
     "scan_moc_status": {"interval":  10},
-    "scan_moc_state_status": {"interval":  10}
+    "scan_moc_state_status": {"interval":  10},
+    "scan_user_state_update": {"interval":  10},
+    "scan_moc_blocks_not_processed": {"interval":  60},
+    "scan_moc_blocks_history": {"interval":  60},
+    "scan_moc_prices_history": {"interval":  60},
+    "scan_moc_state_history": {"interval":  60},
+    "scan_moc_status_history": {"interval":  60},
+    "scan_moc_state_status_history": {"interval":  60}
+  },
+  "scan_moc_history": {
+    "from_block": 1079251,
+    "to_block": 1104666,
+    "force_start": true,
+    "blocks_recession": 1
   },
   "scan_moc_blocks": {
-    "block_start": 0,
-    "block_end": 0,
-    "block_reference": 0,
     "confirm_blocks": 10,
-    "blocks_look_behind": 10,
-    "seconds_not_in_chain_error": 600
+    "blocks_look_behind": 1000,
+    "seconds_not_in_chain_error": 600,
+    "blocks_recession": 2
   },
   "scan_moc_state": {
     "block_height": 0
   },
   "scan_moc_prices": {
-    "block_start": 0,
-    "block_end": 0,
-    "blocks_look_behind": 10
+    "blocks_look_behind": 60
   },
   "scan_moc_state_status": {
-    "block_start": 0,
-    "block_end": 0,
-    "blocks_look_behind": 10
+    "blocks_look_behind": 60
   },
   "networks": {
     "rdocTestnetAlpha": {
       "app_mode": "RRC20",
       "project": "RDoC",
-      "uri": ["https://public-node.testnet.rsk.co"],
+      "uri": ["http://moc-rsk-node-testnet.moneyonchain.com:4454"],
       "chain_id": 31,
       "accounts": [
         {
