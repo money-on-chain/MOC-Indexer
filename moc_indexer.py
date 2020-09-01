@@ -590,31 +590,57 @@ class MoCIndexer:
 
         return d_price
 
-    def moc_contract_addresses(self):
+    # def moc_contract_addresses(self):
+    #
+    #     network = self.connection_manager.network
+    #
+    #     moc_addresses = list()
+    #     moc_addresses.append(
+    #         str.lower(self.connection_manager.options['networks'][network]['addresses']['MoC']))
+    #     moc_addresses.append(
+    #         str.lower(self.connection_manager.options['networks'][network]['addresses']['MoCSettlement']))
+    #     moc_addresses.append(
+    #         str.lower(self.connection_manager.options['networks'][network]['addresses']['MoCExchange']))
+    #     moc_addresses.append(
+    #         str.lower(self.connection_manager.options['networks'][network]['addresses']['BProToken']))
+    #     moc_addresses.append(
+    #         str.lower(self.connection_manager.options['networks'][network]['addresses']['DoCToken']))
+    #     moc_addresses.append(
+    #         str.lower(self.connection_manager.options['networks'][network]['addresses']['MoCState']))
+    #     moc_addresses.append(
+    #         str.lower(self.connection_manager.options['networks'][network]['addresses']['MoCInrate']))
+    #     moc_addresses.append(
+    #         str.lower(self.connection_manager.options['networks'][network]['addresses']['oracle']))
+    #
+    #     if self.app_mode == 'RRC20':
+    #         moc_addresses.append(
+    #             str.lower(self.connection_manager.options['networks'][network]['addresses']['ReserveToken']))
+    #
+    #     return moc_addresses
 
-        network = self.connection_manager.network
+    def moc_contract_addresses(self):
 
         moc_addresses = list()
         moc_addresses.append(
-            str.lower(self.connection_manager.options['networks'][network]['addresses']['MoC']))
+            str.lower(self.contract_MoC.address()))
         moc_addresses.append(
-            str.lower(self.connection_manager.options['networks'][network]['addresses']['MoCSettlement']))
+            str.lower(self.contract_MoCSettlement.address()))
         moc_addresses.append(
-            str.lower(self.connection_manager.options['networks'][network]['addresses']['MoCExchange']))
+            str.lower(self.contract_MoC.sc_moc_exchange.address()))
         moc_addresses.append(
-            str.lower(self.connection_manager.options['networks'][network]['addresses']['BProToken']))
+            str.lower(self.contract_RiskProToken.address()))
         moc_addresses.append(
-            str.lower(self.connection_manager.options['networks'][network]['addresses']['DoCToken']))
+            str.lower(self.contract_StableToken.address()))
         moc_addresses.append(
-            str.lower(self.connection_manager.options['networks'][network]['addresses']['MoCState']))
+            str.lower(self.contract_MoCState.address()))
         moc_addresses.append(
-            str.lower(self.connection_manager.options['networks'][network]['addresses']['MoCInrate']))
+            str.lower(self.contract_MoCInrate.address()))
         moc_addresses.append(
-            str.lower(self.connection_manager.options['networks'][network]['addresses']['oracle']))
+            str.lower(self.contract_MoCMedianizer.address()))
 
         if self.app_mode == 'RRC20':
             moc_addresses.append(
-                str.lower(self.connection_manager.options['networks'][network]['addresses']['ReserveToken']))
+                str.lower(self.contract_ReserveToken.address()))
 
         return moc_addresses
 
@@ -1193,15 +1219,34 @@ class MoCIndexer:
             # return if there are no logs
             return
 
-        network = self.connection_manager.network
-        moc_addresses = self.connection_manager.options['networks'][network]['addresses']
+        """
+        moc_addresses = list()
+        moc_addresses.append(
+            str.lower(self.contract_MoC.address()))
+        moc_addresses.append(
+            str.lower(self.contract_MoCSettlement.address()))
+        moc_addresses.append(
+            str.lower(self.contract_MoC.sc_moc_exchange.address()))
+        moc_addresses.append(
+            str.lower(self.contract_RiskProToken.address()))
+        moc_addresses.append(
+            str.lower(self.contract_StableToken.address()))
+        moc_addresses.append(
+            str.lower(self.contract_MoCState.address()))
+        moc_addresses.append(
+            str.lower(self.contract_MoCInrate.address()))
+        moc_addresses.append(
+            str.lower(self.contract_MoCMedianizer.address()))
+        """
+
+        exchange_address = self.contract_MoC.sc_moc_exchange.address()
 
         events = self.contract_MoC.sc_moc_exchange.events
 
         # RiskProMint
         tx_logs = events.RiskProMint().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
-            if str(tx_log['address']).lower() == str(moc_addresses['MoCExchange']).lower():
+            if str(tx_log['address']).lower() == str(exchange_address).lower():
                 tx_event = MoCExchangeRiskProMint(self.connection_manager, tx_log)
                 self.moc_exchange_risk_pro_mint(tx_receipt,
                                                 tx_event,
@@ -1214,7 +1259,7 @@ class MoCIndexer:
         # RiskProRedeem
         tx_logs = events.RiskProRedeem().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
-            if str(tx_log['address']).lower() == str(moc_addresses['MoCExchange']).lower():
+            if str(tx_log['address']).lower() == str(exchange_address).lower():
                 tx_event = MoCExchangeRiskProRedeem(self.connection_manager, tx_log)
                 self.moc_exchange_risk_pro_redeem(tx_receipt,
                                                   tx_event,
@@ -1227,7 +1272,7 @@ class MoCIndexer:
         # RiskProxMint
         tx_logs = events.RiskProxMint().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
-            if str(tx_log['address']).lower() == str(moc_addresses['MoCExchange']).lower():
+            if str(tx_log['address']).lower() == str(exchange_address).lower():
                 tx_event = MoCExchangeRiskProxMint(self.connection_manager, tx_log)
                 self.moc_exchange_risk_prox_mint(tx_receipt,
                                                  tx_event,
@@ -1240,7 +1285,7 @@ class MoCIndexer:
         # RiskProxRedeem
         tx_logs = events.RiskProxRedeem().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
-            if str(tx_log['address']).lower() == str(moc_addresses['MoCExchange']).lower():
+            if str(tx_log['address']).lower() == str(exchange_address).lower():
                 tx_event = MoCExchangeRiskProxRedeem(self.connection_manager, tx_log)
                 self.moc_exchange_risk_prox_redeem(tx_receipt,
                                                    tx_event,
@@ -1253,7 +1298,7 @@ class MoCIndexer:
         # StableTokenMint
         tx_logs = events.StableTokenMint().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
-            if str(tx_log['address']).lower() == str(moc_addresses['MoCExchange']).lower():
+            if str(tx_log['address']).lower() == str(exchange_address).lower():
                 tx_event = MoCExchangeStableTokenMint(self.connection_manager, tx_log)
                 self.moc_exchange_stable_token_mint(tx_receipt,
                                                     tx_event,
@@ -1266,7 +1311,7 @@ class MoCIndexer:
         # StableTokenRedeem
         tx_logs = events.StableTokenRedeem().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
-            if str(tx_log['address']).lower() == str(moc_addresses['MoCExchange']).lower():
+            if str(tx_log['address']).lower() == str(exchange_address).lower():
                 tx_event = MoCExchangeStableTokenRedeem(self.connection_manager, tx_log)
                 self.moc_exchange_stable_token_redeem(tx_receipt,
                                                       tx_event,
@@ -1279,7 +1324,7 @@ class MoCIndexer:
         # FreeStableTokenRedeem
         tx_logs = events.FreeStableTokenRedeem().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
-            if str(tx_log['address']).lower() == str(moc_addresses['MoCExchange']).lower():
+            if str(tx_log['address']).lower() == str(exchange_address).lower():
                 tx_event = MoCExchangeFreeStableTokenRedeem(self.connection_manager, tx_log)
                 self.moc_exchange_free_stable_token_redeem(tx_receipt,
                                                            tx_event,
@@ -1687,15 +1732,14 @@ class MoCIndexer:
             # return if there are no logs
             return
 
-        network = self.connection_manager.network
-        moc_addresses = self.connection_manager.options['networks'][network]['addresses']
+        settlement_address = self.contract_MoCSettlement.address()
 
         events = self.contract_MoC.sc_moc_settlement.events
 
         # SettlementStarted
         tx_logs = events.SettlementStarted().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
-            if str(tx_log['address']).lower() == str(moc_addresses['MoCSettlement']).lower():
+            if str(tx_log['address']).lower() == str(settlement_address).lower():
                 tx_event = MoCSettlementSettlementStarted(self.connection_manager, tx_log)
                 self.moc_settlement_started(tx_receipt, tx_event, m_client)
                 self.update_settlement_state(tx_event, m_client, block_ts)
@@ -1703,7 +1747,7 @@ class MoCIndexer:
         # RedeemRequestAlter
         tx_logs = events.RedeemRequestAlter().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
-            if str(tx_log['address']).lower() == str(moc_addresses['MoCSettlement']).lower():
+            if str(tx_log['address']).lower() == str(settlement_address).lower():
                 tx_event = MoCSettlementRedeemRequestAlter(self.connection_manager, tx_log)
                 self.moc_settlement_redeem_request_alter(tx_receipt,
                                                          tx_event,
@@ -1716,7 +1760,7 @@ class MoCIndexer:
         # RedeemRequestProcessed
         tx_logs = events.RedeemRequestProcessed().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
-            if str(tx_log['address']).lower() == str(moc_addresses['MoCSettlement']).lower():
+            if str(tx_log['address']).lower() == str(settlement_address).lower():
                 tx_event = MoCSettlementRedeemRequestProcessed(self.connection_manager, tx_log)
                 self.moc_settlement_redeem_request_processed(tx_receipt,
                                                              tx_event,
@@ -1729,7 +1773,7 @@ class MoCIndexer:
         # SettlementRedeemStableToken
         tx_logs = events.SettlementRedeemStableToken().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
-            if str(tx_log['address']).lower() == str(moc_addresses['MoCSettlement']).lower():
+            if str(tx_log['address']).lower() == str(settlement_address).lower():
                 tx_event = MoCSettlementSettlementRedeemStableToken(self.connection_manager, tx_log)
                 self.moc_settlement_redeem_stable_token(tx_receipt,
                                                         tx_event,
@@ -1743,7 +1787,7 @@ class MoCIndexer:
         # SettlementDeleveraging
         tx_logs = events.SettlementDeleveraging().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
-            if str(tx_log['address']).lower() == str(moc_addresses['MoCSettlement']).lower():
+            if str(tx_log['address']).lower() == str(settlement_address).lower():
                 tx_event = MoCSettlementSettlementDeleveraging(self.connection_manager, tx_log)
                 self.moc_settlement_deleveraging(tx_receipt,
                                                  tx_event,
@@ -1757,7 +1801,7 @@ class MoCIndexer:
         # SettlementCompleted
         tx_logs = events.SettlementCompleted().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
-            if str(tx_log['address']).lower() == str(moc_addresses['MoCSettlement']).lower():
+            if str(tx_log['address']).lower() == str(settlement_address).lower():
                 tx_event = MoCSettlementSettlementCompleted(self.connection_manager, tx_log)
                 self.moc_settlement_completed(tx_receipt,
                                               tx_event,
@@ -1892,15 +1936,14 @@ class MoCIndexer:
             # return if there are no logs
             return
 
-        network = self.connection_manager.network
-        moc_addresses = self.connection_manager.options['networks'][network]['addresses']
+        inrate_address = self.contract_MoCInrate.address()
 
         events = self.contract_MoC.sc_moc_inrate.events
 
         # InrateDailyPay
         tx_logs = events.InrateDailyPay().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
-            if str(tx_log['address']).lower() == str(moc_addresses['MoCInrate']).lower():
+            if str(tx_log['address']).lower() == str(inrate_address).lower():
                 tx_event = MoCInrateDailyPay(self.connection_manager, tx_log)
                 self.moc_inrate_daily_pay(tx_receipt, tx_event, m_client, block_ts)
                 self.moc_inrate_daily_pay_notification(tx_receipt, tx_event, tx_log, m_client)
@@ -1908,7 +1951,7 @@ class MoCIndexer:
         # RiskProHoldersInterestPay
         tx_logs = events.RiskProHoldersInterestPay().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
-            if str(tx_log['address']).lower() == str(moc_addresses['MoCInrate']).lower():
+            if str(tx_log['address']).lower() == str(inrate_address).lower():
                 tx_event = MoCInrateRiskProHoldersInterestPay(self.connection_manager, tx_log)
                 self.moc_inrate_risk_pro_holders_interest_pay(tx_receipt, tx_event, m_client, block_ts)
                 self.moc_inrate_risk_pro_holders_interest_pay_notification(tx_receipt, tx_log, tx_event, m_client)
@@ -2023,15 +2066,14 @@ class MoCIndexer:
             # return if there are no logs
             return
 
-        network = self.connection_manager.network
-        moc_addresses = self.connection_manager.options['networks'][network]['addresses']
+        moc_address = self.contract_MoC.address()
 
         events = self.contract_MoC.events
 
         # BucketLiquidation
         tx_logs = events.BucketLiquidation().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
-            if str(tx_log['address']).lower() == str(moc_addresses['MoC']).lower():
+            if str(tx_log['address']).lower() == str(moc_address).lower():
                 tx_event = MoCBucketLiquidation(self.connection_manager, tx_log)
                 self.moc_bucket_liquidation(tx_receipt,
                                             tx_event,
@@ -2075,15 +2117,12 @@ class MoCIndexer:
             # return if there are no logs
             return
 
-        network = self.connection_manager.network
-        moc_addresses = self.connection_manager.options['networks'][network]['addresses']
-
         events = self.contract_MoC.sc_moc_state.events
 
         # StateTransition
         tx_logs = events.StateTransition().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
-            if str(tx_log['address']).lower() == str(moc_addresses['MoCState']).lower():
+            if str(tx_log['address']).lower() == str(self.contract_MoCState.address()).lower():
                 tx_event = MoCStateStateTransition(self.connection_manager, tx_log)
                 self.moc_state_transition(tx_receipt, tx_event, m_client)
                 self.moc_state_transition_notification(tx_receipt, tx_event, tx_log, m_client)
@@ -2105,9 +2144,9 @@ class MoCIndexer:
             status = 'confirming'
             confirmation_time = None
 
-        network = self.connection_manager.network
         address_from_contract = '0x0000000000000000000000000000000000000000'
-        addresses_moc = self.connection_manager.options['networks'][network]['addresses']['MoC']
+        addresses_moc = self.contract_MoC.address()
+
         address_not_allowed = [str.lower(address_from_contract), str.lower(addresses_moc)]
         if str.lower(tx_event.e_from) in address_not_allowed or \
                 str.lower(tx_event.e_to) in address_not_allowed:
@@ -2208,9 +2247,9 @@ class MoCIndexer:
 
         """ Only update balance on transfer reserve"""
 
-        network = self.connection_manager.network
         address_from_contract = '0x0000000000000000000000000000000000000000'
-        addresses_moc = self.connection_manager.options['networks'][network]['addresses']['MoC']
+
+        addresses_moc = self.contract_MoC.address()
         address_not_allowed = [str.lower(address_from_contract), str.lower(addresses_moc)]
         if str.lower(tx_event.e_from) in address_not_allowed or \
                 str.lower(tx_event.e_to) in address_not_allowed:
@@ -2261,10 +2300,8 @@ class MoCIndexer:
             # return if there are no logs
             return
 
-        network = self.connection_manager.network
-        moc_addresses = self.connection_manager.options['networks'][network]['addresses']
-        token_riskpro = moc_addresses['BProToken']
-        token_stable = moc_addresses['DoCToken']
+        token_riskpro = self.contract_StableToken.address()
+        token_stable = self.contract_RiskProToken.address()
 
         # RiskProToken Transfer
         tx_logs = self.contract_RiskProToken.events.Transfer().processReceipt(tx_receipt, errors=DISCARD)
@@ -2295,7 +2332,7 @@ class MoCIndexer:
         # Reserve
         if self.app_mode == 'RRC20':
             # To update balance
-            token_reserve = moc_addresses['ReserveToken']
+            token_reserve = self.contract_ReserveToken.address()  #moc_addresses['ReserveToken']
             tx_logs = self.contract_ReserveToken.events.Transfer().processReceipt(tx_receipt, errors=DISCARD)
             for tx_log in tx_logs:
                 if str(tx_log['address']).lower() == str(token_reserve).lower():
@@ -2358,14 +2395,11 @@ class MoCIndexer:
 
     def update_user_state_approval(self, tx_event, m_client):
 
-        network = self.connection_manager.network
-        moc_addresses = self.connection_manager.options['networks'][network]['addresses']
-
         user_address = tx_event.owner
         contract_address = tx_event.spender
         block_identifier = tx_event.blockNumber
 
-        if str.lower(contract_address) not in [str.lower(moc_addresses['MoC'])]:
+        if str.lower(contract_address) not in [str.lower(self.contract_MoC.address())]:
             # Approval is not from our contract
             return
 
@@ -2377,15 +2411,12 @@ class MoCIndexer:
             # return if there are no logs
             return
 
-        network = self.connection_manager.network
-        moc_addresses = self.connection_manager.options['networks'][network]['addresses']
-
         events = self.contract_ReserveToken.events
 
         # Approval
         tx_logs = events.Approval().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
-            if str(tx_log['address']).lower() == str(moc_addresses['ReserveToken']).lower():
+            if str(tx_log['address']).lower() == str(self.contract_ReserveToken.address()).lower():
                 tx_event = ERC20Approval(self.connection_manager, tx_log)
                 self.update_user_state_approval(tx_event, m_client)
 
@@ -2400,11 +2431,8 @@ class MoCIndexer:
             # return if there are no logs
             return
 
-        network = self.connection_manager.network
-        moc_addresses = self.connection_manager.options['networks'][network]['addresses']
-
         # To update balance
-        token_reserve = moc_addresses['ReserveToken']
+        token_reserve = self.contract_ReserveToken.address()
         tx_logs = self.contract_ReserveToken.events.Transfer().processReceipt(tx_receipt, errors=DISCARD)
         for tx_log in tx_logs:
             if str(tx_log['address']).lower() == str(token_reserve).lower():
