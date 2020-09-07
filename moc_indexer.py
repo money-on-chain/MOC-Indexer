@@ -2300,8 +2300,8 @@ class MoCIndexer:
             # return if there are no logs
             return
 
-        token_riskpro = self.contract_StableToken.address()
-        token_stable = self.contract_RiskProToken.address()
+        token_riskpro = self.contract_RiskProToken.address()
+        token_stable = self.contract_StableToken.address()
 
         # RiskProToken Transfer
         tx_logs = self.contract_RiskProToken.events.Transfer().processReceipt(tx_receipt, errors=DISCARD)
