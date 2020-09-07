@@ -41,6 +41,14 @@ Make sure to change **settings/settings-xxx.json** to point to your mongo db.
 **--network=mocTestnetAlpha:** Network name in the json
 
 
+**Example**
+
+Make sure to change **settings/settings-moc-alpha-testnet.json** to point to your **mongo db**.
+
+`python ./app_run_indexer.py --config=settings/settings-moc-alpha-testnet.json --network=mocTestnetAlpha`
+
+
+
 ## AWS
 
 

@@ -3423,7 +3423,7 @@ class MoCIndexer:
         collection_tx = self.mm.collection_transaction(m_client)
 
         # we need to query tx with processLogs=None and in the last 60 minutes
-        only_new_ones = datetime.datetime.now() - datetime.timedelta(minutes=300)
+        only_new_ones = datetime.datetime.now() - datetime.timedelta(minutes=10)
         moc_txs = collection_tx.find({"processLogs": None,
                                       "status": "confirmed",
                                       "createdAt": {"$gte": only_new_ones}},
