@@ -1100,9 +1100,9 @@ class MoCIndexer:
         d_tx["isPositive"] = False
         d_tx["reservePrice"] = str(tx_event.reservePrice)
         gas_fee = tx_receipt['gasUsed'] * Web3.fromWei(moc_tx['gasPrice'], 'ether')
-        d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
-        if self.app_mode != "RRC20":
-            d_tx["gasFeeUSD"] = str(int(gas_fee * Web3.fromWei(tx_event.reservePrice, 'ether') * self.precision))
+        #d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
+        #if self.app_mode != "RRC20":
+        #    d_tx["gasFeeUSD"] = str(int(gas_fee * Web3.fromWei(tx_event.reservePrice, 'ether') * self.precision))
         rbtc_total = tx_event.reserveTotal - int(gas_fee * self.precision)
         d_tx["RBTCTotal"] = str(rbtc_total)
         usd_total = Web3.fromWei(rbtc_total, 'ether') * Web3.fromWei(tx_event.reservePrice, 'ether')
