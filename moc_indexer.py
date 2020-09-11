@@ -1593,9 +1593,9 @@ class MoCIndexer:
         d_tx["confirmationTime"] = confirmation_time
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
         gas_fee = tx_receipt['gasUsed'] * Web3.fromWei(moc_tx['gasPrice'], 'ether')
-        d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
-        if self.app_mode != "RRC20":
-            d_tx["gasFeeUSD"] = str(int(gas_fee * Web3.fromWei(tx_event.reservePrice, 'ether') * self.precision))
+        #d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
+        #if self.app_mode != "RRC20":
+        #    d_tx["gasFeeUSD"] = str(int(gas_fee * Web3.fromWei(tx_event.reservePrice, 'ether') * self.precision))
         d_tx["processLogs"] = True
         d_tx["createdAt"] = block_ts
 
@@ -1675,7 +1675,7 @@ class MoCIndexer:
         d_tx["confirmationTime"] = confirmation_time
         d_tx["isPositive"] = False
         gas_fee = tx_receipt['gasUsed'] * Web3.fromWei(moc_tx['gasPrice'], 'ether')
-        d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
+        #d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         d_tx["processLogs"] = True
         d_tx["createdAt"] = block_ts
 
@@ -1999,7 +1999,7 @@ class MoCIndexer:
         d_tx["confirmationTime"] = confirmation_time
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
         gas_fee = tx_receipt['gasUsed'] * Web3.fromWei(moc_tx['gasPrice'], 'ether')
-        d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
+        #d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         d_tx["processLogs"] = True
         d_tx["createdAt"] = block_ts
 
