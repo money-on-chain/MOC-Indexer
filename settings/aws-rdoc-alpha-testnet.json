@@ -1,6 +1,6 @@
 {
   "mongo": {
-    "uri": "mongodb://rdocAlphaTestnetUserMoc:tributarytransposemassagerfaceplate@moc-mongotest-rs1.moneyonchain.com:3001,moc-mongotest-rs2.moneyonchain.com:3002,moc-mongotest-rs3.moneyonchain.com:3003/rdoc_alpha_testnet?authSource=rdoc_alpha_testnet&replicaSet=rsalphatest",
+    "uri": "",
     "db": "rdoc_alpha_testnet"
   },
   "timeout": 60,

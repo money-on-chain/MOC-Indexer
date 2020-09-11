@@ -1,6 +1,6 @@
 {
   "mongo": {
-    "uri": "mongodb://alphaUserMoc:mutinyheraldroundupanimator@moc-mongotest-rs1.moneyonchain.com:3001,moc-mongotest-rs2.moneyonchain.com:3002,moc-mongotest-rs3.moneyonchain.com:3003/alpha?authSource=alpha&replicaSet=rsalphatest",
+    "uri": "",
     "db": "alpha"
   },
   "timeout": 60,
@@ -30,7 +30,7 @@
   },
   "scan_moc_blocks": {
     "confirm_blocks": 10,
-    "blocks_look_behind": 100,
+    "blocks_look_behind": 500,
     "seconds_not_in_chain_error": 600,
     "blocks_recession": 1
   },
