@@ -44,5 +44,13 @@ if __name__ == '__main__':
         else:
             network = options.network
 
+    if 'APP_MONGO_URI' in os.environ:
+        mongo_uri = os.environ['APP_MONGO_URI']
+        config['mongo']['uri'] = mongo_uri
+
+    if 'APP_MONGO_DB' in os.environ:
+        mongo_db = os.environ['APP_MONGO_DB']
+        config['mongo']['db'] = mongo_db
+
     job_index = JobsIndexer(config, network)
     job_index.time_loop_start()
