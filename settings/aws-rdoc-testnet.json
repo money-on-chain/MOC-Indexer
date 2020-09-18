@@ -1,45 +1,53 @@
 {
   "mongo": {
-    "uri": "mongodb://192.168.56.2:27017/",
+    "uri": "",
     "db": "local_rdoc_testnet"
   },
   "timeout": 60,
   "timeout_wait": 300,
   "gas_price": 60000000,
-  "debug": false,
+  "debug": true,
+  "index_mode": "normal",
   "tasks": {
     "scan_moc_blocks": {"interval":  20},
     "scan_moc_prices": {"interval":  25},
     "scan_moc_state": {"interval":  30},
     "scan_moc_status": {"interval":  10},
-    "scan_moc_state_status": {"interval":  10}
+    "scan_moc_state_status": {"interval":  10},
+    "scan_user_state_update": {"interval":  10},
+    "scan_moc_blocks_not_processed": {"interval":  60},
+    "scan_moc_blocks_history": {"interval":  60},
+    "scan_moc_prices_history": {"interval":  60},
+    "scan_moc_state_history": {"interval":  60},
+    "scan_moc_status_history": {"interval":  60},
+    "scan_moc_state_status_history": {"interval":  60}
+  },
+  "scan_moc_history": {
+    "from_block": 1079251,
+    "to_block": 1104666,
+    "force_start": true,
+    "blocks_recession": 1
   },
   "scan_moc_blocks": {
-    "block_start": 0,
-    "block_end": 0,
-    "block_reference": 0,
     "confirm_blocks": 10,
-    "blocks_look_behind": 10,
-    "seconds_not_in_chain_error": 600
+    "blocks_look_behind": 1000,
+    "seconds_not_in_chain_error": 600,
+    "blocks_recession": 1
   },
   "scan_moc_state": {
     "block_height": 0
   },
   "scan_moc_prices": {
-    "block_start": 0,
-    "block_end": 0,
-    "blocks_look_behind": 10
+    "blocks_look_behind": 60
   },
   "scan_moc_state_status": {
-    "block_start": 0,
-    "block_end": 0,
-    "blocks_look_behind": 10
+    "blocks_look_behind": 60
   },
   "networks": {
     "rdocTestnet": {
       "app_mode": "RRC20",
       "project": "RDoC",
-      "uri": ["https://public-node.testnet.rsk.co"],
+      "uri": ["http://moc-rsk-node-testnet.moneyonchain.com:4454"],
       "chain_id": 31,
       "accounts": [
         {
@@ -48,27 +56,10 @@
         }
       ],
       "addresses": {
-        "governor": "0x4eAC4518e81B3A5198aADAb998D2610B46aAA609",
-        "oracle": "0x9d4b2c05818A0086e641437fcb64ab6098c7BbEc",
-        "MoCMedianizer": "0x9d4b2c05818A0086e641437fcb64ab6098c7BbEc",
-        "upgradeDelegator": "0xCDAbFbF334A5F6BCe900D2f73470D1e6722365d8",
-        "MoC": "0x7e2F245F7dc8e78576ECB13AEFc0a101E9BE1AD3",
-        "MoCInrate": "0x4C54053845F4f219AddB43ef3A7d4478E89a2A47",
-        "MoCState": "0x496eD67F77D044C8d9471fe86085Ccb5DC4d2f63",
-        "MoCConverter": "0x172e0a60579FD2eA0EdfD2155287dA93eA77dD7E",
-        "MoCExchange": "0x7d5804E33B015b43159e61188526C93cfdA746f6",
-        "MoCConnector": "0x52E1b00d9f75aE6ecCcC0c9Ef3087dF7F0BaB15E",
-        "MoCHelperLib": "0xB44721cD90E9063953831685aB0372A98ECC5EF4",
-        "MoCBProxManager": "0xDd67D17eDABF2b320A18C00753C4D1c1008Abd73",
-        "MoCSettlement": "0x163D79dB568417983Aa2D64AA6310Bed0f23Ab61",
-        "MoCBurnout": "0x0E4010aF12E09CD7aa758B6ebE8BF1949c5174Ca",
-        "BProToken": "0x23A1aA7b11e68beBE560a36beC04D1f79357f28d",
-        "DoCToken": "0xC3De9F38581f83e281f260d0DdbaAc0e102ff9F8",
-        "ReserveToken": "0x19F64674D8A5B4E652319F5e239eFd3bc969A1fE"
+        "MoC": "0x7e2F245F7dc8e78576ECB13AEFc0a101E9BE1AD3"
       }
 
     }
-
 
   }
 
