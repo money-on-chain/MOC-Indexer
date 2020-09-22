@@ -73,7 +73,7 @@ if [ -z "${e}" ]; then
     usage
 fi
 
-REGION="us-west-2" # us-west-1
+REGION="us-west-1" # us-west-1
 
 # login into aws ecr
 $(aws ecr get-login --no-include-email --region $REGION)
