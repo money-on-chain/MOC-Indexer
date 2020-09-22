@@ -73,8 +73,10 @@ if [ -z "${e}" ]; then
     usage
 fi
 
-# login into aws ecr
-$(aws ecr get-login --no-include-email --region us-west-1)
+REGION="us-west-2" # us-west-1
 
-docker tag moc_indexer_$ENV:latest 551471957915.dkr.ecr.us-west-1.amazonaws.com/moc_indexer_$ENV:latest
-docker push 551471957915.dkr.ecr.us-west-1.amazonaws.com/moc_indexer_$ENV:latest
+# login into aws ecr
+$(aws ecr get-login --no-include-email --region $REGION)
+
+docker tag moc_indexer_$ENV:latest 551471957915.dkr.ecr.$REGION.amazonaws.com/moc_indexer_$ENV:latest
+docker push 551471957915.dkr.ecr.$REGION.amazonaws.com/moc_indexer_$ENV:latest
