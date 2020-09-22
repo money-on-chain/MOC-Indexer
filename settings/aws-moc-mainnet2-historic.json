@@ -1,0 +1,66 @@
+{
+  "mongo": {
+    "uri": "",
+    "db": "doc_mainnet"
+  },
+  "timeout": 60,
+  "timeout_wait": 300,
+  "gas_price": 60000000,
+  "debug": true,
+  "index_mode": "history",
+  "tasks": {
+    "scan_moc_blocks": {"interval":  20},
+    "scan_moc_prices": {"interval":  25},
+    "scan_moc_state": {"interval":  30},
+    "scan_moc_status": {"interval":  10},
+    "scan_moc_state_status": {"interval":  10},
+    "scan_user_state_update": {"interval":  10},
+    "scan_moc_blocks_not_processed": {"interval":  60},
+    "scan_moc_blocks_history": {"interval":  60},
+    "scan_moc_prices_history": {"interval":  60},
+    "scan_moc_state_history": {"interval":  60},
+    "scan_moc_status_history": {"interval":  60},
+    "scan_moc_state_status_history": {"interval":  60}
+  },
+  "scan_moc_history": {
+    "from_block": 2628703,
+    "to_block": 2718703,
+    "force_start": true,
+    "blocks_recession": 1
+  },
+  "scan_moc_blocks": {
+    "confirm_blocks": 10,
+    "blocks_look_behind": 500,
+    "seconds_not_in_chain_error": 600,
+    "blocks_recession": 1
+  },
+  "scan_moc_state": {
+    "block_height": 0
+  },
+  "scan_moc_prices": {
+    "blocks_look_behind": 60
+  },
+  "scan_moc_state_status": {
+    "blocks_look_behind": 60
+  },
+  "networks": {
+    "mocMainnet2": {
+      "app_mode": "MoC",
+      "project": "MoC",
+      "uri": ["http://moc-rsk-node-mainnet.moneyonchain.com:4454"],
+      "chain_id": 30,
+      "accounts": [
+        {
+          "address": "0xEA14c08764c9e5F212c916E11a5c47Eaf92571e4",
+          "private_key": ""
+        }
+      ],
+      "addresses": {
+        "MoC": "0xf773B590aF754D597770937Fa8ea7AbDf2668370"
+      }
+
+    }
+
+  }
+
+}
