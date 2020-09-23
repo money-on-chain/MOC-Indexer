@@ -808,7 +808,10 @@ class MoCIndexer:
             d_tx["gasFeeUSD"] = str(int(gas_fee * Web3.fromWei(tx_event.reservePrice, 'ether') * self.precision))
         rbtc_total = tx_event.reserveTotal - int(gas_fee * self.precision)
         d_tx["RBTCTotal"] = str(rbtc_total)
-        usd_total = Web3.fromWei(rbtc_total, 'ether') * Web3.fromWei(tx_event.reservePrice, 'ether')
+        rbtc_total_ether = Web3.fromWei(abs(rbtc_total), 'ether')
+        if rbtc_total < 0:
+            rbtc_total_ether = -rbtc_total_ether
+        usd_total = rbtc_total_ether * Web3.fromWei(tx_event.reservePrice, 'ether')
         d_tx["USDTotal"] = str(int(usd_total * self.precision))
         d_tx["processLogs"] = True
         d_tx["createdAt"] = block_ts
@@ -960,7 +963,10 @@ class MoCIndexer:
             d_tx["gasFeeUSD"] = str(int(gas_fee * Web3.fromWei(tx_event.reservePrice, 'ether') * self.precision))
         rbtc_total = tx_event.reserveTotal + tx_event.interests - int(gas_fee * self.precision)
         d_tx["RBTCTotal"] = str(rbtc_total)
-        usd_total = Web3.fromWei(rbtc_total, 'ether') * Web3.fromWei(tx_event.reservePrice, 'ether')
+        rbtc_total_ether = Web3.fromWei(abs(rbtc_total), 'ether')
+        if rbtc_total < 0:
+            rbtc_total_ether = -rbtc_total_ether
+        usd_total = rbtc_total_ether * Web3.fromWei(tx_event.reservePrice, 'ether')
         d_tx["USDTotal"] = str(int(usd_total * self.precision))
         d_tx["processLogs"] = True
         d_tx["createdAt"] = block_ts
@@ -1105,7 +1111,10 @@ class MoCIndexer:
         #    d_tx["gasFeeUSD"] = str(int(gas_fee * Web3.fromWei(tx_event.reservePrice, 'ether') * self.precision))
         rbtc_total = tx_event.reserveTotal - int(gas_fee * self.precision)
         d_tx["RBTCTotal"] = str(rbtc_total)
-        usd_total = Web3.fromWei(rbtc_total, 'ether') * Web3.fromWei(tx_event.reservePrice, 'ether')
+        rbtc_total_ether = Web3.fromWei(abs(rbtc_total), 'ether')
+        if rbtc_total < 0:
+            rbtc_total_ether = -rbtc_total_ether
+        usd_total = rbtc_total_ether * Web3.fromWei(tx_event.reservePrice, 'ether')
         d_tx["USDTotal"] = str(int(usd_total * self.precision))
         d_tx["processLogs"] = True
         d_tx["createdAt"] = block_ts
@@ -1183,7 +1192,11 @@ class MoCIndexer:
             d_tx["gasFeeUSD"] = str(int(gas_fee * Web3.fromWei(tx_event.reservePrice, 'ether') * self.precision))
         rbtc_total = tx_event.reserveTotal - tx_event.commission - int(gas_fee * self.precision)
         d_tx["RBTCTotal"] = str(rbtc_total)
-        usd_total = Web3.fromWei(rbtc_total, 'ether') * Web3.fromWei(tx_event.reservePrice, 'ether')
+        rbtc_total_ether = Web3.fromWei(abs(rbtc_total), 'ether')
+        if rbtc_total < 0:
+            rbtc_total_ether = -rbtc_total_ether
+        usd_total = rbtc_total_ether * Web3.fromWei(tx_event.reservePrice, 'ether')
+        log.info(usd_total)
         d_tx["USDTotal"] = str(int(usd_total * self.precision))
         d_tx["processLogs"] = True
         d_tx["createdAt"] = block_ts
@@ -1617,7 +1630,10 @@ class MoCIndexer:
                 d_tx["reservePrice_deleveraging"] = str(reserve_price)
                 rbtc_total = rbtc_amount - int(gas_fee * self.precision)
                 d_tx["RBTCTotal"] = str(rbtc_total)
-                usd_total = Web3.fromWei(rbtc_total, 'ether') * reserve_price
+                rbtc_total_ether = Web3.fromWei(abs(rbtc_total), 'ether')
+                if rbtc_total < 0:
+                    rbtc_total_ether = -rbtc_total_ether
+                usd_total = rbtc_total_ether * reserve_price
                 d_tx["USDTotal"] = str(int(usd_total * self.precision))
 
                 post_id = collection_tx.find_one_and_update(
