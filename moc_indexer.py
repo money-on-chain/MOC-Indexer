@@ -1621,7 +1621,7 @@ class MoCIndexer:
             try:
                 d_user_balances = self.riskprox_balances_from_address(user_riskprox["address"],
                                                                       prior_block_to_deleveraging)
-            except ValidationError:
+            except:
                 continue
 
             if float(d_user_balances["bprox2Balance"]) > 0.0:
