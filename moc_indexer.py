@@ -10,7 +10,7 @@ from bson.decimal128 import Decimal128
 from collections import OrderedDict
 from web3.types import BlockIdentifier
 from web3.logs import DISCARD
-from web3.exceptions import TransactionNotFound
+from web3.exceptions import TransactionNotFound, ValidationError
 from requests.exceptions import HTTPError
 
 from moneyonchain.manager import ConnectionManager
@@ -1618,8 +1618,12 @@ class MoCIndexer:
         prior_block_to_deleveraging = start_block_number - 1
         l_transactions = list()
         for user_riskprox in l_users_riskprox:
-            d_user_balances = self.riskprox_balances_from_address(user_riskprox["address"],
-                                                                  prior_block_to_deleveraging)
+            try:
+                d_user_balances = self.riskprox_balances_from_address(user_riskprox["address"],
+                                                                      prior_block_to_deleveraging)
+            except ValidationError:
+                continue
+
             if float(d_user_balances["bprox2Balance"]) > 0.0:
                 d_tx["address"] = user_riskprox["address"]
                 d_tx["amount"] = str(d_user_balances["bprox2Balance"])
