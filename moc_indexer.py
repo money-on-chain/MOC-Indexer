@@ -1196,7 +1196,6 @@ class MoCIndexer:
         if rbtc_total < 0:
             rbtc_total_ether = -rbtc_total_ether
         usd_total = rbtc_total_ether * Web3.fromWei(tx_event.reservePrice, 'ether')
-        log.info(usd_total)
         d_tx["USDTotal"] = str(int(usd_total * self.precision))
         d_tx["processLogs"] = True
         d_tx["createdAt"] = block_ts
@@ -2943,7 +2942,8 @@ class MoCIndexer:
         last_block_indexed = 0
         if moc_index:
             if 'last_moc_block' in moc_index:
-                last_block_indexed = moc_index['last_moc_block']
+                if moc_index['last_moc_block'] > 0:
+                    last_block_indexed = moc_index['last_moc_block']
 
         if last_block_indexed > 0:
             from_block = last_block_indexed + 1
@@ -3385,7 +3385,12 @@ class MoCIndexer:
 
         collection_moc_indexer_history = self.mm.collection_moc_indexer_history(m_client)
 
-        collection_moc_indexer_history.drop()
+        collection_moc_indexer_history.update_one({},
+                                                  {'$set': {'last_moc_block': 0,
+                                                            'updatedAt': datetime.datetime.now()}},
+                                                  upsert=True)
+
+        #collection_moc_indexer_history.drop()
 
         log.info("[FORCE START HISTORY] DONE! Collection remove it!.")
 
