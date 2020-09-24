@@ -1,7 +1,7 @@
 {
   "mongo": {
-    "uri": "",
-    "db": "rdoc_mainnet"
+    "uri": "mongodb://192.168.56.2:27017/",
+    "db": "local_moc_mainnet2"
   },
   "timeout": 60,
   "timeout_wait": 300,
@@ -23,14 +23,14 @@
     "scan_moc_state_status_history": {"interval":  60}
   },
   "scan_moc_history": {
-    "from_block": 2712518,
-    "to_block": 2718436,
+    "from_block": 2670274,
+    "to_block": 2670275,
     "force_start": true,
     "blocks_recession": 1
   },
   "scan_moc_blocks": {
     "confirm_blocks": 10,
-    "blocks_look_behind": 1000,
+    "blocks_look_behind": 100,
     "seconds_not_in_chain_error": 600,
     "blocks_recession": 1
   },
@@ -38,28 +38,29 @@
     "block_height": 0
   },
   "scan_moc_prices": {
-    "blocks_look_behind": 60
+    "blocks_look_behind": 10
   },
   "scan_moc_state_status": {
-    "blocks_look_behind": 60
+    "blocks_look_behind": 10
   },
   "networks": {
-    "rdocMainnet": {
-      "app_mode": "RRC20",
-      "project": "RDoC",
-      "uri": ["http://moc-rsk-node-mainnet.moneyonchain.com:4454"],
+    "mocMainnet2": {
+      "app_mode": "MoC",
+      "project": "MoC",
+      "uri": ["https://public-node.rsk.co"],
       "chain_id": 30,
       "accounts": [
         {
-          "address": "0xC67D9eE30d2119A384E02de568BE80FE785074Ba",
+          "address": "0xEA14c08764c9e5F212c916E11a5c47Eaf92571e4",
           "private_key": ""
         }
       ],
       "addresses": {
-        "MoC": "0xCfF3fcaeC2352C672C38d77cb1a064B7D50ce7e1"
+        "MoC": "0xf773B590aF754D597770937Fa8ea7AbDf2668370"
       }
 
     }
+
 
   }
 
