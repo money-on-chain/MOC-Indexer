@@ -2025,8 +2025,12 @@ class MoCIndexer:
         prior_block_to_liquidation = tx_event.blockNumber - 1
         l_transactions = list()
         for user_riskprox in l_users_riskprox:
-            d_user_balances = self.riskprox_balances_from_address(user_riskprox["address"],
-                                                                  prior_block_to_liquidation)
+            try:
+                d_user_balances = self.riskprox_balances_from_address(user_riskprox["address"],
+                                                                      prior_block_to_liquidation)
+            except:
+                continue
+
             if float(d_user_balances["bprox2Balance"]) > 0.0:
                 d_tx["address"] = user_riskprox["address"]
                 d_tx["amount"] = str(d_user_balances["bprox2Balance"])
