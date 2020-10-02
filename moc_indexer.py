@@ -2478,7 +2478,6 @@ class MoCIndexer:
 
         if user_state:
             if 'block_height' in user_state:
-                log.info(user_state['block_height'])
                 if user_state['block_height'] >= block_height:
                     # not process if already have updated in this block
                     return
