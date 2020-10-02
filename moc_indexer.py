@@ -274,8 +274,6 @@ class MoCIndexer:
 
     def balances_from_address(self, address, block_height):
 
-        log.info("Balance of Address. Address: [{0}] BlockHeight: [{1}]".format(address, block_height))
-
         d_user_balance = OrderedDict()
         d_user_balance["mocBalance"] = str(0)
         d_user_balance["bProHoldIncentive"] = str(0)
@@ -2477,17 +2475,26 @@ class MoCIndexer:
         user_state = collection_user_state.find_one(
             {"address": account_address}
         )
+
+        log.info("update_balance_address")
+        log.info(account_address)
+        log.info(block_height)
+
         if user_state:
             if 'block_height' in user_state:
+                log.info(user_state['block_height'])
                 if user_state['block_height'] >= block_height:
                     # not process if already have updated in this block
                     return
+            else:
+                block_height = self.connection_manager.block_number
+        else:
+            # if not exist get the last block number
+            block_height = self.connection_manager.block_number
 
         # get all functions state from smart contract
         d_user_balance = self.balances_from_address(account_address, block_height)
         d_user_balance['block_height'] = block_height
-
-        log.info(d_user_balance)
 
         if not user_state:
             # if the user not exist in the database created but default info
@@ -2521,8 +2528,6 @@ class MoCIndexer:
 
         """ TX Tranfer from MOC Reserve """
 
-        log.info("PROCESS TRANSFER")
-
         confirm_blocks = self.options['scan_moc_blocks']['confirm_blocks']
         if block_height_current - block_height > confirm_blocks:
             status = 'confirmed'
@@ -2533,9 +2538,6 @@ class MoCIndexer:
 
         network = self.connection_manager.network
         moc_addresses = self.connection_manager.options['networks'][network]['addresses']
-
-        log.info(str.lower(tx_event.e_from))
-        log.info(str.lower(moc_addresses['MoC']))
 
         if str.lower(tx_event.e_from) not in [str.lower(moc_addresses['MoC'])]:
             # If is not from our contract return
@@ -2584,11 +2586,6 @@ class MoCIndexer:
              "event": d_tx["event"]},
             {"$set": d_tx},
             upsert=True)
-
-        log.info("PROCESS TRANSFER PASS")
-        log.info(d_tx["address"])
-        log.info(d_tx["blockNumber"])
-        log.info(d_tx["amount"])
 
         # update user balances
         self.update_balance_address(m_client, d_tx["address"], block_height)
