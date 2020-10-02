@@ -2476,10 +2476,6 @@ class MoCIndexer:
             {"address": account_address}
         )
 
-        log.info("update_balance_address")
-        log.info(account_address)
-        log.info(block_height)
-
         if user_state:
             if 'block_height' in user_state:
                 log.info(user_state['block_height'])
