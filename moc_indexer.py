@@ -2521,6 +2521,8 @@ class MoCIndexer:
 
         """ TX Tranfer from MOC Reserve """
 
+        log.info("PROCESS TRANSFER")
+
         confirm_blocks = self.options['scan_moc_blocks']['confirm_blocks']
         if block_height_current - block_height > confirm_blocks:
             status = 'confirmed'
@@ -2531,6 +2533,9 @@ class MoCIndexer:
 
         network = self.connection_manager.network
         moc_addresses = self.connection_manager.options['networks'][network]['addresses']
+
+        log.info(str.lower(tx_event.e_from))
+        log.info(str.lower(moc_addresses['MoC']))
 
         if str.lower(tx_event.e_from) not in [str.lower(moc_addresses['MoC'])]:
             # If is not from our contract return
@@ -2579,6 +2584,11 @@ class MoCIndexer:
              "event": d_tx["event"]},
             {"$set": d_tx},
             upsert=True)
+
+        log.info("PROCESS TRANSFER PASS")
+        log.info(d_tx["address"])
+        log.info(d_tx["blockNumber"])
+        log.info(d_tx["amount"])
 
         # update user balances
         self.update_balance_address(m_client, d_tx["address"], block_height)
