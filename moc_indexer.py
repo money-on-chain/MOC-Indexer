@@ -274,6 +274,8 @@ class MoCIndexer:
 
     def balances_from_address(self, address, block_height):
 
+        log.info("Balance of Address. Address: [{0}] BlockHeight: [{1}]".format(address, block_height))
+
         d_user_balance = OrderedDict()
         d_user_balance["mocBalance"] = str(0)
         d_user_balance["bProHoldIncentive"] = str(0)
