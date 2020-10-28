@@ -35,7 +35,7 @@ from moneyonchain.events import MoCExchangeRiskProMint, \
     ERC20Transfer, \
     MoCSettlementRedeemRequestProcessed, \
     MoCSettlementSettlementCompleted
-from moneyonchain.token import RIF, RIFDoC, RIFPro, DoCToken, BProToken
+from moneyonchain.token import RIF, RIFDoC, RIFPro, DoCToken, BProToken, MoCToken
 
 import logging
 import logging.config
@@ -270,7 +270,7 @@ class MoCIndexer:
         self.mm = MongoManager(self.options)
 
         # Create CloudWatch client
-        self.cloudwatch = boto3.client('cloudwatch')
+        #self.cloudwatch = boto3.client('cloudwatch')
 
     def balances_from_address(self, address, block_height):
 
@@ -730,6 +730,8 @@ class MoCIndexer:
         d_tx["status"] = status
         d_tx["tokenInvolved"] = 'RISKPRO'
         d_tx["reservePrice"] = str(tx_event.reservePrice)
+        d_tx["mocCommissionValue"] = str(tx_event.mocCommissionValue)
+        d_tx["mocPrice"] = str(tx_event.mocPrice)
         gas_fee = tx_receipt['gasUsed'] * Web3.fromWei(moc_tx['gasPrice'], 'ether')
         d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         if self.app_mode != "RRC20":
@@ -802,6 +804,8 @@ class MoCIndexer:
         d_tx["USDCommission"] = str(int(usd_commission * self.precision))
         d_tx["isPositive"] = False
         d_tx["reservePrice"] = str(tx_event.reservePrice)
+        d_tx["mocCommissionValue"] = str(tx_event.mocCommissionValue)
+        d_tx["mocPrice"] = str(tx_event.mocPrice)
         gas_fee = tx_receipt['gasUsed'] * Web3.fromWei(moc_tx['gasPrice'], 'ether')
         d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         if self.app_mode != "RRC20":
@@ -881,6 +885,8 @@ class MoCIndexer:
         usd_interest = Web3.fromWei(tx_event.interests, 'ether') * Web3.fromWei(tx_event.reservePrice, 'ether')
         d_tx["USDInterests"] = str(int(usd_interest * self.precision))
         d_tx["reservePrice"] = str(tx_event.reservePrice)
+        d_tx["mocCommissionValue"] = str(tx_event.mocCommissionValue)
+        d_tx["mocPrice"] = str(tx_event.mocPrice)
         gas_fee = tx_receipt['gasUsed'] * Web3.fromWei(moc_tx['gasPrice'], 'ether')
         d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         if self.app_mode != "RRC20":
@@ -957,6 +963,8 @@ class MoCIndexer:
         d_tx["USDInterests"] = str(int(usd_interest * self.precision))
         d_tx["isPositive"] = False
         d_tx["reservePrice"] = str(tx_event.reservePrice)
+        d_tx["mocCommissionValue"] = str(tx_event.mocCommissionValue)
+        d_tx["mocPrice"] = str(tx_event.mocPrice)
         gas_fee = tx_receipt['gasUsed'] * Web3.fromWei(moc_tx['gasPrice'], 'ether')
         d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         if self.app_mode != "RRC20":
@@ -1034,6 +1042,8 @@ class MoCIndexer:
         d_tx["isPositive"] = True
         d_tx["rbtcCommission"] = str(tx_event.commission)
         d_tx["reservePrice"] = str(tx_event.reservePrice)
+        d_tx["mocCommissionValue"] = str(tx_event.mocCommissionValue)
+        d_tx["mocPrice"] = str(tx_event.mocPrice)
         gas_fee = tx_receipt['gasUsed'] * Web3.fromWei(moc_tx['gasPrice'], 'ether')
         d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         if self.app_mode != "RRC20":
@@ -1105,6 +1115,8 @@ class MoCIndexer:
         d_tx["USDCommission"] = str(int(usd_commission * self.precision))
         d_tx["isPositive"] = False
         d_tx["reservePrice"] = str(tx_event.reservePrice)
+        d_tx["mocCommissionValue"] = str(tx_event.mocCommissionValue)
+        d_tx["mocPrice"] = str(tx_event.mocPrice)
         gas_fee = tx_receipt['gasUsed'] * Web3.fromWei(moc_tx['gasPrice'], 'ether')
         #d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         #if self.app_mode != "RRC20":
@@ -1186,6 +1198,8 @@ class MoCIndexer:
         d_tx["USDInterests"] = str(int(usd_interest * self.precision))
         d_tx["isPositive"] = False
         d_tx["reservePrice"] = str(tx_event.reservePrice)
+        d_tx["mocCommissionValue"] = str(tx_event.mocCommissionValue)
+        d_tx["mocPrice"] = str(tx_event.mocPrice)
         gas_fee = tx_receipt['gasUsed'] * Web3.fromWei(moc_tx['gasPrice'], 'ether')
         d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         if self.app_mode != "RRC20":
