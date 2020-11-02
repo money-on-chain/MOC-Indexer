@@ -371,6 +371,14 @@ class MoCIndexer:
             log.error("No price valid in BLOCKHEIGHT: [{0}] skipping!".format(block_identifier))
             return
 
+        try:
+            d_moc_state["mocPrice"] = str(self.contract_MoCState.moc_price(
+                formatted=False,
+                block_identifier=block_identifier))
+        except HTTPError:
+            log.error("No price valid for MoC in BLOCKHEIGHT: [{0}] skipping!".format(block_identifier))
+            return
+
         d_moc_state["bproAvailableToMint"] = str(self.contract_MoCState.max_mint_bpro_available(
             formatted=False,
             block_identifier=block_identifier))
@@ -592,6 +600,18 @@ class MoCIndexer:
             price_active = True
 
         d_status['price_active'] = price_active
+
+        try:
+            str(self.contract_MoCState.moc_price(
+                formatted=False,
+                block_identifier=block_identifier))
+        except HTTPError:
+            moc_price_active = False
+        else:
+            moc_price_active = True
+
+        d_status['moc_price_active'] = moc_price_active
+
         d_status["paused"] = self.contract_MoC.paused(
             block_identifier=block_identifier)
         d_status["state"] = self.contract_MoCState.state(
@@ -651,6 +671,15 @@ class MoCIndexer:
         d_price["bprox2PriceInUsd"] = str(
             int(d_price["bprox2PriceInRbtc"]) * int(d_price["bitcoinPrice"]) / int(
                 d_price["reservePrecision"]))
+
+        try:
+            d_price["mocPrice"] = str(self.contract_MoCState.moc_price(
+                formatted=False,
+                block_identifier=block_identifier))
+        except HTTPError:
+            log.error("No price valid for MoC in BLOCKHEIGHT: [{0}] skipping!".format(block_identifier))
+            return
+
         d_price["createdAt"] = block_ts
 
         return d_price
