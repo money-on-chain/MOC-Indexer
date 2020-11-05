@@ -490,6 +490,15 @@ class MoCIndexer:
         except HTTPError:
             log.error("[WARNING] bprox2PriceInBpro Exception! [{0}]".format(block_identifier))
             d_moc_state["bprox2PriceInBpro"] = '0'
+
+        try:
+            d_moc_state["mocPrice"] = str(self.contract_MoCState.moc_price(
+                formatted=False,
+                block_identifier=block_identifier))
+        except HTTPError:
+            log.error("[WARNING] mocPrice Exception! [{0}]".format(block_identifier))
+            d_moc_state["mocPrice"] = '0'
+
         try:
             d_moc_state["spotInrate"] = str(self.contract_MoCInrate.spot_inrate(
                 formatted=False,
