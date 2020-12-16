@@ -576,10 +576,16 @@ class MoCIndexer:
             bucket_x2,
             formatted=False,
             block_identifier=block_identifier))
-        d_price["bprox2PriceInBpro"] = str(self.contract_MoCState.bprox_price(
-            bucket_x2,
-            formatted=False,
-            block_identifier=block_identifier))
+
+        try:
+            d_price["bprox2PriceInBpro"] = str(self.contract_MoCState.bprox_price(
+                bucket_x2,
+                formatted=False,
+                block_identifier=block_identifier))
+        except HTTPError:
+            log.error("No bprox2PriceInBpro valid in BLOCKHEIGHT: [{0}] skipping!".format(block_identifier))
+            return
+
         d_price["reservePrecision"] = str(self.contract_MoC.reserve_precision(
             formatted=False,
             block_identifier=block_identifier))
