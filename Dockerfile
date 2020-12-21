@@ -12,8 +12,9 @@ WORKDIR /home/www-data/app/
 COPY app_run_indexer.py ./
 
 COPY moc_indexer.py ./
+COPY taskrunner.py ./
 
-COPY job_indexer.py ./
+COPY jobs.py ./
 
 ENV PATH "$PATH:/home/www-data/app/"
 ENV AWS_DEFAULT_REGION=us-west-1
