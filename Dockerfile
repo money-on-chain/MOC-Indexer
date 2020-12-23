@@ -14,14 +14,22 @@ COPY app_run_indexer.py ./
 COPY moc_indexer.py ./
 COPY taskrunner.py ./
 COPY common.py ./
+COPY moc_config.py ./
 COPY jobs.py ./
+COPY agent/ ./agent
 
 ENV PATH "$PATH:/home/www-data/app/"
 ENV AWS_DEFAULT_REGION=us-west-1
 ARG configFile
 
 ENV APP_CONFIG=${configFile}
+ENV environment=${env}
+COPY ./config/${configFile} ./
 
 ENV PYTHONPATH "${PYTONPATH}:/home/www-data/app/"
 
-CMD [ "python", "./app_run_indexer.py" ]
+#CMD [ "python", "./app_run_indexer.py" ]
+#CMD [ "sh","-c","python ./rewards.py -c ${configFile} -n ${environment}"]
+CMD [ "sh","-c","python ./taskrunner.py -n ${environment} -c ${configFile} jobs:* agent.jobs:*"]
+#python3 rewards.py -n mocTestnetAlpha -c config-alpha-testnet.json
+#python taskrunner.py -n mocTestnetAlpha -c config-sample.json jobs:* agent.jobs:*
