@@ -13,11 +13,14 @@ COPY app_run_indexer.py ./
 
 COPY moc_indexer.py ./
 COPY taskrunner.py ./
-
+COPY common.py ./
 COPY jobs.py ./
 
 ENV PATH "$PATH:/home/www-data/app/"
 ENV AWS_DEFAULT_REGION=us-west-1
+ARG configFile
+
+ENV APP_CONFIG=${configFile}
 
 ENV PYTHONPATH "${PYTONPATH}:/home/www-data/app/"
 

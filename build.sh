@@ -75,6 +75,6 @@ if [ -z "${e}" ]; then
     usage
 fi
 
-docker image build -t moc_indexer_$ENV -f Dockerfile .
+docker image build --build-arg configFile=$1 -t moc_indexer_$ENV -f Dockerfile .
 
 echo "Build done! Exiting!"
