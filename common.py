@@ -38,18 +38,18 @@ def getNetwork(options, default):
     return network
 
 
-def getMocCfg(parser, indexerClass=None, defaultNet='rdocTestnet',
-              defaultConfig=None):
-    (options, args) = parser.parse_args()
-    _config = getConfig(options.config, defaultConfig)
-    _network = getNetwork(options, defaultNet)
-    class MocCfg:
-        config = _config
-        network = _network
-        if indexerClass is not None:
-            def get_indexer(self):
-                return indexerClass(self.config, self.network)
-    return MocCfg
+# def getMocCfg(parser, indexerClass=None, defaultNet='rdocTestnet',
+#               defaultConfig=None):
+#     (options, args) = parser.parse_args()
+#     _config = getConfig(options.config, defaultConfig)
+#     _network = getNetwork(options, defaultNet)
+#     class MocCfg:
+#         config = _config
+#         network = _network
+#         if indexerClass is not None:
+#             def get_indexer(self):
+#                 return indexerClass(self.config, self.network)
+#     return MocCfg
 
 
 def getParser(progname=None):

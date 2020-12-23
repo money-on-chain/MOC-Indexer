@@ -212,7 +212,7 @@ class MoCIndexer:
         self.connection_manager = ConnectionManager(options=self.options,
                                                     network=self.network)
         self.app_mode = self.options['networks'][self.network]['app_mode']
-        self.debug_mode = self.options['debug']
+        self.debug_mode = self.options.get('debug', False)
 
         if self.app_mode == "RRC20":
             self.contract_MoC = RDOCMoC(self.connection_manager,

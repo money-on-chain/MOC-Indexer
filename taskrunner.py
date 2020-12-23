@@ -1,9 +1,10 @@
+import abc
 import datetime
+import inspect
 import logging.config
 import os
 import sys
 import threading
-import time
 from abc import abstractmethod
 from weakref import WeakValueDictionary
 
@@ -13,7 +14,7 @@ from moneyonchain.manager import ConnectionManager
 from timeloop import Timeloop
 from timeloop.job import Job as TLJob
 
-#from moc_config import MoCCfg
+from moc_config import MoCCfg
 
 
 logging.basicConfig(level=logging.INFO,
@@ -28,7 +29,7 @@ class RetriableException(Exception):
     retryInSeconds = 60
 
 
-class Job(TLJob):
+class Job(TLJob, abc.ABC):
     IntervalSeconds = 20
     Name = None
 
@@ -38,6 +39,11 @@ class Job(TLJob):
         self.con = ConnectionManager(options=self.options, network=self.network)
         self.initialized = False
         self.logger = logging.getLogger(self.name)
+
+    def run(self):
+        while not self.stopped.wait(self.interval.total_seconds()):
+            if self.stopped.is_set(): break
+            self.execute(*self.args, **self.kwargs)
 
     @property
     def options(self):
@@ -73,6 +79,10 @@ class Job(TLJob):
         if not self.initialized:
             self.initialized = True
             self.plugin_init()
+
+    @classmethod
+    def IsJob(cls):
+        return True
 
     def looprun(self):
         try:
@@ -184,7 +194,7 @@ class Blockchain:
         return self.con.get_transaction_receipt(txhash)
 
 
-class BlockBasedJob(Job):
+class BlockBasedJob(Job, abc.ABC):
     # noinspection PyAttributeOutsideInit
     def plugin_init(self):
         self.prev = None
@@ -209,7 +219,7 @@ class BlockBasedJob(Job):
         raise NotImplementedError()
 
 
-class ConfirmedBlockBasedJob(BlockBasedJob):
+class ConfirmedBlockBasedJob(BlockBasedJob, abc.ABC):
     Confirmations = 12
     Retry = 5
 
@@ -221,7 +231,7 @@ class ConfirmedBlockBasedJob(BlockBasedJob):
             if self.stopped.wait(self.Retry):
                 break
 
-    @abstractmethod
+    @abc.abstractmethod
     def on_confirmed_block(self, block):
         raise NotImplementedError()
 
@@ -282,8 +292,7 @@ class JobsRunner:
     @property
     def client(self):
         if self._client is None:
-            self._client = pymongo.MongoClient(self.dburi,
-                                               connectTimeoutMS=5000)
+            self._client = pymongo.MongoClient(self.dburi)
         return self._client
 
     @property
@@ -317,11 +326,11 @@ class JobsRunner:
 
         for jobklass in joblist:
             job = jobklass(self)
-            log.info("Jobs add %s" % job.name)
+            log.info("Jobs add: %s" % job.name)
             self.tl._my_add_job(job)
 
     def add_jobdesc(self, job_desc):
-        modulepath, klass = job_desc.split(":")
+        modulepath, classname = job_desc.split(":")
         mod = self._modules.get(modulepath)
         if mod is None:
             mod = __import__(modulepath)
@@ -331,8 +340,22 @@ class JobsRunner:
         while submods:
             subname = submods.pop(0)
             mod = getattr(mod, subname)
-        jobklass = getattr(mod, klass)
-        self.add_jobs([jobklass])
+        self._load_class(mod, classname)
+
+    def _load_class(self, mod, classname):
+        if not classname=='*':
+            jobklass = getattr(mod, classname)
+            return self.add_jobs([jobklass])
+        try:
+            class_list = getattr(mod, '__all__')
+        except AttributeError:
+            class_list = dir(mod)
+        for attrname in class_list:
+            attr = getattr(mod, attrname)
+            if inspect.isclass(attr) and (not inspect.isabstract(attr)):
+                if issubclass(attr, (Job,)) or (hasattr(attr, 'IsJob') and
+                    attr.IsJob()):
+                    self._load_class(mod, attrname)
 
     def time_loop_start(self):
         return self.start(block=True)
@@ -356,7 +379,6 @@ class JobsRunner:
             log.info("Shutting DOWN! TASKS")
         self.tl.stop()
         self.stopped.set()
-        self.quitEvent = None
 
     def stop(self):
         if self.quitEvent is None:
@@ -366,10 +388,21 @@ class JobsRunner:
         self.quitEvent.set()
         return self.stopped
 
+def extract_plugins_from_cmd(sys_argv, offset=1):
+    plugins = [arg for arg in sys_argv[offset:] if ':' in arg]
+    for plugin in plugins:
+        sys_argv.remove(plugin)
+    return plugins
+
+def main(prog='taskrunner.py', plugins=None):
+    if plugins is None:
+        plugins = extract_plugins_from_cmd(sys.argv, 1)
+    moccfg = MoCCfg(prog=prog)
+    runner = JobsRunner(moccfg=moccfg)
+    for plugin in plugins:
+        runner.add_jobdesc(plugin)
+    runner.time_loop_start()
 
 
 if __name__ == '__main__':
-    runner = JobsRunner(None)
-    # runner.add_jobdesc("yourplugin:YourJob")
-    # runner.add_jobdesc("your.plugin:OtherJobClass")
-    runner.time_loop_start()
+    main()
