@@ -24,7 +24,7 @@ ARG configFile
 
 ENV APP_CONFIG=${configFile}
 ENV environment=${env}
-COPY ./config/${configFile} ./
+COPY ./settings/${configFile} ./
 
 ENV PYTHONPATH "${PYTONPATH}:/home/www-data/app/"
 
