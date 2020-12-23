@@ -29,7 +29,5 @@ COPY ./settings/${configFile} ./
 ENV PYTHONPATH "${PYTONPATH}:/home/www-data/app/"
 
 #CMD [ "python", "./app_run_indexer.py" ]
-#CMD [ "sh","-c","python ./rewards.py -c ${configFile} -n ${environment}"]
 CMD [ "sh","-c","python ./taskrunner.py -n ${environment} -c ${configFile} jobs:* agent.jobs:*"]
-#python3 rewards.py -n mocTestnetAlpha -c config-alpha-testnet.json
 #python taskrunner.py -n mocTestnetAlpha -c config-sample.json jobs:* agent.jobs:*
