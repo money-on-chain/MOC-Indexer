@@ -18,6 +18,7 @@ class MoCCfg:
     default_network = 'rdocMainnet'
 
     def __init__(self, customize_parser_cb=None, prog=None):
+        logger = logging.getLogger('default')
         self.parser = OptionParser(usage='%prog [options]', prog=prog)
         self.parser.add_option('-n', '--network', action='store', dest='network',
                           type="string", help='network')
@@ -29,22 +30,26 @@ class MoCCfg:
         (options, args) = self.parser.parse_args()
     
         if 'APP_CONFIG' in os.environ:
+            logger.info("Config: from APP_CONFIG(env)")
             config = json.loads(os.environ['APP_CONFIG'])
         else:
             if not options.config:
                 config_path = self.default_config_path
             else:
                 config_path = options.config
+            logger.info("Config: from: %s"%config_path)
             config = options_from_config(config_path)
     
         if 'APP_NETWORK' in os.environ:
+            logger.info("Network: from: APP_NETWORK(env)")
             network = os.environ['APP_NETWORK']
         else:
             if not options.network:
                 network = self.default_network
             else:
                 network = options.network
-    
+        logger.info("Network=%s"%network)
+
         if 'APP_MONGO_URI' in os.environ:
             mongo_uri = os.environ['APP_MONGO_URI']
             config['mongo']['uri'] = mongo_uri
