@@ -90,7 +90,7 @@ class Job(TLJob, abc.ABC):
         except Exception as err:
             logging.getLogger('default').error(err)
             self.runner.stop()
-            self.stop()
+            self.stopped.set()
             return
 
         try:
