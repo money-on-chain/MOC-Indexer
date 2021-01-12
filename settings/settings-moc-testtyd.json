@@ -1,7 +1,7 @@
 {
   "mongo": {
-    "uri": "mongodb://192.168.56.2:27017/",
-    "db": "local_alpha_testnet2"
+    "uri": "mongodb://localhost:27017/",
+    "db": "local_alpha_testnet"
   },
   "timeout": 60,
   "timeout_wait": 300,
@@ -44,19 +44,19 @@
     "blocks_look_behind": 10
   },
   "networks": {
-    "mocTestnetAlpha": {
+    "mocTestTyD": {
       "app_mode": "MoC",
       "project": "MoC",
       "uri": ["https://public-node.testnet.rsk.co"],
       "chain_id": 31,
       "accounts": [
         {
-          "address": "0xB7d4B3c37d17D66B88da41e8A87561323A6DBDA0",
+          "address": "0x9032F510A5B54A005f04e81B5C98B7f201C4daC1",
           "private_key": ""
         }
       ],
       "addresses": {
-        "MoC": "0x01AD6f8E884ed4DDC089fA3efC075E9ba45C9039"
+        "MoC": "0x71d0921010CA8367835D34F7F3d215047E307581"
       }
     }
   }
