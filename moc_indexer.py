@@ -260,6 +260,11 @@ class MoCIndexer:
         self.debug_mode = self.options['debug']
 
         if self.app_mode == "RRC20":
+            self.vendor_account = None
+        else:
+            self.vendor_account = self.options['vendor_account']
+
+        if self.app_mode == "RRC20":
             self.contract_MoC = RDOCMoC(self.connection_manager, contracts_discovery=True)
         else:
             self.contract_MoC = MoC(self.connection_manager, contracts_discovery=True)
@@ -294,6 +299,7 @@ class MoCIndexer:
             block_identifier=block_height))
         d_user_balance["mocAllowance"] = str(self.contract_MoC.moc_allowance(
             address,
+            self.contract_MoC.address(),
             formatted=False,
             block_identifier=block_height))
         d_user_balance["bProHoldIncentive"] = str(0)
@@ -345,13 +351,16 @@ class MoCIndexer:
             d_user_balance["potentialBprox2MaxInterest"] = '0'
 
         d_user_balance["estimateGasMintBpro"] = str(self.contract_MoC.mint_bpro_gas_estimated(
-            int(d_user_balance["rbtcBalance"]))
+            int(d_user_balance["rbtcBalance"]),
+            self.vendor_account)
         )
         d_user_balance["estimateGasMintDoc"] = str(self.contract_MoC.mint_doc_gas_estimated(
-            int(d_user_balance["rbtcBalance"]))
+            int(d_user_balance["rbtcBalance"]),
+            self.vendor_account)
         )
         d_user_balance["estimateGasMintBprox2"] = str(self.contract_MoC.mint_bprox_gas_estimated(
-            int(d_user_balance["rbtcBalance"]))
+            int(d_user_balance["rbtcBalance"]),
+            self.vendor_account)
         )
 
         return d_user_balance
