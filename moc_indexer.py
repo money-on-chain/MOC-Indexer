@@ -2913,8 +2913,9 @@ class MoCIndexer:
         # update or insert the new info on mocstate
         collection_moc_state.find_one_and_update(
             {},
-            {"$set": d_moc_state},
+            {"$set": d_moc_state, "$unset": {"commissionRate": ""}},
             upsert=True)
+        # DEPRECATED FIELD commissionRate
 
         # history
         collection_moc_state_history = self.mm.collection_moc_state_history(m_client)
