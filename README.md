@@ -68,8 +68,7 @@ Alternative usages:
 
 `python taskrunner.py -c config -n network jobs:*` _for default jobs_
 `python taskrunner.py -c config -n network jobs_history:*` _for history jobs_
-`python taskrunner.py -c config -n network jobs:scan_moc_blocks` _for 
-scan_moc_blocks job_
+`python taskrunner.py -c config -n network jobs:scan_moc_blocks` _for scan_moc_blocks job_
 `python taskrunner.py -c config -n network jobs:scan_moc_prices` _for scan_moc_prices job_
 `python taskrunner.py -c config -n network jobs:scan_moc_status` _for scan_moc_status job_
 `python taskrunner.py -c config -n network jobs:scan_moc_state` _for scan_moc_state job_
