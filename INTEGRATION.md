@@ -24,7 +24,7 @@ in the existing indexer config. is the agent:
 
 {
  'networks': [
-        '<network>': {
+        '-network-': {
             'agent' { .. }
         }
    ]
@@ -34,7 +34,7 @@ in the existing indexer config. is the agent:
  its key.
 
 And it is also required the MocToken be set inside 
-`networks/<network>/addresses`.
+`networks/-network-/addresses`.
 
 ### Dependencies and Code setup
 
@@ -45,7 +45,7 @@ For projects which can be globally installed which make them available to
 other projects, just install them globally (perhaps using their `setup.py` 
 as you would do to install any project: `python setup.py install`).
 
-If the 3pp isn't ready for system installation a two step setup is required:
+If the 3pp isn't ready for system installation a two-step setup is required:
 
 1. As usual, install dependencies with: 
 
@@ -56,11 +56,16 @@ using requirements.txt from the 3pp in our case, Rewards.
 2. Make code available
 
 Required 3pp project code is inside the `agent/` directory from the 3pp, you 
-just copy this directory inside the indexer directory and it will be 
+just copy this directory inside the indexer directory, and it will be 
 available to use.
 
 
 ## Execution
+
+Remember that before executing the 3pp module, you probably would like to 
+run its setup, like in Rewards project, you better run `set_initial` block 
+scripts, and others which would affect settings inside the database.
+
 
 If you already run indexer this way:
 
