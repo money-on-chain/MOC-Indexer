@@ -29,6 +29,7 @@ from moneyonchain.events import MoCExchangeRiskProMint, \
     MoCInrateDailyPay, \
     MoCInrateRiskProHoldersInterestPay,\
     MoCBucketLiquidation, \
+    MoCContractLiquidated, \
     MoCStateStateTransition, \
     MoCSettlementSettlementStarted, \
     ERC20Approval, \
@@ -370,6 +371,17 @@ class MoCIndexer:
         d_user_balance = OrderedDict()
 
         d_user_balance["bprox2Balance"] = str(self.contract_MoC.bprox_balance_of(
+            address,
+            formatted=False,
+            block_identifier=block_identifier))
+
+        return d_user_balance
+
+    def stable_balances_from_address(self, address, block_identifier: BlockIdentifier = 'latest'):
+
+        d_user_balance = OrderedDict()
+
+        d_user_balance["bprox2Balance"] = str(self.contract_MoC.doc_balance_of(
             address,
             formatted=False,
             block_identifier=block_identifier))
@@ -2281,6 +2293,107 @@ class MoCIndexer:
 
         return d_tx
 
+    def moc_contract_liquidated(self,
+                               tx_receipt,
+                               tx_event,
+                               m_client,
+                               block_height,
+                               block_height_current,
+                               d_moc_transactions,
+                               block_ts):
+
+        confirm_blocks = self.options['scan_moc_blocks']['confirm_blocks']
+        if block_height_current - block_height > confirm_blocks:
+            status = 'confirmed'
+            confirmation_time = block_ts
+        else:
+            status = 'confirming'
+            confirmation_time = None
+
+        # get collection transaction
+        collection_tx = self.mm.collection_transaction(m_client)
+
+        tx_hash = Web3.toHex(tx_receipt['transactionHash'])
+        moc_tx = d_moc_transactions[tx_hash]
+
+        # get all address who has DoC, at the time all users because
+        # we dont know who has DoC in certain block
+        collection_users = self.mm.collection_user_state(m_client)
+        users = collection_users.find()
+        l_users_stable = list()
+        for user in users:
+            l_users_stable.append(user)
+
+        d_tx = OrderedDict()
+        d_tx["transactionHash"] = tx_hash
+        d_tx["blockNumber"] = tx_event.blockNumber
+        d_tx["event"] = 'ContractLiquidated'
+        d_tx["tokenInvolved"] = 'STABLE'
+        d_tx["bucket"] = 'C0'
+        d_tx["status"] = status
+        d_tx["confirmationTime"] = confirmation_time
+        d_tx["lastUpdatedAt"] = datetime.datetime.now()
+        gas_fee = tx_receipt['gasUsed'] * Web3.fromWei(moc_tx['gasPrice'], 'ether')
+        d_tx["processLogs"] = True
+        d_tx["createdAt"] = block_ts
+
+        prior_block_to_liquidation = tx_event.blockNumber - 1
+        l_transactions = list()
+        for user_stable in l_users_stable:
+            try:
+                d_user_balances = self.stable_balances_from_address(user_stable["address"],
+                                                                      prior_block_to_liquidation)
+            except:
+                continue
+
+            if float(d_user_balances["docBalance"]) > 0.0:
+                d_tx["address"] = user_stable["address"]
+                d_tx["amount"] = str(d_user_balances["docBalance"])
+
+                post_id = collection_tx.find_one_and_update(
+                    {"transactionHash": tx_hash,
+                     "address": d_tx["address"],
+                     "event": d_tx["event"]},
+                    {"$set": d_tx},
+                    upsert=True)
+
+                log.info("Tx {0} From: [{1}] Amount: {2} Tx Hash: {3}".format(
+                    d_tx["event"],
+                    d_tx["address"],
+                    d_tx["amount"],
+                    tx_hash))
+
+                # update user balances
+                self.update_balance_address(m_client, d_tx["address"], block_height)
+
+                l_transactions.append(d_tx)
+
+
+    def moc_contract_liquidated_notification(self, tx_receipt, tx_event, tx_log, m_client):
+
+        collection_tx = self.mm.collection_notification(m_client)
+        tx_hash = Web3.toHex(tx_receipt['transactionHash'])
+        event_name = 'ContractLiquidated'
+        log_index = tx_log['logIndex']
+
+        d_tx = OrderedDict()
+        d_tx["event"] = event_name
+        d_tx["transactionHash"] = tx_hash
+        d_tx["logIndex"] = log_index
+        d_tx["bucket"] = 'C0'
+        d_tx["timestamp"] = tx_event.timestamp
+        d_tx["processLogs"] = True
+
+        post_id = collection_tx.find_one_and_update(
+            {"transactionHash": tx_hash, "event": event_name, "logIndex": log_index},
+            {"$set": d_tx},
+            upsert=True)
+
+        d_tx['post_id'] = post_id
+
+        return d_tx
+
+
     def logs_process_moc(self,
                          tx_receipt,
                          m_client,
@@ -2310,6 +2423,20 @@ class MoCIndexer:
                                             d_moc_transactions,
                                             block_ts)
                 self.moc_bucket_liquidation_notification(tx_receipt, tx_event, tx_log, m_client)
+
+        # ContractLiquidated
+        tx_logs = events.ContractLiquidated().processReceipt(tx_receipt, errors=DISCARD)
+        for tx_log in tx_logs:
+            if str(tx_log['address']).lower() == str(moc_address).lower():
+                tx_event = MoCContractLiquidated(self.connection_manager, tx_log)
+                self.moc_contract_liquidated(tx_receipt,
+                                            tx_event,
+                                            m_client,
+                                            block_height,
+                                            block_height_current,
+                                            d_moc_transactions,
+                                            block_ts)
+                self.moc_contract_liquidated_notification(tx_receipt, tx_event, tx_log, m_client)
 
     def moc_state_transition(self, tx_receipt, tx_event, m_client):
         pass
