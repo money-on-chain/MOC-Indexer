@@ -408,9 +408,13 @@ class MoCIndexer:
             log.error("No price valid for MoC in BLOCKHEIGHT: [{0}] skipping!".format(block_identifier))
             return
 
-        d_moc_state["bproAvailableToMint"] = str(self.contract_MoCState.max_mint_bpro_available(
-            formatted=False,
-            block_identifier=block_identifier))
+        if self.app_mode == 'RRC20':
+            d_moc_state["bproAvailableToMint"] = str(self.contract_MoCState.max_mint_bpro_available(
+                formatted=False,
+                block_identifier=block_identifier))
+        else:
+            d_moc_state["bproAvailableToMint"] = '0'
+
         d_moc_state["bproAvailableToRedeem"] = str(self.contract_MoCState.absolute_max_bpro(
             formatted=False,
             block_identifier=block_identifier))
@@ -536,73 +540,76 @@ class MoCIndexer:
             log.error("[WARNING] spotInrate Exception [{0}]".format(block_identifier))
             d_moc_state["spotInrate"] = '0'
 
-        # Start: Commission rates by transaction types
+        if self.app_mode == 'RRC20':
+            d_moc_state["commissionRate"] = str(self.contract_MoCInrate.commission_rate(
+                formatted=False,
+                block_identifier=block_identifier))
+        else:
+            # Start: Commission rates by transaction types
+            commission_rates = {}
 
-        commission_rates = {}
+            commission_rates["MINT_BPRO_FEES_RBTC"] = str(self.contract_MoCInrate.commission_rate_by_transaction_type(
+                tx_type=self.contract_MoCInrate.tx_type_mint_bpro_fees_rbtc(),
+                formatted=False,
+                block_identifier=block_identifier))
 
-        commission_rates["MINT_BPRO_FEES_RBTC"] = str(self.contract_MoCInrate.commission_rate_by_transaction_type(
-            tx_type=self.contract_MoCInrate.tx_type_mint_bpro_fees_rbtc(),
-            formatted=False,
-            block_identifier=block_identifier))
+            commission_rates["REDEEM_BPRO_FEES_RBTC"] = str(self.contract_MoCInrate.commission_rate_by_transaction_type(
+                tx_type=self.contract_MoCInrate.tx_type_redeem_bpro_fees_rbtc(),
+                formatted=False,
+                block_identifier=block_identifier))
 
-        commission_rates["REDEEM_BPRO_FEES_RBTC"] = str(self.contract_MoCInrate.commission_rate_by_transaction_type(
-            tx_type=self.contract_MoCInrate.tx_type_redeem_bpro_fees_rbtc(),
-            formatted=False,
-            block_identifier=block_identifier))
+            commission_rates["MINT_DOC_FEES_RBTC"] = str(self.contract_MoCInrate.commission_rate_by_transaction_type(
+                tx_type=self.contract_MoCInrate.tx_type_mint_doc_fees_rbtc(),
+                formatted=False,
+                block_identifier=block_identifier))
 
-        commission_rates["MINT_DOC_FEES_RBTC"] = str(self.contract_MoCInrate.commission_rate_by_transaction_type(
-            tx_type=self.contract_MoCInrate.tx_type_mint_doc_fees_rbtc(),
-            formatted=False,
-            block_identifier=block_identifier))
+            commission_rates["REDEEM_DOC_FEES_RBTC"] = str(self.contract_MoCInrate.commission_rate_by_transaction_type(
+                tx_type=self.contract_MoCInrate.tx_type_redeem_doc_fees_rbtc(),
+                formatted=False,
+                block_identifier=block_identifier))
 
-        commission_rates["REDEEM_DOC_FEES_RBTC"] = str(self.contract_MoCInrate.commission_rate_by_transaction_type(
-            tx_type=self.contract_MoCInrate.tx_type_redeem_doc_fees_rbtc(),
-            formatted=False,
-            block_identifier=block_identifier))
+            commission_rates["MINT_BTCX_FEES_RBTC"] = str(self.contract_MoCInrate.commission_rate_by_transaction_type(
+                tx_type=self.contract_MoCInrate.tx_type_mint_btcx_fees_rbtc(),
+                formatted=False,
+                block_identifier=block_identifier))
 
-        commission_rates["MINT_BTCX_FEES_RBTC"] = str(self.contract_MoCInrate.commission_rate_by_transaction_type(
-            tx_type=self.contract_MoCInrate.tx_type_mint_btcx_fees_rbtc(),
-            formatted=False,
-            block_identifier=block_identifier))
+            commission_rates["REDEEM_BTCX_FEES_RBTC"] = str(self.contract_MoCInrate.commission_rate_by_transaction_type(
+                tx_type=self.contract_MoCInrate.tx_type_redeem_btcx_fees_rbtc(),
+                formatted=False,
+                block_identifier=block_identifier))
 
-        commission_rates["REDEEM_BTCX_FEES_RBTC"] = str(self.contract_MoCInrate.commission_rate_by_transaction_type(
-            tx_type=self.contract_MoCInrate.tx_type_redeem_btcx_fees_rbtc(),
-            formatted=False,
-            block_identifier=block_identifier))
+            commission_rates["MINT_BPRO_FEES_MOC"] = str(self.contract_MoCInrate.commission_rate_by_transaction_type(
+                tx_type=self.contract_MoCInrate.tx_type_mint_bpro_fees_moc(),
+                formatted=False,
+                block_identifier=block_identifier))
 
-        commission_rates["MINT_BPRO_FEES_MOC"] = str(self.contract_MoCInrate.commission_rate_by_transaction_type(
-            tx_type=self.contract_MoCInrate.tx_type_mint_bpro_fees_moc(),
-            formatted=False,
-            block_identifier=block_identifier))
+            commission_rates["REDEEM_BPRO_FEES_MOC"] = str(self.contract_MoCInrate.commission_rate_by_transaction_type(
+                tx_type=self.contract_MoCInrate.tx_type_redeem_bpro_fees_moc(),
+                formatted=False,
+                block_identifier=block_identifier))
 
-        commission_rates["REDEEM_BPRO_FEES_MOC"] = str(self.contract_MoCInrate.commission_rate_by_transaction_type(
-            tx_type=self.contract_MoCInrate.tx_type_redeem_bpro_fees_moc(),
-            formatted=False,
-            block_identifier=block_identifier))
+            commission_rates["MINT_DOC_FEES_MOC"] = str(self.contract_MoCInrate.commission_rate_by_transaction_type(
+                tx_type=self.contract_MoCInrate.tx_type_mint_doc_fees_moc(),
+                formatted=False,
+                block_identifier=block_identifier))
 
-        commission_rates["MINT_DOC_FEES_MOC"] = str(self.contract_MoCInrate.commission_rate_by_transaction_type(
-            tx_type=self.contract_MoCInrate.tx_type_mint_doc_fees_moc(),
-            formatted=False,
-            block_identifier=block_identifier))
+            commission_rates["REDEEM_DOC_FEES_MOC"] = str(self.contract_MoCInrate.commission_rate_by_transaction_type(
+                tx_type=self.contract_MoCInrate.tx_type_redeem_doc_fees_moc(),
+                formatted=False,
+                block_identifier=block_identifier))
 
-        commission_rates["REDEEM_DOC_FEES_MOC"] = str(self.contract_MoCInrate.commission_rate_by_transaction_type(
-            tx_type=self.contract_MoCInrate.tx_type_redeem_doc_fees_moc(),
-            formatted=False,
-            block_identifier=block_identifier))
+            commission_rates["MINT_BTCX_FEES_MOC"] = str(self.contract_MoCInrate.commission_rate_by_transaction_type(
+                tx_type=self.contract_MoCInrate.tx_type_mint_btcx_fees_moc(),
+                formatted=False,
+                block_identifier=block_identifier))
 
-        commission_rates["MINT_BTCX_FEES_MOC"] = str(self.contract_MoCInrate.commission_rate_by_transaction_type(
-            tx_type=self.contract_MoCInrate.tx_type_mint_btcx_fees_moc(),
-            formatted=False,
-            block_identifier=block_identifier))
+            commission_rates["REDEEM_BTCX_FEES_MOC"] = str(self.contract_MoCInrate.commission_rate_by_transaction_type(
+                tx_type=self.contract_MoCInrate.tx_type_redeem_btcx_fees_moc(),
+                formatted=False,
+                block_identifier=block_identifier))
 
-        commission_rates["REDEEM_BTCX_FEES_MOC"] = str(self.contract_MoCInrate.commission_rate_by_transaction_type(
-            tx_type=self.contract_MoCInrate.tx_type_redeem_btcx_fees_moc(),
-            formatted=False,
-            block_identifier=block_identifier))
-
-        d_moc_state["commissionRates"] = commission_rates
-
-        # End: Commission rates by transaction types
+            d_moc_state["commissionRates"] = commission_rates
+            # End: Commission rates by transaction types
 
         d_moc_state["bprox2PriceInUsd"] = str(
             int(d_moc_state["bprox2PriceInRbtc"]) * int(d_moc_state["bitcoinPrice"]) / int(
@@ -621,6 +628,13 @@ class MoCIndexer:
         #d_moc_state["priceVariation"] = dailyPriceRef
         d_moc_state["paused"] = self.contract_MoC.paused(
             block_identifier=block_identifier)
+
+        if self.app_mode != 'RRC20':
+            d_moc_state["liquidationEnabled"] = self.contract_MoCState.liquidation_enabled(
+                block_identifier=block_identifier)
+            d_moc_state["protected"] = str(self.contract_MoCState.protected(
+                formatted=False,
+                block_identifier=block_identifier))
 
         return d_moc_state
 
@@ -2911,11 +2925,17 @@ class MoCIndexer:
         d_moc_state["priceVariation"] = d_price_variation
 
         # update or insert the new info on mocstate
-        collection_moc_state.find_one_and_update(
+        if self.app_mode != 'RRC20':
+            # DEPRECATED FIELDS: commissionRate and bproAvailableToMint
+            collection_moc_state.find_one_and_update(
+                {},
+                {"$set": d_moc_state, "$unset": {"commissionRate": "", "bproAvailableToMint": ""}},
+                upsert=True)
+        else:
+            collection_moc_state.find_one_and_update(
             {},
-            {"$set": d_moc_state, "$unset": {"commissionRate": ""}},
+            {"$set": d_moc_state},
             upsert=True)
-        # DEPRECATED FIELD commissionRate
 
         # history
         collection_moc_state_history = self.mm.collection_moc_state_history(m_client)
