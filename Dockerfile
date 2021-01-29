@@ -12,12 +12,22 @@ WORKDIR /home/www-data/app/
 COPY app_run_indexer.py ./
 
 COPY moc_indexer.py ./
-
-COPY job_indexer.py ./
+COPY taskrunner.py ./
+COPY common.py ./
+COPY moc_config.py ./
+COPY jobs.py ./
+COPY agent/ ./agent
 
 ENV PATH "$PATH:/home/www-data/app/"
 ENV AWS_DEFAULT_REGION=us-west-1
+ARG configFile
+ARG env
+
+ENV APP_CONFIG=${configFile}
+ENV configFile=${configFile}
+ENV environment=${env}
+COPY ./settings/${configFile} ./
 
 ENV PYTHONPATH "${PYTONPATH}:/home/www-data/app/"
 
-CMD [ "python", "./app_run_indexer.py" ]
+CMD [ "sh","-c","python ./taskrunner.py -n ${environment} -c ${configFile} 'jobs:*' 'agent.jobs:*'"]

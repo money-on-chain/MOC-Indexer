@@ -41,6 +41,40 @@ Make sure to change **settings/settings-xxx.json** to point to your mongo db.
 **--network=mocTestnetAlpha:** Network name in the json
 
 
+**Usage**
+
+Alternative usages:
+
+* Single task scripts:
+
+`python ./app_scan_moc_blocks.py --config=settings/settings-xxx.json 
+--network=develop`
+
+`python ./app_scan_moc_prices.py --config=settings/settings-xxx.json 
+--network=develop`
+
+`python ./app_scan_moc_state.py --config=settings/settings-xxx.json 
+--network=develop`
+
+`python ./app_scan_moc_status.py --config=settings/settings-xxx.json 
+--network=develop`
+
+* Full tasks scripts:
+
+`python ./app_run_indexer.py --config=settings/settings-xxx.json 
+--network=develop` _(which choose to run jobs or history jobs based on config)_
+
+* Via `taskrunner`:
+
+`python taskrunner.py -c config -n network jobs:*` _for default jobs_
+`python taskrunner.py -c config -n network jobs_history:*` _for history jobs_
+`python taskrunner.py -c config -n network jobs:scan_moc_blocks` _for scan_moc_blocks job_
+`python taskrunner.py -c config -n network jobs:scan_moc_prices` _for scan_moc_prices job_
+`python taskrunner.py -c config -n network jobs:scan_moc_status` _for scan_moc_status job_
+`python taskrunner.py -c config -n network jobs:scan_moc_state` _for scan_moc_state job_
+
+
+
 **Example**
 
 Make sure to change **settings/settings-moc-alpha-testnet.json** to point to your **mongo db**.
