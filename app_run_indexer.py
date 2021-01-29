@@ -1,56 +1,54 @@
-import os
-from optparse import OptionParser
-import json
-from job_indexer import JobsIndexer
+from moc_config import MoCCfg
+from taskrunner import JobsRunner
 
 
-def options_from_config(filename='config.json'):
-    """ Options from file config.json """
+def add_jobs():
+    jobs = [
+        "jobs:scan_moc_blocks",
+        "jobs:scan_moc_prices",
+        "jobs:scan_moc_state",
+        "jobs:scan_moc_status",
+        "jobs:scan_moc_state_status",
+        "jobs:scan_user_state_update",
+        "jobs:scan_moc_blocks_not_processed",
+    ]
+    return jobs
 
-    with open(filename) as f:
-        config_options = json.load(f)
 
-    return config_options
+def add_jobs_history():
+    jobs = [
+        "jobs:scan_moc_blocks_history",
+        "jobs:scan_moc_prices_history",
+        "jobs:scan_moc_state_history",
+        "jobs:scan_moc_state_status_history",
+    ]
+    return jobs
+
+
+def add_jobs_tx_history():
+    jobs = [
+        "jobs:scan_moc_blocks_history"
+    ]
+    return jobs
+
+
+def main(moccfg):
+    runner = JobsRunner(moccfg=moccfg)
+
+    if moccfg.config['index_mode']=='normal':
+        f = add_jobs
+    elif moccfg.config['index_mode']=='history':
+        f = add_jobs_tx_history
+    else:
+        raise Exception("Index mode not recognize")
+
+    for job_desc in f():
+        runner.add_jobdesc(job_desc)
+    runner.time_loop_start()
 
 
 if __name__ == '__main__':
+    moccfg = MoCCfg(prog='app_run_indexer.py')
+    main(moccfg)
 
-    usage = '%prog [options] '
-    parser = OptionParser(usage=usage)
 
-    parser.add_option('-n', '--network', action='store', dest='network', type="string", help='network')
-
-    parser.add_option('-c', '--config', action='store', dest='config', type="string", help='config')
-
-    (options, args) = parser.parse_args()
-
-    if 'APP_CONFIG' in os.environ:
-        config = json.loads(os.environ['APP_CONFIG'])
-    else:
-        if not options.config:
-            config_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                       'settings',
-                                       'settings-rdoc-mainnet-historic.json')
-        else:
-            config_path = options.config
-
-        config = options_from_config(config_path)
-
-    if 'APP_NETWORK' in os.environ:
-        network = os.environ['APP_NETWORK']
-    else:
-        if not options.network:
-            network = 'rdocMainnet'
-        else:
-            network = options.network
-
-    if 'APP_MONGO_URI' in os.environ:
-        mongo_uri = os.environ['APP_MONGO_URI']
-        config['mongo']['uri'] = mongo_uri
-
-    if 'APP_MONGO_DB' in os.environ:
-        mongo_db = os.environ['APP_MONGO_DB']
-        config['mongo']['db'] = mongo_db
-
-    job_index = JobsIndexer(config, network)
-    job_index.time_loop_start()
