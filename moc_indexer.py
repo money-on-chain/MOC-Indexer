@@ -3,6 +3,7 @@ import logging.config
 import time
 from collections import OrderedDict
 import boto3
+from brownie.network.transaction import Status
 
 import pymongo
 from moneyonchain.moc import MoCExchangeRiskProMint, \
@@ -37,6 +38,14 @@ from web3 import Web3
 from web3.exceptions import TransactionNotFound
 from web3.types import BlockIdentifier
 
+
+import logging
+import logging.config
+
+
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S')
 
 log = logging.getLogger('default')
 
@@ -740,6 +749,7 @@ class MoCIndexer:
         return l_transactions, d_index_transactions
     """
 
+    """
     def search_moc_transaction(self, block):
 
         moc_addresses = self.moc_contract_addresses()
@@ -750,6 +760,7 @@ class MoCIndexer:
                 d_block['transactions'], moc_addresses)
 
         return l_transactions
+    """
 
     """
     def transactions_receipt(self, transactions):
@@ -779,12 +790,8 @@ class MoCIndexer:
                     Web3.toHex(tx['hash'])))
                 tx_receipt = None
             if tx_receipt:
-                if tx_receipt.status == 1:
+                if tx_receipt.status == Status.Confirmed:
                     l_tx_receipt.append(tx_receipt)
-                else:
-                    log.error("Transaction not confirmed for hash: [{0}]".format(
-                        Web3.toHex(tx['hash'])
-                    ))
 
         return l_tx_receipt
 
@@ -1380,6 +1387,7 @@ class MoCIndexer:
 
         return d_tx
 
+    """
     @staticmethod
     def d_base_event_decoded(tx_receipt):
 
@@ -1390,6 +1398,7 @@ class MoCIndexer:
         d_event['event'] = None
 
         return d_event
+    """
 
     def logs_process_moc_exchange(self,
                                   tx_receipt,
@@ -2049,7 +2058,7 @@ class MoCIndexer:
                 self.moc_settlement_redeem_stable_token_notification(
                     tx_receipt,
                     d_event.event,
-                    tx_log,
+                    raw_logs[tx_index],
                     m_client)
 
             tx_index += 1
@@ -2246,7 +2255,7 @@ class MoCIndexer:
                 self.moc_inrate_daily_pay_notification(
                     tx_receipt,
                     d_event.event,
-                    tx_log,
+                    raw_logs[tx_index],
                     m_client)
 
             tx_index += 1
@@ -2268,7 +2277,7 @@ class MoCIndexer:
                     block_ts)
                 self.moc_inrate_risk_pro_holders_interest_pay_notification(
                     tx_receipt,
-                    tx_log,
+                    raw_logs[tx_index],
                     d_event.event,
                     m_client)
 
@@ -2355,7 +2364,7 @@ class MoCIndexer:
     def moc_bucket_liquidation_notification(self, tx_receipt, tx_event, tx_log, m_client):
 
         collection_tx = self.mm.collection_notification(m_client)
-        tx_hash = Web3.toHex(tx_receipt['transactionHash'])
+        tx_hash = tx_receipt.txid
         event_name = 'BucketLiquidation'
         log_index = tx_log['logIndex']
 
@@ -2405,7 +2414,7 @@ class MoCIndexer:
 
             if 'BucketLiquidation' in tx_event:
                 d_event = MoCBucketLiquidation(tx_event['BucketLiquidation'],
-                                                 tx_receipt=tx_receipt)
+                                               tx_receipt=tx_receipt)
                 self.moc_bucket_liquidation(tx_receipt,
                                             d_event.event,
                                             m_client,
@@ -2415,7 +2424,7 @@ class MoCIndexer:
                                             block_ts)
                 self.moc_bucket_liquidation_notification(tx_receipt,
                                                          d_event.event,
-                                                         tx_log,
+                                                         raw_logs[tx_index],
                                                          m_client)
 
             tx_index += 1
@@ -2426,7 +2435,7 @@ class MoCIndexer:
     def moc_state_transition_notification(self, tx_receipt, tx_event, tx_log, m_client):
 
         collection_tx = self.mm.collection_notification(m_client)
-        tx_hash = Web3.toHex(tx_receipt['transactionHash'])
+        tx_hash = tx_receipt.txid
         event_name = 'StateTransition'
         log_index = tx_log['logIndex']
 
@@ -2476,7 +2485,7 @@ class MoCIndexer:
                 self.moc_state_transition_notification(
                     tx_receipt,
                     d_event.event,
-                    tx_log,
+                    raw_logs[tx_index],
                     m_client)
 
             tx_index += 1
@@ -2515,7 +2524,7 @@ class MoCIndexer:
         # get collection transaction
         collection_tx = self.mm.collection_transaction(m_client)
 
-        tx_hash = Web3.toHex(tx_receipt['transactionHash'])
+        tx_hash = tx_receipt.txid
 
         collection_users = self.mm.collection_users(m_client)
 
@@ -2917,7 +2926,7 @@ class MoCIndexer:
             # If is not from our contract return
             return
 
-        tx_hash = Web3.toHex(tx_receipt['transactionHash'])
+        tx_hash = tx_receipt.txid
 
         if tx_event["value"] <= 0:
             return
@@ -2988,7 +2997,7 @@ class MoCIndexer:
             # If is not from our contract return
             return
 
-        tx_hash = Web3.toHex(tx_receipt['transactionHash'])
+        tx_hash = tx_receipt.txid
         moc_tx = d_moc_transactions[tx_hash]
 
         if moc_tx['value'] <= 0:

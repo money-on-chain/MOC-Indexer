@@ -21,11 +21,15 @@ log = logging.getLogger('default')
 
 class JobsIndexer:
 
-    def __init__(self, config_app, network_app):
+    def __init__(self, config_app, config_net, connection_net):
 
         self.options = config_app
-        self.network = network_app
-        self.moc_indexer = MoCIndexer(self.options, self.network)
+        self.config_network = config_net
+        self.connection_network = connection_net
+        self.moc_indexer = MoCIndexer(
+            self.options,
+            self.config_network,
+            self.connection_network)
 
         self.tl = Timeloop()
 
