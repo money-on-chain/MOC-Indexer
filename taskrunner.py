@@ -10,7 +10,7 @@ from weakref import WeakValueDictionary
 
 import boto3 as boto3
 import pymongo
-from moneyonchain.manager import ConnectionManager
+from moneyonchain.networks import NetworkManager
 from timeloop import Timeloop
 from timeloop.job import Job as TLJob
 
@@ -24,7 +24,6 @@ logging.basicConfig(level=logging.INFO,
 log = logging.getLogger('default')
 
 
-
 class RetriableException(Exception):
     retryInSeconds = 60
 
@@ -36,7 +35,18 @@ class Job(TLJob, abc.ABC):
     def __init__(self, runner):
         super().__init__(self.IntervalSeconds, self.looprun)
         self.runner = runner
-        self.con = ConnectionManager(options=self.options, network=self.network)
+        #self.con = ConnectionManager(options=self.options, network=self.network)
+
+        # init network manager
+        # connection network is the brownie connection network
+        # config network is our enviroment we want to connect
+        self.network_manager = NetworkManager(
+            connection_network=self.connection_network,
+            config_network=self.config_network)
+
+        # Connect to network
+        self.network_manager.connect()
+
         self.initialized = False
         self.logger = logging.getLogger(self.name)
 
@@ -50,8 +60,12 @@ class Job(TLJob, abc.ABC):
         return self.runner.options
 
     @property
-    def network(self):
-        return self.runner.network
+    def connection_network(self):
+        return self.runner.connection_network
+
+    @property
+    def config_network(self):
+        return self.runner.config_network
 
     @property
     def name(self):
@@ -104,20 +118,21 @@ class Job(TLJob, abc.ABC):
 
     @property
     def block_number(self):
-        return Blockchain.GetBlockNr(self.con)
+        return Blockchain.GetBlockNr(self.network_manager)
 
     def getBlock(self, nr):
-        return Blockchain.GetBlock(self.con, nr)
+        return Blockchain.GetBlock(self.network_manager, nr)
 
     @abstractmethod
     def run_job(self):
         raise NotImplementedError()
 
     @classmethod
-    def Run(cls, _config, _network):
+    def Run(cls, _config, _config_network, _connection_network):
         class FakeRunner:
             options = _config
-            network = _network
+            connection_network = _connection_network
+            config_network = _config_network
         return cls.RunWithRunner(FakeRunner())
 
     @classmethod
@@ -144,7 +159,7 @@ class Blockchain:
         #     cls.BlockNumberUpdate = 1
 
     @classmethod
-    def GetBlock(cls, con, nr, useCache=True):
+    def GetBlock(cls, network_manager, nr, useCache=True):
         if nr!='latest' and useCache:
             with cls.BlocksLock:
                 block = cls.Blocks.get(nr)
@@ -152,8 +167,8 @@ class Blockchain:
             block = None
 
         if block is None:
-            block = con.get_block(nr, full_transactions=True)
-            if nr=='latest':
+            block = network_manager.get_block(nr, full_transactions=True)
+            if nr == 'latest':
                 nr = block['number']
             with cls.BlocksLock:
                 cls.Blocks[nr] = block
@@ -170,7 +185,7 @@ class Blockchain:
                 cls.Blocks.pop(key)
 
     @classmethod
-    def GetBlockNr(cls, con):
+    def GetBlockNr(cls, network_manager):
         # with cls.BlockNumberLock:
         #     ts = time.time()
         #     if True:  # (None in (cls.BlockNumberTS, cls.BlockNumber)) or (
@@ -178,20 +193,20 @@ class Blockchain:
         #         cls.BlockNumber = con.block_number
         #         cls.BlockNumberTS = ts
         #     return cls.BlockNumber
-        return con.block_number
+        return network_manager.block_number
 
-    def __init__(self, con):
-        self.con = con
+    def __init__(self, network_manager):
+        self.network_manager = network_manager
 
     @property
     def block_number(self):
-        return self.GetBlockNr(self.con)
+        return self.GetBlockNr(self.network_manager)
 
     def getBlock(self, nr, useCache=True):
-        return self.GetBlock(self.con, nr, useCache=useCache)
+        return self.GetBlock(self.network_manager, nr, useCache=useCache)
 
     def getTxReceipt(self, txhash):
-        return self.con.get_transaction_receipt(txhash)
+        return self.network_manager.get_transaction_receipt(txhash)
 
 
 class BlockBasedJob(Job, abc.ABC):
@@ -267,7 +282,8 @@ class JobsRunner:
         self.cfg = kwargs
         self.logger = logging.getLogger("jobs-runner")
         self.options = moccfg.config
-        self.network = moccfg.network
+        self.config_network = moccfg.config_network
+        self.connection_network = moccfg.connection_network
         self.tl = TimeloopExt()
         self._db = None
         self._client = None
@@ -343,7 +359,7 @@ class JobsRunner:
         self._load_class(mod, classname)
 
     def _load_class(self, mod, classname):
-        if not classname=='*':
+        if not classname == '*':
             jobklass = getattr(mod, classname)
             return self.add_jobs([jobklass])
         try:
@@ -388,11 +404,13 @@ class JobsRunner:
         self.quitEvent.set()
         return self.stopped
 
+
 def extract_plugins_from_cmd(sys_argv, offset=1):
     plugins = [arg for arg in sys_argv[offset:] if ':' in arg]
     for plugin in plugins:
         sys_argv.remove(plugin)
     return plugins
+
 
 def main(prog='taskrunner.py', plugins=None):
     if plugins is None:

@@ -27,15 +27,26 @@ def getConfig(config_opt, defaultConfig=None):
     return config
 
 
-def getNetwork(options, default):
-    if 'APP_NETWORK' in os.environ:
-        network = os.environ['APP_NETWORK']
+def getConnectionNetwork(options, default):
+    if 'APP_CONNECTION_NETWORK' in os.environ:
+        connection_network = os.environ['APP_CONNECTION_NETWORK']
     else:
-        if not options.network:
-            network = default
+        if not options.connection_network:
+            connection_network = default
         else:
-            network = options.network
-    return network
+            connection_network = options.connection_network
+    return connection_network
+
+
+def getConfigNetwork(options, default):
+    if 'APP_CONFIG_NETWORK' in os.environ:
+        config_network = os.environ['APP_CONFIG_NETWORK']
+    else:
+        if not options.config_network:
+            config_network = default
+        else:
+            config_network = options.config_network
+    return config_network
 
 
 # def getMocCfg(parser, indexerClass=None, defaultNet='rdocTestnet',
@@ -59,8 +70,10 @@ def getParser(progname=None):
         progname = os.path.split(progname)[1]
     usage = '%s [options] '%progname
     parser = OptionParser(usage=usage)
-    parser.add_option('-n', '--network', action='store', dest='network',
-                      type="string", help='network')
+    parser.add_option('-n', '--connection_network', action='store', dest='connection_network',
+                      type="string", help='connection_network')
+    parser.add_option('-e', '--config_network', action='store', dest='config_network',
+                      type="string", help='config_network')
     parser.add_option('-c', '--config', action='store', dest='config',
                       type="string", help='config')
     return parser

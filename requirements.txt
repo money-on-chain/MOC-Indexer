@@ -1,6 +1,7 @@
-web3
+web3==5.11.1
+eth-brownie==1.12.2
 timeloop
 boto3
 pymongo
 requests
-moneyonchain==0.0.53
+moneyonchain==2.0.7

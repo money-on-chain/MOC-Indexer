@@ -4,7 +4,7 @@ import time
 from collections import OrderedDict
 
 import pymongo
-from moneyonchain.events import MoCExchangeRiskProMint, \
+from moneyonchain.moc import MoCExchangeRiskProMint, \
     MoCExchangeStableTokenMint, \
     MoCExchangeRiskProxMint, \
     MoCExchangeRiskProRedeem, \
@@ -23,9 +23,14 @@ from moneyonchain.events import MoCExchangeRiskProMint, \
     ERC20Transfer, \
     MoCSettlementRedeemRequestProcessed, \
     MoCSettlementSettlementCompleted
-from moneyonchain.manager import ConnectionManager
-from moneyonchain.moc import MoC, MoCMedianizer
-from moneyonchain.rdoc import RDOCMoC, RDOCMoCMedianizer
+
+from moneyonchain.networks import NetworkManager
+from moneyonchain.transaction import TransactionReceiptBase
+
+from moneyonchain.moc import MoC
+from moneyonchain.rdoc import RDOCMoC
+from moneyonchain.medianizer import MoCMedianizer, RDOCMoCMedianizer
+
 from requests.exceptions import HTTPError
 from web3 import Web3
 from web3.exceptions import TransactionNotFound
@@ -205,21 +210,29 @@ class MongoManager:
 class MoCIndexer:
     precision = 10 ** 18
 
-    def __init__(self, config_app, network_app):
+    def __init__(self, config_app, config_net, connection_net):
         self.options = config_app
-        self.network = network_app
+        self.config_network = config_net
+        self.connection_network = connection_net
 
-        self.connection_manager = ConnectionManager(options=self.options,
-                                                    network=self.network)
-        self.app_mode = self.options['networks'][self.network]['app_mode']
+        # init network manager
+        # connection network is the brownie connection network
+        # config network is our enviroment we want to connect
+        self.network_manager = NetworkManager(
+            connection_network=self.connection_network,
+            config_network=self.config_network)
+
+        self.app_mode = self.options['networks'][self.config_network]['app_mode']
         self.debug_mode = self.options.get('debug', False)
 
         if self.app_mode == "RRC20":
-            self.contract_MoC = RDOCMoC(self.connection_manager,
-                                        contracts_discovery=True)
+            self.contract_MoC = RDOCMoC(
+                self.network_manager,
+                load_sub_contract=False).from_abi().contracts_discovery()
         else:
-            self.contract_MoC = MoC(self.connection_manager,
-                                    contracts_discovery=True)
+            self.contract_MoC = MoC(
+                self.network_manager,
+                load_sub_contract=False).from_abi().contracts_discovery()
 
         self.contract_MoCState = self.contract_MoC.sc_moc_state
         self.contract_MoCInrate = self.contract_MoC.sc_moc_inrate
@@ -229,12 +242,13 @@ class MoCIndexer:
 
         if self.app_mode == "RRC20":
             self.contract_MoCMedianizer = RDOCMoCMedianizer(
-                self.connection_manager,
-                contract_address=self.contract_MoCState.price_provider())
+                self.network_manager,
+                contract_address=self.contract_MoCState.price_provider()).from_abi()
             self.contract_ReserveToken = self.contract_MoC.sc_reserve_token
         else:
-            self.contract_MoCMedianizer = MoCMedianizer(self.connection_manager,
-                                                        contract_address=self.contract_MoCState.price_provider())
+            self.contract_MoCMedianizer = MoCMedianizer(
+                self.network_manager,
+                contract_address=self.contract_MoCState.price_provider()).from_abi()
 
         # initialize mongo db
         self.mm = MongoManager(self.options)
@@ -331,7 +345,7 @@ class MoCIndexer:
         bucket_c0 = str.encode('C0')
 
         # get block time from node
-        block_ts = self.connection_manager.block_timestamp(block_identifier)
+        block_ts = self.network_manager.block_timestamp(block_identifier)
 
         d_moc_state = OrderedDict()
 
@@ -540,7 +554,7 @@ class MoCIndexer:
         bucket_x2 = str.encode('X2')
 
         # get block time from node
-        block_ts = self.connection_manager.block_timestamp(block_identifier)
+        block_ts = self.network_manager.block_timestamp(block_identifier)
 
         d_price = OrderedDict()
 
@@ -673,13 +687,14 @@ class MoCIndexer:
     def search_moc_transaction(self, block):
         moc_addresses = self.moc_contract_addresses()
 
-        f_block = self.connection_manager.get_block(block,
-                                                    full_transactions=True)
+        f_block = self.network_manager.get_block(block,
+                                                 full_transactions=True)
         l_transactions, d_index_transactions = self.filter_transactions(
                 f_block['transactions'], moc_addresses)
 
         return l_transactions
 
+    """
     def transactions_receipt(self, transactions):
         l_tx_receipt = list()
         for tx in transactions:
@@ -692,6 +707,27 @@ class MoCIndexer:
                 tx_receipt = None
             if tx_receipt:
                 l_tx_receipt.append(tx_receipt)
+
+        return l_tx_receipt
+    """
+
+    @staticmethod
+    def transactions_receipt(transactions):
+        l_tx_receipt = list()
+        for tx in transactions:
+            try:
+                tx_receipt = TransactionReceiptBase(tx['hash'], trace_enabled=False)
+            except TransactionNotFound:
+                log.error("No transaction receipt for hash: [{0}]".format(
+                    Web3.toHex(tx['hash'])))
+                tx_receipt = None
+            if tx_receipt:
+                if tx_receipt.status == 1:
+                    l_tx_receipt.append(tx_receipt)
+                else:
+                    log.error("Transaction not confirmed for hash: [{0}]".format(
+                        Web3.toHex(tx['hash'])
+                    ))
 
         return l_tx_receipt
 
@@ -714,43 +750,43 @@ class MoCIndexer:
         # get collection transaction
         collection_tx = self.mm.collection_transaction(m_client)
 
-        tx_hash = Web3.toHex(tx_receipt['transactionHash'])
+        tx_hash = tx_receipt.txid
         moc_tx = d_moc_transactions[tx_hash]
 
         d_tx = OrderedDict()
-        d_tx["address"] = tx_event.account
-        d_tx["blockNumber"] = tx_event.blockNumber
+        d_tx["address"] = tx_event["account"]
+        d_tx["blockNumber"] = tx_event["blockNumber"]
         d_tx["event"] = 'RiskProMint'
         d_tx["transactionHash"] = tx_hash
-        d_tx["RBTCAmount"] = str(tx_event.reserveTotal)
-        usd_amount = Web3.fromWei(tx_event.reserveTotal,
-                                  'ether') * Web3.fromWei(tx_event.reservePrice,
+        d_tx["RBTCAmount"] = str(tx_event["reserveTotal"])
+        usd_amount = Web3.fromWei(tx_event["reserveTotal"],
+                                  'ether') * Web3.fromWei(tx_event["reservePrice"],
                                                           'ether')
         d_tx["USDAmount"] = str(int(usd_amount * self.precision))
-        d_tx["amount"] = str(tx_event.amount)
+        d_tx["amount"] = str(tx_event["amount"])
         d_tx["confirmationTime"] = confirmation_time
         d_tx["isPositive"] = True
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
-        d_tx["rbtcCommission"] = str(tx_event.commission)
-        usd_commission = Web3.fromWei(tx_event.commission,
+        d_tx["rbtcCommission"] = str(tx_event["commission"])
+        usd_commission = Web3.fromWei(tx_event["commission"],
                                       'ether') * Web3.fromWei(
-            tx_event.reservePrice, 'ether')
+            tx_event["reservePrice"], 'ether')
         d_tx["USDCommission"] = str(int(usd_commission * self.precision))
         d_tx["status"] = status
         d_tx["tokenInvolved"] = 'RISKPRO'
-        d_tx["reservePrice"] = str(tx_event.reservePrice)
+        d_tx["reservePrice"] = str(tx_event["reservePrice"])
         gas_fee = tx_receipt['gasUsed'] * Web3.fromWei(moc_tx['gasPrice'],
                                                        'ether')
         d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         if self.app_mode != "RRC20":
             d_tx["gasFeeUSD"] = str(int(
-                gas_fee * Web3.fromWei(tx_event.reservePrice,
+                gas_fee * Web3.fromWei(tx_event["reservePrice"],
                                        'ether') * self.precision))
-        rbtc_total = tx_event.reserveTotal + tx_event.commission + int(
+        rbtc_total = tx_event["reserveTotal"] + tx_event["commission"] + int(
             gas_fee * self.precision)
         d_tx["RBTCTotal"] = str(rbtc_total)
         usd_total = Web3.fromWei(rbtc_total, 'ether') * Web3.fromWei(
-            tx_event.reservePrice, 'ether')
+            tx_event["reservePrice"], 'ether')
         d_tx["USDTotal"] = str(int(usd_total * self.precision))
         d_tx["processLogs"] = True
         d_tx["createdAt"] = block_ts
@@ -793,45 +829,45 @@ class MoCIndexer:
         # get collection transaction
         collection_tx = self.mm.collection_transaction(m_client)
 
-        tx_hash = Web3.toHex(tx_receipt['transactionHash'])
+        tx_hash = tx_receipt.txid
         moc_tx = d_moc_transactions[tx_hash]
 
         d_tx = OrderedDict()
         d_tx["event"] = 'RiskProRedeem'
-        d_tx["blockNumber"] = tx_event.blockNumber
+        d_tx["blockNumber"] = tx_event["blockNumber"]
         d_tx["transactionHash"] = tx_hash
-        d_tx["address"] = tx_event.account
+        d_tx["address"] = tx_event["account"]
         d_tx["tokenInvolved"] = 'RISKPRO'
-        d_tx["userAmount"] = str(Web3.fromWei(tx_event.amount, 'ether'))
+        d_tx["userAmount"] = str(Web3.fromWei(tx_event["amount"], 'ether'))
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
         d_tx["status"] = status
-        d_tx["RBTCAmount"] = str(tx_event.reserveTotal)
-        usd_amount = Web3.fromWei(tx_event.reserveTotal,
-                                  'ether') * Web3.fromWei(tx_event.reservePrice,
+        d_tx["RBTCAmount"] = str(tx_event["reserveTotal"])
+        usd_amount = Web3.fromWei(tx_event["reserveTotal"],
+                                  'ether') * Web3.fromWei(tx_event["reservePrice"],
                                                           'ether')
         d_tx["USDAmount"] = str(int(usd_amount * self.precision))
-        d_tx["amount"] = str(tx_event.amount)
+        d_tx["amount"] = str(tx_event["amount"])
         d_tx["confirmationTime"] = confirmation_time
-        d_tx["rbtcCommission"] = str(tx_event.commission)
-        usd_commission = Web3.fromWei(tx_event.commission,
+        d_tx["rbtcCommission"] = str(tx_event["commission"])
+        usd_commission = Web3.fromWei(tx_event["commission"],
                                       'ether') * Web3.fromWei(
-            tx_event.reservePrice, 'ether')
+            tx_event["reservePrice"], 'ether')
         d_tx["USDCommission"] = str(int(usd_commission * self.precision))
         d_tx["isPositive"] = False
-        d_tx["reservePrice"] = str(tx_event.reservePrice)
+        d_tx["reservePrice"] = str(tx_event["reservePrice"])
         gas_fee = tx_receipt['gasUsed'] * Web3.fromWei(moc_tx['gasPrice'],
                                                        'ether')
         d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         if self.app_mode != "RRC20":
             d_tx["gasFeeUSD"] = str(int(
-                gas_fee * Web3.fromWei(tx_event.reservePrice,
+                gas_fee * Web3.fromWei(tx_event["reservePrice"],
                                        'ether') * self.precision))
-        rbtc_total = tx_event.reserveTotal - int(gas_fee * self.precision)
+        rbtc_total = tx_event["reserveTotal"] - int(gas_fee * self.precision)
         d_tx["RBTCTotal"] = str(rbtc_total)
         rbtc_total_ether = Web3.fromWei(abs(rbtc_total), 'ether')
         if rbtc_total < 0:
             rbtc_total_ether = -rbtc_total_ether
-        usd_total = rbtc_total_ether * Web3.fromWei(tx_event.reservePrice,
+        usd_total = rbtc_total_ether * Web3.fromWei(tx_event["reservePrice"],
                                                     'ether')
         d_tx["USDTotal"] = str(int(usd_total * self.precision))
         d_tx["processLogs"] = True
@@ -875,49 +911,49 @@ class MoCIndexer:
         # get collection transaction
         collection_tx = self.mm.collection_transaction(m_client)
 
-        tx_hash = Web3.toHex(tx_receipt['transactionHash'])
+        tx_hash = tx_receipt.txid
         moc_tx = d_moc_transactions[tx_hash]
 
         d_tx = OrderedDict()
         d_tx["transactionHash"] = tx_hash
-        d_tx["blockNumber"] = tx_event.blockNumber
-        d_tx["address"] = tx_event.account
+        d_tx["blockNumber"] = tx_event["blockNumber"]
+        d_tx["address"] = tx_event["account"]
         d_tx["status"] = status
         d_tx["event"] = 'RiskProxMint'
         d_tx["tokenInvolved"] = 'RISKPROX'
-        d_tx["userAmount"] = str(Web3.fromWei(tx_event.amount, 'ether'))
+        d_tx["userAmount"] = str(Web3.fromWei(tx_event["amount"], 'ether'))
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
-        d_tx["RBTCAmount"] = str(tx_event.reserveTotal)
-        usd_amount = Web3.fromWei(tx_event.reserveTotal,
-                                  'ether') * Web3.fromWei(tx_event.reservePrice,
+        d_tx["RBTCAmount"] = str(tx_event["reserveTotal"])
+        usd_amount = Web3.fromWei(tx_event["reserveTotal"],
+                                  'ether') * Web3.fromWei(tx_event["reservePrice"],
                                                           'ether')
         d_tx["USDAmount"] = str(int(usd_amount * self.precision))
-        d_tx["amount"] = str(tx_event.amount)
+        d_tx["amount"] = str(tx_event["amount"])
         d_tx["confirmationTime"] = confirmation_time
         d_tx["isPositive"] = True
-        d_tx["leverage"] = str(tx_event.leverage)
-        d_tx["rbtcCommission"] = str(tx_event.commission)
-        usd_commission = Web3.fromWei(tx_event.commission,
+        d_tx["leverage"] = str(tx_event["leverage"])
+        d_tx["rbtcCommission"] = str(tx_event["commission"])
+        usd_commission = Web3.fromWei(tx_event["commission"],
                                       'ether') * Web3.fromWei(
-            tx_event.reservePrice, 'ether')
+            tx_event["reservePrice"], 'ether')
         d_tx["USDCommission"] = str(int(usd_commission * self.precision))
-        d_tx["rbtcInterests"] = str(tx_event.interests)
-        usd_interest = Web3.fromWei(tx_event.interests, 'ether') * Web3.fromWei(
-            tx_event.reservePrice, 'ether')
+        d_tx["rbtcInterests"] = str(tx_event["interests"])
+        usd_interest = Web3.fromWei(tx_event["interests"], 'ether') * Web3.fromWei(
+            tx_event["reservePrice"], 'ether')
         d_tx["USDInterests"] = str(int(usd_interest * self.precision))
-        d_tx["reservePrice"] = str(tx_event.reservePrice)
+        d_tx["reservePrice"] = str(tx_event["reservePrice"])
         gas_fee = tx_receipt['gasUsed'] * Web3.fromWei(moc_tx['gasPrice'],
                                                        'ether')
         d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         if self.app_mode != "RRC20":
             d_tx["gasFeeUSD"] = str(int(
-                gas_fee * Web3.fromWei(tx_event.reservePrice,
+                gas_fee * Web3.fromWei(tx_event["reservePrice"],
                                        'ether') * self.precision))
-        rbtc_total = tx_event.reserveTotal + tx_event.commission + tx_event.interests + int(
+        rbtc_total = tx_event["reserveTotal"] + tx_event["commission"] + tx_event["interests"] + int(
             gas_fee * self.precision)
         d_tx["RBTCTotal"] = str(rbtc_total)
         usd_total = Web3.fromWei(rbtc_total, 'ether') * Web3.fromWei(
-            tx_event.reservePrice, 'ether')
+            tx_event["reservePrice"], 'ether')
         d_tx["USDTotal"] = str(int(usd_total * self.precision))
         d_tx["processLogs"] = True
         d_tx["createdAt"] = block_ts
@@ -960,51 +996,51 @@ class MoCIndexer:
         # get collection transaction
         collection_tx = self.mm.collection_transaction(m_client)
 
-        tx_hash = Web3.toHex(tx_receipt['transactionHash'])
+        tx_hash = tx_receipt.txid
         moc_tx = d_moc_transactions[tx_hash]
 
         d_tx = OrderedDict()
         d_tx["transactionHash"] = tx_hash
-        d_tx["blockNumber"] = tx_event.blockNumber
-        d_tx["address"] = tx_event.account
+        d_tx["blockNumber"] = tx_event["blockNumber"]
+        d_tx["address"] = tx_event["account"]
         d_tx["status"] = status
         d_tx["event"] = 'RiskProxRedeem'
         d_tx["tokenInvolved"] = 'RISKPROX'
-        d_tx["userAmount"] = str(Web3.fromWei(tx_event.amount, 'ether'))
+        d_tx["userAmount"] = str(Web3.fromWei(tx_event["amount"], 'ether'))
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
-        d_tx["RBTCAmount"] = str(tx_event.reserveTotal)
-        usd_amount = Web3.fromWei(tx_event.reserveTotal,
-                                  'ether') * Web3.fromWei(tx_event.reservePrice,
+        d_tx["RBTCAmount"] = str(tx_event["reserveTotal"])
+        usd_amount = Web3.fromWei(tx_event["reserveTotal"],
+                                  'ether') * Web3.fromWei(tx_event["reservePrice"],
                                                           'ether')
         d_tx["USDAmount"] = str(int(usd_amount * self.precision))
-        d_tx["amount"] = str(tx_event.amount)
+        d_tx["amount"] = str(tx_event["amount"])
         d_tx["confirmationTime"] = confirmation_time
-        d_tx["leverage"] = str(tx_event.leverage)
-        d_tx["rbtcCommission"] = str(tx_event.commission)
-        usd_commission = Web3.fromWei(tx_event.commission,
+        d_tx["leverage"] = str(tx_event["leverage"])
+        d_tx["rbtcCommission"] = str(tx_event["commission"])
+        usd_commission = Web3.fromWei(tx_event["commission"],
                                       'ether') * Web3.fromWei(
-            tx_event.reservePrice, 'ether')
+            tx_event["reservePrice"], 'ether')
         d_tx["USDCommission"] = str(int(usd_commission * self.precision))
-        d_tx["rbtcInterests"] = str(tx_event.interests)
-        usd_interest = Web3.fromWei(tx_event.interests, 'ether') * Web3.fromWei(
-            tx_event.reservePrice, 'ether')
+        d_tx["rbtcInterests"] = str(tx_event["interests"])
+        usd_interest = Web3.fromWei(tx_event["interests"], 'ether') * Web3.fromWei(
+            tx_event["reservePrice"], 'ether')
         d_tx["USDInterests"] = str(int(usd_interest * self.precision))
         d_tx["isPositive"] = False
-        d_tx["reservePrice"] = str(tx_event.reservePrice)
+        d_tx["reservePrice"] = str(tx_event["reservePrice"])
         gas_fee = tx_receipt['gasUsed'] * Web3.fromWei(moc_tx['gasPrice'],
                                                        'ether')
         d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         if self.app_mode != "RRC20":
             d_tx["gasFeeUSD"] = str(int(
-                gas_fee * Web3.fromWei(tx_event.reservePrice,
+                gas_fee * Web3.fromWei(tx_event["reservePrice"],
                                        'ether') * self.precision))
-        rbtc_total = tx_event.reserveTotal + tx_event.interests - int(
+        rbtc_total = tx_event["reserveTotal"] + tx_event["interests"] - int(
             gas_fee * self.precision)
         d_tx["RBTCTotal"] = str(rbtc_total)
         rbtc_total_ether = Web3.fromWei(abs(rbtc_total), 'ether')
         if rbtc_total < 0:
             rbtc_total_ether = -rbtc_total_ether
-        usd_total = rbtc_total_ether * Web3.fromWei(tx_event.reservePrice,
+        usd_total = rbtc_total_ether * Web3.fromWei(tx_event["reservePrice"],
                                                     'ether')
         d_tx["USDTotal"] = str(int(usd_total * self.precision))
         d_tx["processLogs"] = True
@@ -1048,46 +1084,46 @@ class MoCIndexer:
         # get collection transaction
         collection_tx = self.mm.collection_transaction(m_client)
 
-        tx_hash = Web3.toHex(tx_receipt['transactionHash'])
+        tx_hash = tx_receipt.txid
         moc_tx = d_moc_transactions[tx_hash]
 
         d_tx = OrderedDict()
         d_tx["transactionHash"] = tx_hash
-        d_tx["blockNumber"] = tx_event.blockNumber
-        d_tx["address"] = tx_event.account
+        d_tx["blockNumber"] = tx_event["blockNumber"]
+        d_tx["address"] = tx_event["account"]
         d_tx["status"] = status
         d_tx["event"] = 'StableTokenMint'
         d_tx["tokenInvolved"] = 'STABLE'
         # WARNING something to investigate, commented think is correct
         # d_tx["userAmount"] = str(Web3.fromWei(tx_event.amount, 'ether'))
-        d_tx["userAmount"] = str(Web3.fromWei(tx_event.reserveTotal, 'ether'))
+        d_tx["userAmount"] = str(Web3.fromWei(tx_event["reserveTotal"], 'ether'))
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
-        d_tx["RBTCAmount"] = str(tx_event.reserveTotal)
-        usd_amount = Web3.fromWei(tx_event.reserveTotal,
-                                  'ether') * Web3.fromWei(tx_event.reservePrice,
+        d_tx["RBTCAmount"] = str(tx_event["reserveTotal"])
+        usd_amount = Web3.fromWei(tx_event["reserveTotal"],
+                                  'ether') * Web3.fromWei(tx_event["reservePrice"],
                                                           'ether')
         d_tx["USDAmount"] = str(int(usd_amount * self.precision))
-        usd_commission = Web3.fromWei(tx_event.commission,
+        usd_commission = Web3.fromWei(tx_event["commission"],
                                       'ether') * Web3.fromWei(
-            tx_event.reservePrice, 'ether')
+            tx_event["reservePrice"], 'ether')
         d_tx["USDCommission"] = str(int(usd_commission * self.precision))
-        d_tx["amount"] = str(tx_event.amount)
+        d_tx["amount"] = str(tx_event["amount"])
         d_tx["confirmationTime"] = confirmation_time
         d_tx["isPositive"] = True
-        d_tx["rbtcCommission"] = str(tx_event.commission)
-        d_tx["reservePrice"] = str(tx_event.reservePrice)
+        d_tx["rbtcCommission"] = str(tx_event["commission"])
+        d_tx["reservePrice"] = str(tx_event["reservePrice"])
         gas_fee = tx_receipt['gasUsed'] * Web3.fromWei(moc_tx['gasPrice'],
                                                        'ether')
         d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         if self.app_mode != "RRC20":
             d_tx["gasFeeUSD"] = str(int(
-                gas_fee * Web3.fromWei(tx_event.reservePrice,
+                gas_fee * Web3.fromWei(tx_event["reservePrice"],
                                        'ether') * self.precision))
-        rbtc_total = tx_event.reserveTotal + tx_event.commission + int(
+        rbtc_total = tx_event["reserveTotal"] + tx_event["commission"] + int(
             gas_fee * self.precision)
         d_tx["RBTCTotal"] = str(rbtc_total)
         usd_total = Web3.fromWei(rbtc_total, 'ether') * Web3.fromWei(
-            tx_event.reservePrice, 'ether')
+            tx_event["reservePrice"], 'ether')
         d_tx["USDTotal"] = str(int(usd_total * self.precision))
         d_tx["processLogs"] = True
         d_tx["createdAt"] = block_ts
@@ -1130,42 +1166,42 @@ class MoCIndexer:
         # get collection transaction
         collection_tx = self.mm.collection_transaction(m_client)
 
-        tx_hash = Web3.toHex(tx_receipt['transactionHash'])
+        tx_hash = tx_receipt.txid
         moc_tx = d_moc_transactions[tx_hash]
 
         d_tx = OrderedDict()
-        d_tx["address"] = tx_event.account
-        d_tx["blockNumber"] = tx_event.blockNumber
+        d_tx["address"] = tx_event["account"]
+        d_tx["blockNumber"] = tx_event["blockNumber"]
         d_tx["event"] = 'StableTokenRedeem'
         d_tx["transactionHash"] = tx_hash
-        d_tx["RBTCAmount"] = str(tx_event.reserveTotal)
-        usd_amount = Web3.fromWei(tx_event.reserveTotal,
-                                  'ether') * Web3.fromWei(tx_event.reservePrice,
+        d_tx["RBTCAmount"] = str(tx_event["reserveTotal"])
+        usd_amount = Web3.fromWei(tx_event["reserveTotal"],
+                                  'ether') * Web3.fromWei(tx_event["reservePrice"],
                                                           'ether')
         d_tx["USDAmount"] = str(int(usd_amount * self.precision))
-        d_tx["amount"] = str(tx_event.amount)
+        d_tx["amount"] = str(tx_event["amount"])
         d_tx["confirmationTime"] = confirmation_time
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
         d_tx["status"] = status
         d_tx["tokenInvolved"] = 'STABLE'
-        d_tx["rbtcCommission"] = str(tx_event.commission)
-        usd_commission = Web3.fromWei(tx_event.commission,
+        d_tx["rbtcCommission"] = str(tx_event["commission"])
+        usd_commission = Web3.fromWei(tx_event["commission"],
                                       'ether') * Web3.fromWei(
-            tx_event.reservePrice, 'ether')
+            tx_event["reservePrice"], 'ether')
         d_tx["USDCommission"] = str(int(usd_commission * self.precision))
         d_tx["isPositive"] = False
-        d_tx["reservePrice"] = str(tx_event.reservePrice)
+        d_tx["reservePrice"] = str(tx_event["reservePrice"])
         gas_fee = tx_receipt['gasUsed'] * Web3.fromWei(moc_tx['gasPrice'],
                                                        'ether')
         # d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         # if self.app_mode != "RRC20":
         #    d_tx["gasFeeUSD"] = str(int(gas_fee * Web3.fromWei(tx_event.reservePrice, 'ether') * self.precision))
-        rbtc_total = tx_event.reserveTotal - int(gas_fee * self.precision)
+        rbtc_total = tx_event["reserveTotal"] - int(gas_fee * self.precision)
         d_tx["RBTCTotal"] = str(rbtc_total)
         rbtc_total_ether = Web3.fromWei(abs(rbtc_total), 'ether')
         if rbtc_total < 0:
             rbtc_total_ether = -rbtc_total_ether
-        usd_total = rbtc_total_ether * Web3.fromWei(tx_event.reservePrice,
+        usd_total = rbtc_total_ether * Web3.fromWei(tx_event["reservePrice"],
                                                     'ether')
         d_tx["USDTotal"] = str(int(usd_total * self.precision))
         d_tx["processLogs"] = True
@@ -1212,50 +1248,50 @@ class MoCIndexer:
         # get collection transaction
         collection_tx = self.mm.collection_transaction(m_client)
 
-        tx_hash = Web3.toHex(tx_receipt['transactionHash'])
+        tx_hash = tx_receipt.txid
         moc_tx = d_moc_transactions[tx_hash]
 
         d_tx = OrderedDict()
         d_tx["transactionHash"] = tx_hash
-        d_tx["blockNumber"] = tx_event.blockNumber
-        d_tx["address"] = tx_event.account
+        d_tx["blockNumber"] = tx_event["blockNumber"]
+        d_tx["address"] = tx_event["account"]
         d_tx["status"] = status
         d_tx["event"] = 'FreeStableTokenRedeem'
         d_tx["tokenInvolved"] = 'STABLE'
-        d_tx["userAmount"] = str(Web3.fromWei(tx_event.amount, 'ether'))
+        d_tx["userAmount"] = str(Web3.fromWei(tx_event["amount"], 'ether'))
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
-        d_tx["RBTCAmount"] = str(tx_event.reserveTotal)
-        usd_amount = Web3.fromWei(tx_event.reserveTotal,
-                                  'ether') * Web3.fromWei(tx_event.reservePrice,
+        d_tx["RBTCAmount"] = str(tx_event["reserveTotal"])
+        usd_amount = Web3.fromWei(tx_event["reserveTotal"],
+                                  'ether') * Web3.fromWei(tx_event["reservePrice"],
                                                           'ether')
         d_tx["USDAmount"] = str(int(usd_amount * self.precision))
-        d_tx["amount"] = str(tx_event.amount)
+        d_tx["amount"] = str(tx_event["amount"])
         d_tx["confirmationTime"] = confirmation_time
-        d_tx["rbtcCommission"] = str(tx_event.commission)
-        usd_commission = Web3.fromWei(tx_event.commission,
+        d_tx["rbtcCommission"] = str(tx_event["commission"])
+        usd_commission = Web3.fromWei(tx_event["commission"],
                                       'ether') * Web3.fromWei(
             tx_event.reservePrice, 'ether')
         d_tx["USDCommission"] = str(int(usd_commission * self.precision))
-        d_tx["rbtcInterests"] = str(tx_event.interests)
-        usd_interest = Web3.fromWei(tx_event.interests, 'ether') * Web3.fromWei(
-            tx_event.reservePrice, 'ether')
+        d_tx["rbtcInterests"] = str(tx_event["interests"])
+        usd_interest = Web3.fromWei(tx_event["interests"], 'ether') * Web3.fromWei(
+            tx_event["reservePrice"], 'ether')
         d_tx["USDInterests"] = str(int(usd_interest * self.precision))
         d_tx["isPositive"] = False
-        d_tx["reservePrice"] = str(tx_event.reservePrice)
+        d_tx["reservePrice"] = str(tx_event["reservePrice"])
         gas_fee = tx_receipt['gasUsed'] * Web3.fromWei(moc_tx['gasPrice'],
                                                        'ether')
         d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         if self.app_mode != "RRC20":
             d_tx["gasFeeUSD"] = str(int(
-                gas_fee * Web3.fromWei(tx_event.reservePrice,
+                gas_fee * Web3.fromWei(tx_event["reservePrice"],
                                        'ether') * self.precision))
-        rbtc_total = tx_event.reserveTotal - tx_event.commission - int(
+        rbtc_total = tx_event["reserveTotal"] - tx_event["commission"] - int(
             gas_fee * self.precision)
         d_tx["RBTCTotal"] = str(rbtc_total)
         rbtc_total_ether = Web3.fromWei(abs(rbtc_total), 'ether')
         if rbtc_total < 0:
             rbtc_total_ether = -rbtc_total_ether
-        usd_total = rbtc_total_ether * Web3.fromWei(tx_event.reservePrice,
+        usd_total = rbtc_total_ether * Web3.fromWei(tx_event["reservePrice"],
                                                     'ether')
         d_tx["USDTotal"] = str(int(usd_total * self.precision))
         d_tx["processLogs"] = True
@@ -1280,6 +1316,17 @@ class MoCIndexer:
 
         return d_tx
 
+    @staticmethod
+    def d_base_event_decoded(tx_receipt):
+
+        d_event = dict()
+        d_event['transactionHash'] = tx_receipt.txid
+        d_event['blockNumber'] = tx_receipt.block_number
+        d_event['timestamp'] = datetime.datetime.fromtimestamp(tx_receipt.timestamp)
+        d_event['event'] = None
+
+        return d_event
+
     def logs_process_moc_exchange(self,
                                   tx_receipt,
                                   m_client,
@@ -1287,56 +1334,46 @@ class MoCIndexer:
                                   block_height_current,
                                   d_moc_transactions,
                                   block_ts):
-        if not tx_receipt['logs']:
-            # return if there are no logs
+        if not tx_receipt.events:
+            # return if there are no logs events decoded
             return
 
-        """
-        moc_addresses = list()
-        moc_addresses.append(
-            str.lower(self.contract_MoC.address()))
-        moc_addresses.append(
-            str.lower(self.contract_MoCSettlement.address()))
-        moc_addresses.append(
-            str.lower(self.contract_MoC.sc_moc_exchange.address()))
-        moc_addresses.append(
-            str.lower(self.contract_RiskProToken.address()))
-        moc_addresses.append(
-            str.lower(self.contract_StableToken.address()))
-        moc_addresses.append(
-            str.lower(self.contract_MoCState.address()))
-        moc_addresses.append(
-            str.lower(self.contract_MoCInrate.address()))
-        moc_addresses.append(
-            str.lower(self.contract_MoCMedianizer.address()))
-        """
+        if not tx_receipt.logs:
+            # return if there are no logs events in raw mode
+            return
 
         exchange_address = self.contract_MoC.sc_moc_exchange.address()
 
-        events = self.contract_MoC.sc_moc_exchange.events
+        tx_index = 0
+        raw_logs = tx_receipt.logs
+        d_event = self.d_base_event_decoded(tx_receipt)
 
         # RiskProMint
-        tx_logs = events.RiskProMint().processReceipt(tx_receipt,
-                                                      errors=DISCARD)
-        for tx_log in tx_logs:
-            if str(tx_log['address']).lower() == str(exchange_address).lower():
-                tx_event = MoCExchangeRiskProMint(self.connection_manager,
-                                                  tx_log)
+        for tx_event in tx_receipt.events:
+
+            if str(raw_logs[tx_index]['address']).lower() != str(exchange_address).lower():
+                continue
+
+            if 'RiskProMint' in tx_event:
+                d_event['event'] = MoCExchangeRiskProMint(tx_event['RiskProMint'])
                 self.moc_exchange_risk_pro_mint(tx_receipt,
-                                                tx_event,
+                                                d_event,
                                                 m_client,
                                                 block_height,
                                                 block_height_current,
                                                 d_moc_transactions,
                                                 block_ts)
 
+            tx_index += 1
+
         # RiskProRedeem
-        tx_logs = events.RiskProRedeem().processReceipt(tx_receipt,
-                                                        errors=DISCARD)
-        for tx_log in tx_logs:
-            if str(tx_log['address']).lower() == str(exchange_address).lower():
-                tx_event = MoCExchangeRiskProRedeem(self.connection_manager,
-                                                    tx_log)
+        for tx_event in tx_receipt.events:
+
+            if str(raw_logs[tx_index]['address']).lower() != str(exchange_address).lower():
+                continue
+
+            if 'RiskProRedeem' in tx_event:
+                d_event['event'] = MoCExchangeRiskProRedeem(tx_event['RiskProRedeem'])
                 self.moc_exchange_risk_pro_redeem(tx_receipt,
                                                   tx_event,
                                                   m_client,
@@ -1345,13 +1382,16 @@ class MoCIndexer:
                                                   d_moc_transactions,
                                                   block_ts)
 
+            tx_index += 1
+
         # RiskProxMint
-        tx_logs = events.RiskProxMint().processReceipt(tx_receipt,
-                                                       errors=DISCARD)
-        for tx_log in tx_logs:
-            if str(tx_log['address']).lower() == str(exchange_address).lower():
-                tx_event = MoCExchangeRiskProxMint(self.connection_manager,
-                                                   tx_log)
+        for tx_event in tx_receipt.events:
+
+            if str(raw_logs[tx_index]['address']).lower() != str(exchange_address).lower():
+                continue
+
+            if 'RiskProxMint' in tx_event:
+                d_event['event'] = MoCExchangeRiskProxMint(tx_event['RiskProxMint'])
                 self.moc_exchange_risk_prox_mint(tx_receipt,
                                                  tx_event,
                                                  m_client,
@@ -1360,13 +1400,16 @@ class MoCIndexer:
                                                  d_moc_transactions,
                                                  block_ts)
 
+            tx_index += 1
+
         # RiskProxRedeem
-        tx_logs = events.RiskProxRedeem().processReceipt(tx_receipt,
-                                                         errors=DISCARD)
-        for tx_log in tx_logs:
-            if str(tx_log['address']).lower() == str(exchange_address).lower():
-                tx_event = MoCExchangeRiskProxRedeem(self.connection_manager,
-                                                     tx_log)
+        for tx_event in tx_receipt.events:
+
+            if str(raw_logs[tx_index]['address']).lower() != str(exchange_address).lower():
+                continue
+
+            if 'RiskProxRedeem' in tx_event:
+                d_event['event'] = MoCExchangeRiskProxRedeem(tx_event['RiskProxRedeem'])
                 self.moc_exchange_risk_prox_redeem(tx_receipt,
                                                    tx_event,
                                                    m_client,
@@ -1375,13 +1418,16 @@ class MoCIndexer:
                                                    d_moc_transactions,
                                                    block_ts)
 
+            tx_index += 1
+
         # StableTokenMint
-        tx_logs = events.StableTokenMint().processReceipt(tx_receipt,
-                                                          errors=DISCARD)
-        for tx_log in tx_logs:
-            if str(tx_log['address']).lower() == str(exchange_address).lower():
-                tx_event = MoCExchangeStableTokenMint(self.connection_manager,
-                                                      tx_log)
+        for tx_event in tx_receipt.events:
+
+            if str(raw_logs[tx_index]['address']).lower() != str(exchange_address).lower():
+                continue
+
+            if 'StableTokenMint' in tx_event:
+                d_event['event'] = MoCExchangeStableTokenMint(tx_event['StableTokenMint'])
                 self.moc_exchange_stable_token_mint(tx_receipt,
                                                     tx_event,
                                                     m_client,
@@ -1390,13 +1436,16 @@ class MoCIndexer:
                                                     d_moc_transactions,
                                                     block_ts)
 
+            tx_index += 1
+
         # StableTokenRedeem
-        tx_logs = events.StableTokenRedeem().processReceipt(tx_receipt,
-                                                            errors=DISCARD)
-        for tx_log in tx_logs:
-            if str(tx_log['address']).lower() == str(exchange_address).lower():
-                tx_event = MoCExchangeStableTokenRedeem(self.connection_manager,
-                                                        tx_log)
+        for tx_event in tx_receipt.events:
+
+            if str(raw_logs[tx_index]['address']).lower() != str(exchange_address).lower():
+                continue
+
+            if 'StableTokenRedeem' in tx_event:
+                d_event['event'] = MoCExchangeStableTokenRedeem(tx_event['StableTokenRedeem'])
                 self.moc_exchange_stable_token_redeem(tx_receipt,
                                                       tx_event,
                                                       m_client,
@@ -1405,13 +1454,16 @@ class MoCIndexer:
                                                       d_moc_transactions,
                                                       block_ts)
 
+            tx_index += 1
+
         # FreeStableTokenRedeem
-        tx_logs = events.FreeStableTokenRedeem().processReceipt(tx_receipt,
-                                                                errors=DISCARD)
-        for tx_log in tx_logs:
-            if str(tx_log['address']).lower() == str(exchange_address).lower():
-                tx_event = MoCExchangeFreeStableTokenRedeem(
-                    self.connection_manager, tx_log)
+        for tx_event in tx_receipt.events:
+
+            if str(raw_logs[tx_index]['address']).lower() != str(exchange_address).lower():
+                continue
+
+            if 'FreeStableTokenRedeem' in tx_event:
+                d_event['event'] = MoCExchangeFreeStableTokenRedeem(tx_event['FreeStableTokenRedeem'])
                 self.moc_exchange_free_stable_token_redeem(tx_receipt,
                                                            tx_event,
                                                            m_client,
@@ -1419,6 +1471,8 @@ class MoCIndexer:
                                                            block_height_current,
                                                            d_moc_transactions,
                                                            block_ts)
+
+            tx_index += 1
 
     def moc_settlement_redeem_request_alter(self,
                                             tx_receipt,
@@ -1439,7 +1493,7 @@ class MoCIndexer:
         # get collection transaction
         collection_tx = self.mm.collection_transaction(m_client)
 
-        tx_hash = Web3.toHex(tx_receipt['transactionHash'])
+        tx_hash = tx_receipt.txid
         moc_tx = d_moc_transactions[tx_hash]
 
         d_tx = OrderedDict()
@@ -2795,7 +2849,7 @@ class MoCIndexer:
         m_client = self.mm.connect()
 
         # get last block from node
-        last_block = self.connection_manager.block_number
+        last_block = self.network_manager.block_number
 
         block_height = config_block_height
         if block_height <= 0:
@@ -2953,14 +3007,14 @@ class MoCIndexer:
                             current_block, block_reference))
 
         # get block time from node
-        block_ts = self.connection_manager.block_timestamp(current_block)
+        block_ts = self.network_manager.block_timestamp(current_block)
 
         # get moc contracts adressess
         moc_addresses = self.moc_contract_addresses()
 
         # get block and full transactions
-        f_block = self.connection_manager.get_block(current_block,
-                                                    full_transactions=True)
+        f_block = self.network_manager.get_block(current_block,
+                                                 full_transactions=True)
         all_transactions = f_block['transactions']
 
         # From MOC Contract transactions
@@ -3100,7 +3154,7 @@ class MoCIndexer:
             'blocks_recession']
 
         # get last block from node compare 2 blocks older than new
-        last_block = self.connection_manager.block_number - config_blocks_recession
+        last_block = self.network_manager.block_number - config_blocks_recession
 
         # conect to mongo db
         m_client = self.mm.connect()
@@ -3457,7 +3511,7 @@ class MoCIndexer:
     def scan_moc_state_status_block(self, collection_moc_state_status,
                                     current_block):
         # get block time from node
-        block_ts = self.connection_manager.block_timestamp(current_block)
+        block_ts = self.network_manager.block_timestamp(current_block)
 
         # get all functions from smart contract
         d_status = self.state_status_from_sc(block_identifier=current_block)
@@ -3481,7 +3535,7 @@ class MoCIndexer:
             'blocks_look_behind']
 
         # get last block from node
-        last_block = self.connection_manager.block_number
+        last_block = self.network_manager.block_number
 
         collection_moc_indexer = self.mm.collection_moc_indexer(m_client)
         moc_index = collection_moc_indexer.find_one(sort=[("updatedAt", -1)])
@@ -3620,7 +3674,7 @@ class MoCIndexer:
         m_client = self.mm.connect()
 
         # get last block from node
-        last_block = self.connection_manager.block_number
+        last_block = self.network_manager.block_number
 
         collection_user_state_update = self.mm.collection_user_state_update(
             m_client)
@@ -3635,7 +3689,7 @@ class MoCIndexer:
 
         # get list of users to update balance
         for user_update in users_pending_update:
-            block_height = self.connection_manager.block_number
+            block_height = self.network_manager.block_number
 
             # udpate balance of address of the account on the last block height
             self.update_balance_address(m_client, user_update['account'],
@@ -3663,7 +3717,7 @@ class MoCIndexer:
         start_time = time.time()
 
         # get last block from node
-        last_block = self.connection_manager.block_number
+        last_block = self.network_manager.block_number
 
         # conect to mongo db
         m_client = self.mm.connect()

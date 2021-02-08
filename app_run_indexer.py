@@ -35,9 +35,9 @@ def add_jobs_tx_history():
 def main(moccfg):
     runner = JobsRunner(moccfg=moccfg)
 
-    if moccfg.config['index_mode']=='normal':
+    if moccfg.config['index_mode'] == 'normal':
         f = add_jobs
-    elif moccfg.config['index_mode']=='history':
+    elif moccfg.config['index_mode'] == 'history':
         f = add_jobs_tx_history
     else:
         raise Exception("Index mode not recognize")

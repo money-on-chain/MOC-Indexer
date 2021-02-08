@@ -10,7 +10,9 @@ class MocIndexerJob(Job):
         except KeyError:
             #traceback.print_exc()
             self.interval = 20
-        self.moc_indexer = MoCIndexer(self.runner.options, self.runner.network)
+        self.moc_indexer = MoCIndexer(self.runner.options,
+                                      self.runner.config_network,
+                                      self.runner.connection_network)
 
 
 class scan_moc_blocks(MocIndexerJob):
