@@ -32,8 +32,8 @@ class IndexSTABLETransfer(BaseIndexEvent):
         address_from_contract = '0x0000000000000000000000000000000000000000'
 
         address_not_allowed = [str.lower(address_from_contract), str.lower(self.moc_address)]
-        if str.lower(tx_event["e_from"]) in address_not_allowed or \
-                str.lower(tx_event["e_to"]) in address_not_allowed:
+        if str.lower(tx_event["from"]) in address_not_allowed or \
+                str.lower(tx_event["to"]) in address_not_allowed:
             # Transfer from our Contract we dont add because already done
             # with ...Mint
             # if self.debug_mode:
@@ -49,13 +49,13 @@ class IndexSTABLETransfer(BaseIndexEvent):
         collection_users = mongo_manager.collection_users(self.m_client)
 
         exist_user = collection_users.find_one(
-            {"username": tx_event["e_from"]}
+            {"username": tx_event["from"]}
         )
 
         if exist_user:
             # FROM
             d_tx = OrderedDict()
-            d_tx["address"] = tx_event["e_from"]
+            d_tx["address"] = tx_event["from"]
             d_tx["blockNumber"] = self.tx_receipt.block_number
             d_tx["event"] = 'Transfer'
             d_tx["transactionHash"] = tx_hash
@@ -63,7 +63,7 @@ class IndexSTABLETransfer(BaseIndexEvent):
             d_tx["confirmationTime"] = confirmation_time
             d_tx["isPositive"] = False
             d_tx["lastUpdatedAt"] = datetime.datetime.now()
-            d_tx["otherAddress"] = tx_event["e_to"]
+            d_tx["otherAddress"] = tx_event["to"]
             d_tx["status"] = status
             d_tx["tokenInvolved"] = token_involved
             d_tx["processLogs"] = True
@@ -80,18 +80,18 @@ class IndexSTABLETransfer(BaseIndexEvent):
 
             log.info("Tx Transfer {0} From: [{1}] To: [{2}] Amount: {3}".format(
                 token_involved,
-                tx_event["e_from"],
-                tx_event["e_to"],
+                tx_event["from"],
+                tx_event["to"],
                 tx_event["value"]))
 
         exist_user = collection_users.find_one(
-            {"username": tx_event["e_to"]}
+            {"username": tx_event["to"]}
         )
 
         if exist_user:
             # TO
             d_tx = OrderedDict()
-            d_tx["address"] = tx_event["e_to"]
+            d_tx["address"] = tx_event["to"]
             d_tx["blockNumber"] = self.tx_receipt.block_number
             d_tx["event"] = 'Transfer'
             d_tx["transactionHash"] = tx_hash
@@ -99,7 +99,7 @@ class IndexSTABLETransfer(BaseIndexEvent):
             d_tx["confirmationTime"] = confirmation_time
             d_tx["isPositive"] = True
             d_tx["lastUpdatedAt"] = datetime.datetime.now()
-            d_tx["otherAddress"] = tx_event["e_from"]
+            d_tx["otherAddress"] = tx_event["from"]
             d_tx["status"] = status
             d_tx["tokenInvolved"] = token_involved
             d_tx["processLogs"] = True
@@ -116,8 +116,8 @@ class IndexSTABLETransfer(BaseIndexEvent):
 
             log.info("Tx Transfer {0} From: [{1}] To: [{2}] Amount: {3}".format(
                 token_involved,
-                tx_event["e_from"],
-                tx_event["e_to"],
+                tx_event["from"],
+                tx_event["to"],
                 tx_event["value"]))
 
     def on_event(self, tx_event, log_index=None):

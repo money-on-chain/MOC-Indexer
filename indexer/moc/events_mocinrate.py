@@ -1,4 +1,5 @@
 from collections import OrderedDict
+import datetime
 
 from moneyonchain.moc import MoCInrateDailyPay, \
     MoCInrateRiskProHoldersInterestPay
@@ -33,7 +34,7 @@ class IndexInrateDailyPay(BaseIndexEvent):
         d_tx["logIndex"] = log_index
         d_tx["amount"] = str(tx_event["amount"])
         d_tx["daysToSettlement"] = str(tx_event["daysToSettlement"])
-        d_tx["timestamp"] = tx_event["timestamp"]
+        d_tx["timestamp"] = datetime.datetime.fromtimestamp(self.tx_receipt.timestamp)
         d_tx["processLogs"] = True
 
         post_id = collection_tx.find_one_and_update(
@@ -57,7 +58,7 @@ class IndexInrateDailyPay(BaseIndexEvent):
         d_tx["logIndex"] = log_index
         d_tx["amount"] = str(tx_event["amount"])
         d_tx["daysToSettlement"] = str(tx_event["daysToSettlement"])
-        d_tx["timestamp"] = tx_event["timestamp"]
+        d_tx["timestamp"] = datetime.datetime.fromtimestamp(self.tx_receipt.timestamp)
         d_tx["processLogs"] = True
 
         post_id = collection_tx.find_one_and_update(
@@ -97,7 +98,7 @@ class IndexRiskProHoldersInterestPay(BaseIndexEvent):
         d_tx["blockHeight"] = self.tx_receipt.block_number
         d_tx["amount"] = str(tx_event["amount"])
         d_tx["nBtcBucketC0BeforePay"] = str(tx_event["nReserveBucketC0BeforePay"])
-        d_tx["timestamp"] = tx_event["timestamp"]
+        d_tx["timestamp"] = datetime.datetime.fromtimestamp(self.tx_receipt.timestamp)
         d_tx["processLogs"] = True
         d_tx["createdAt"] = self.block_ts
 
@@ -128,7 +129,7 @@ class IndexRiskProHoldersInterestPay(BaseIndexEvent):
         d_tx["logIndex"] = log_index
         d_tx["amount"] = str(tx_event["amount"])
         d_tx["nBtcBucketC0BeforePay"] = str(tx_event["nReserveBucketC0BeforePay"])
-        d_tx["timestamp"] = tx_event["timestamp"]
+        d_tx["timestamp"] = datetime.datetime.fromtimestamp(self.tx_receipt.timestamp)
         d_tx["processLogs"] = True
 
         post_id = collection_tx.find_one_and_update(

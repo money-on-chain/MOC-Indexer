@@ -326,17 +326,14 @@ class ScanBlocks(Balances):
             status = 'confirming'
             confirmation_time = None
 
-        network = network_manager.network
-        moc_addresses = network_manager.options['networks'][network]['addresses']
-
-        if str.lower(tx_receipt['from']) not in [str.lower(moc_addresses['MoC'])]:
+        if str.lower(tx_receipt.sender) not in [str.lower(self.contract_MoC.address())]:
             # If is not from our contract return
             return
 
         tx_hash = tx_receipt.txid
         moc_tx = d_moc_transactions[tx_hash]
 
-        if moc_tx['value'] <= 0:
+        if tx_receipt.value <= 0:
             return
 
         if self.contract_MoC.project == 'RDoC':
@@ -356,11 +353,11 @@ class ScanBlocks(Balances):
 
         # FROM
         d_tx = OrderedDict()
-        d_tx["address"] = moc_tx['to']
-        d_tx["blockNumber"] = moc_tx['blockNumber']
+        d_tx["address"] = tx_receipt.receiver
+        d_tx["blockNumber"] = tx_receipt.block_number
         d_tx["event"] = 'TransferFromMoC'
         d_tx["transactionHash"] = tx_hash
-        d_tx["amount"] = str(moc_tx['value'])
+        d_tx["amount"] = str(tx_receipt.value)
         d_tx["confirmationTime"] = confirmation_time
         d_tx["isPositive"] = False
         d_tx["lastUpdatedAt"] = datetime.datetime.now()

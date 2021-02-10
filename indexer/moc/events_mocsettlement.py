@@ -253,7 +253,7 @@ class IndexSettlementRedeemStableToken(BaseIndexEvent):
         d_tx["queueSize"] = str(tx_event["queueSize"])
         d_tx["accumCommissions"] = str(tx_event["accumCommissions"])
         d_tx["reservePrice"] = str(tx_event["reservePrice"])
-        d_tx["timestamp"] = tx_event["timestamp"]
+        d_tx["timestamp"] = datetime.datetime.fromtimestamp(self.tx_receipt.timestamp)
         d_tx["processLogs"] = True
 
         post_id = collection_tx.find_one_and_update(

@@ -100,7 +100,7 @@ class IndexBucketLiquidation(BaseIndexEvent):
         d_tx["transactionHash"] = tx_hash
         d_tx["logIndex"] = log_index
         d_tx["bucket"] = 'X2'
-        d_tx["timestamp"] = tx_event["timestamp"]
+        d_tx["timestamp"] = datetime.datetime.fromtimestamp(self.tx_receipt.timestamp)
         d_tx["processLogs"] = True
 
         post_id = collection_tx.find_one_and_update(
