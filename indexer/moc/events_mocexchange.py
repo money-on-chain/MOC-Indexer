@@ -13,7 +13,6 @@ from moneyonchain.moc import MoCExchangeRiskProMint, \
 from indexer.mongo_manager import mongo_manager
 
 from .events import BaseIndexEvent
-from .balances import Balances
 
 import logging
 import logging.config
@@ -26,11 +25,11 @@ logging.basicConfig(level=logging.INFO,
 log = logging.getLogger('default')
 
 
-class IndexRiskProMint(BaseIndexEvent, Balances):
+class IndexRiskProMint(BaseIndexEvent):
 
     name = 'RiskProMint'
 
-    def index_event(self, tx_event):
+    def index_event(self, tx_event, log_index=None):
 
         # status of tx
         status, confirmation_time = self.status_tx()
@@ -98,18 +97,18 @@ class IndexRiskProMint(BaseIndexEvent, Balances):
 
         return d_tx
 
-    def on_event(self, tx_event):
+    def on_event(self, tx_event, log_index=None):
         """ Event """
 
         d_event = MoCExchangeRiskProMint(tx_event, tx_receipt=self.tx_receipt)
-        self.index_event(d_event.event)
+        self.index_event(d_event.event, log_index=log_index)
 
 
 class IndexRiskProRedeem(BaseIndexEvent):
 
     name = 'RiskProRedeem'
 
-    def index_event(self, tx_event):
+    def index_event(self, tx_event, log_index=None):
 
         # status of tx
         status, confirmation_time = self.status_tx()
@@ -178,18 +177,18 @@ class IndexRiskProRedeem(BaseIndexEvent):
 
         return d_tx
 
-    def on_event(self, tx_event):
+    def on_event(self, tx_event, log_index=None):
         """ Event """
 
         d_event = MoCExchangeRiskProRedeem(tx_event, tx_receipt=self.tx_receipt)
-        self.index_event(d_event.event)
+        self.index_event(d_event.event, log_index=log_index)
 
 
 class IndexRiskProxMint(BaseIndexEvent):
 
     name = 'RiskProxMint'
 
-    def index_event(self, tx_event):
+    def index_event(self, tx_event, log_index=None):
 
         # status of tx
         status, confirmation_time = self.status_tx()
@@ -261,18 +260,18 @@ class IndexRiskProxMint(BaseIndexEvent):
 
         return d_tx
 
-    def on_event(self, tx_event):
+    def on_event(self, tx_event, log_index=None):
         """ Event """
 
         d_event = MoCExchangeRiskProxMint(tx_event, tx_receipt=self.tx_receipt)
-        self.index_event(d_event.event)
+        self.index_event(d_event.event, log_index=log_index)
 
 
 class IndexRiskProxRedeem(BaseIndexEvent):
 
     name = 'RiskProxRedeem'
 
-    def index_event(self, tx_event):
+    def index_event(self, tx_event, log_index=None):
 
         # status of tx
         status, confirmation_time = self.status_tx()
@@ -347,17 +346,17 @@ class IndexRiskProxRedeem(BaseIndexEvent):
 
         return d_tx
 
-    def on_event(self, tx_event):
+    def on_event(self, tx_event, log_index=None):
         """ Event """
 
         d_event = MoCExchangeRiskProxRedeem(tx_event, tx_receipt=self.tx_receipt)
-        self.index_event(d_event.event)
+        self.index_event(d_event.event, log_index=log_index)
 
 
 class IndexStableTokenMint(BaseIndexEvent):
     name = 'StableTokenMint'
 
-    def index_event(self, tx_event):
+    def index_event(self, tx_event, log_index=None):
 
         # status of tx
         status, confirmation_time = self.status_tx()
@@ -426,17 +425,17 @@ class IndexStableTokenMint(BaseIndexEvent):
 
         return d_tx
 
-    def on_event(self, tx_event):
+    def on_event(self, tx_event, log_index=None):
         """ Event """
 
         d_event = MoCExchangeStableTokenMint(tx_event, tx_receipt=self.tx_receipt)
-        self.index_event(d_event.event)
+        self.index_event(d_event.event, log_index=log_index)
 
 
 class IndexStableTokenRedeem(BaseIndexEvent):
     name = 'StableTokenRedeem'
 
-    def index_event(self, tx_event):
+    def index_event(self, tx_event, log_index=None):
 
         # status of tx
         status, confirmation_time = self.status_tx()
@@ -505,17 +504,17 @@ class IndexStableTokenRedeem(BaseIndexEvent):
 
         return d_tx
 
-    def on_event(self, tx_event):
+    def on_event(self, tx_event, log_index=None):
         """ Event """
 
         d_event = MoCExchangeStableTokenRedeem(tx_event, tx_receipt=self.tx_receipt)
-        self.index_event(d_event.event)
+        self.index_event(d_event.event, log_index=log_index)
 
 
 class IndexFreeStableTokenRedeem(BaseIndexEvent):
     name = 'FreeStableTokenRedeem'
 
-    def index_event(self, tx_event):
+    def index_event(self, tx_event, log_index=None):
 
         # status of tx
         status, confirmation_time = self.status_tx()
@@ -589,8 +588,8 @@ class IndexFreeStableTokenRedeem(BaseIndexEvent):
 
         return d_tx
 
-    def on_event(self, tx_event):
+    def on_event(self, tx_event, log_index=None):
         """ Event """
 
         d_event = MoCExchangeFreeStableTokenRedeem(tx_event, tx_receipt=self.tx_receipt)
-        self.index_event(d_event.event)
+        self.index_event(d_event.event, log_index=log_index)

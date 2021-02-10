@@ -9,8 +9,8 @@ from moneyonchain.moc import MoCSettlementRedeemRequestAlter, \
     MoCSettlementRedeemRequestProcessed, \
     MoCSettlementSettlementCompleted
 
-from .mongo_manager import mongo_manager
-from .base import BaseIndexEvent
+from indexer.mongo_manager import mongo_manager
+from .events import BaseIndexEvent
 
 import logging
 import logging.config
@@ -23,15 +23,11 @@ logging.basicConfig(level=logging.INFO,
 log = logging.getLogger('default')
 
 
-BUCKET_X2 = '0x5832000000000000000000000000000000000000000000000000000000000000'
-BUCKET_C0 = '0x4330000000000000000000000000000000000000000000000000000000000000'
-
-
 class IndexSettlementStarted(BaseIndexEvent):
 
     name = 'SettlementStarted'
 
-    def index_event(self, tx_event):
+    def index_event(self, tx_event, log_index=None):
 
         return
 
@@ -42,12 +38,12 @@ class IndexSettlementStarted(BaseIndexEvent):
         collection_tx = mongo_manager.collection_settlement_state(self.m_client)
 
         exist_tx = collection_tx.find_one(
-            {"startBlockNumber": tx_event["blockNumber"]}
+            {"startBlockNumber": self.tx_receipt.block_number}
         )
 
         d_tx = dict()
         d_tx["inProcess"] = True
-        d_tx["startBlockNumber"] = tx_event["blockNumber"]
+        d_tx["startBlockNumber"] = self.tx_receipt.block_number
         d_tx["docRedeemCount"] = tx_event["stableTokenRedeemCount"]
         d_tx["deleveragingCount"] = tx_event["deleveragingCount"]
         #adjust_price = Web3.fromWei(tx_event.riskProxPrice, 'ether') * Web3.fromWei(tx_event.reservePrice, 'ether')
@@ -72,48 +68,21 @@ class IndexSettlementStarted(BaseIndexEvent):
 
         return d_tx
 
-    def index_events(self):
-        """ Index  """
+    def on_event(self, tx_event, log_index=None):
+        """ Event """
 
-        if not self.tx_receipt.events:
-            # return if there are no logs events decoded
-            return
-
-        if not self.tx_receipt.logs:
-            # return if there are no logs events in raw mode
-            return
-
-        settlement_address = self.contract_MoC.sc_moc_settlement.address()
-
-        tx_index = 0
-        raw_logs = self.tx_receipt.logs
-
-        # SettlementStarted
-        for tx_event in self.tx_receipt.events:
-
-            if str(raw_logs[tx_index]['address']).lower() != str(settlement_address).lower():
-                continue
-
-            if self.name in tx_event:
-                d_event = MoCSettlementSettlementStarted(tx_event[self.name],
-                                                 tx_receipt=self.tx_receipt)
-                self.index_event(d_event.event)
-                self.update_settlement_state(d_event.event)
-
-            tx_index += 1
+        d_event = MoCSettlementSettlementStarted(tx_event, tx_receipt=self.tx_receipt)
+        self.index_event(d_event.event, log_index=log_index)
+        self.update_settlement_state(d_event.event)
 
 
 class IndexRedeemRequestAlter(BaseIndexEvent):
     name = 'RedeemRequestAlter'
 
-    def index_event(self, tx_event):
+    def index_event(self, tx_event, log_index=None):
 
-        if self.block_height_current - self.block_height > self.confirm_blocks:
-            status = 'confirmed'
-            confirmation_time = self.block_ts
-        else:
-            status = 'confirming'
-            confirmation_time = None
+        # status of tx
+        status, confirmation_time = self.status_tx()
 
         # get collection transaction
         collection_tx = mongo_manager.collection_transaction(self.m_client)
@@ -123,7 +92,7 @@ class IndexRedeemRequestAlter(BaseIndexEvent):
 
         d_tx = OrderedDict()
         d_tx["transactionHash"] = tx_hash
-        d_tx["blockNumber"] = tx_event["blockNumber"]
+        d_tx["blockNumber"] = self.tx_receipt.block_number
         d_tx["address"] = tx_event["redeemer"]
         d_tx["status"] = status
         d_tx["event"] = 'RedeemRequestAlter'
@@ -131,8 +100,7 @@ class IndexRedeemRequestAlter(BaseIndexEvent):
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
         d_tx["amount"] = str(tx_event["delta"])
         d_tx["confirmationTime"] = confirmation_time
-        gas_fee = self.tx_receipt['gasUsed'] * Web3.fromWei(moc_tx['gasPrice'],
-                                                       'ether')
+        gas_fee = self.tx_receipt.gas_used * Web3.fromWei(self.tx_receipt.gas_price, 'ether')
         d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         d_tx["processLogs"] = True
 
@@ -161,8 +129,8 @@ class IndexRedeemRequestAlter(BaseIndexEvent):
             tx_hash))
 
         # update user balances
-        info_balance = self.update_balance_address(self.m_client, d_tx["address"],
-                                                   self.block_height)
+        info_balance = self.parent.update_balance_address(self.m_client, d_tx["address"],
+                                                          self.block_height)
 
         # QUEUE DOC
         # Is the operation of sending or cancel doc to queue is
@@ -202,47 +170,19 @@ class IndexRedeemRequestAlter(BaseIndexEvent):
 
         return d_tx
 
-    def index_events(self):
-        """ Index  """
+    def on_event(self, tx_event, log_index=None):
+        """ Event """
 
-        if not self.tx_receipt.events:
-            # return if there are no logs events decoded
-            return
-
-        if not self.tx_receipt.logs:
-            # return if there are no logs events in raw mode
-            return
-
-        settlement_address = self.contract_MoC.sc_moc_settlement.address()
-
-        tx_index = 0
-        raw_logs = self.tx_receipt.logs
-
-        # SettlementStarted
-        for tx_event in self.tx_receipt.events:
-
-            if str(raw_logs[tx_index]['address']).lower() != str(settlement_address).lower():
-                continue
-
-            if self.name in tx_event:
-                d_event = MoCSettlementRedeemRequestAlter(tx_event[self.name],
-                                                          tx_receipt=self.tx_receipt)
-                self.index_event(d_event.event)
-
-            tx_index += 1
+        d_event = MoCSettlementRedeemRequestAlter(tx_event, tx_receipt=self.tx_receipt)
+        self.index_event(d_event.event, log_index=log_index)
 
 
 class IndexRedeemRequestProcessed(BaseIndexEvent):
     name = 'RedeemRequestProcessed'
 
-    def index_event(self, tx_event):
-
-        if self.block_height_current - self.block_height > self.confirm_blocks:
-            status = 'confirmed'
-            confirmation_time = self.block_ts
-        else:
-            status = 'confirming'
-            confirmation_time = None
+    def index_event(self, tx_event, log_index=None):
+        # status of tx
+        status, confirmation_time = self.status_tx()
 
         # get collection transaction
         collection_tx = mongo_manager.collection_transaction(self.m_client)
@@ -252,7 +192,7 @@ class IndexRedeemRequestProcessed(BaseIndexEvent):
 
         d_tx = OrderedDict()
         d_tx["transactionHash"] = tx_hash
-        d_tx["blockNumber"] = tx_event["blockNumber"]
+        d_tx["blockNumber"] = self.tx_receipt.block_number
         d_tx["address"] = tx_event["redeemer"]
         d_tx["status"] = status
         d_tx["event"] = 'RedeemRequestProcessed'
@@ -261,8 +201,7 @@ class IndexRedeemRequestProcessed(BaseIndexEvent):
         d_tx["amount"] = str(tx_event["amount"])
         d_tx["confirmationTime"] = confirmation_time
         d_tx["isPositive"] = False
-        gas_fee = self.tx_receipt['gasUsed'] * Web3.fromWei(moc_tx['gasPrice'],
-                                                       'ether')
+        gas_fee = self.tx_receipt.gas_used * Web3.fromWei(self.tx_receipt.gas_price, 'ether')
         # d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         d_tx["processLogs"] = True
         d_tx["createdAt"] = self.block_ts
@@ -282,54 +221,30 @@ class IndexRedeemRequestProcessed(BaseIndexEvent):
             tx_hash))
 
         # update user balances
-        self.update_balance_address(self.m_client, d_tx["address"], self.block_height)
+        self.parent.update_balance_address(self.m_client, d_tx["address"], self.block_height)
 
         return d_tx
 
-    def index_events(self):
-        """ Index  """
+    def on_event(self, tx_event, log_index=None):
+        """ Event """
 
-        if not self.tx_receipt.events:
-            # return if there are no logs events decoded
-            return
-
-        if not self.tx_receipt.logs:
-            # return if there are no logs events in raw mode
-            return
-
-        settlement_address = self.contract_MoC.sc_moc_settlement.address()
-
-        tx_index = 0
-        raw_logs = self.tx_receipt.logs
-
-        # SettlementStarted
-        for tx_event in self.tx_receipt.events:
-
-            if str(raw_logs[tx_index]['address']).lower() != str(settlement_address).lower():
-                continue
-
-            if self.name in tx_event:
-                d_event = MoCSettlementRedeemRequestProcessed(tx_event[self.name],
-                                                          tx_receipt=self.tx_receipt)
-                self.index_event(d_event.event)
-
-            tx_index += 1
+        d_event = MoCSettlementRedeemRequestProcessed(tx_event, tx_receipt=self.tx_receipt)
+        self.index_event(d_event.event, log_index=log_index)
 
 
 class IndexSettlementRedeemStableToken(BaseIndexEvent):
     name = 'SettlementRedeemStableToken'
 
-    def index_event(self, tx_event):
+    def index_event(self, tx_event, log_index=None):
 
         return
 
-    def notifications(self, tx_event):
+    def notifications(self, tx_event, log_index=None):
 
         # Notifications
         collection_tx = mongo_manager.collection_notification(self.m_client)
         tx_hash = self.tx_receipt.txid
         event_name = 'SettlementRedeemStableToken'
-        log_index = self.tx_log['logIndex']
 
         d_tx = dict()
         d_tx["event"] = event_name
@@ -356,48 +271,21 @@ class IndexSettlementRedeemStableToken(BaseIndexEvent):
 
         return d_tx
 
-    def index_events(self):
-        """ Index  """
+    def on_event(self, tx_event, log_index=None):
+        """ Event """
 
-        if not self.tx_receipt.events:
-            # return if there are no logs events decoded
-            return
-
-        if not self.tx_receipt.logs:
-            # return if there are no logs events in raw mode
-            return
-
-        settlement_address = self.contract_MoC.sc_moc_settlement.address()
-
-        tx_index = 0
-        raw_logs = self.tx_receipt.logs
-
-        # SettlementStarted
-        for tx_event in self.tx_receipt.events:
-
-            if str(raw_logs[tx_index]['address']).lower() != str(settlement_address).lower():
-                continue
-
-            if self.name in tx_event:
-                d_event = MoCSettlementSettlementRedeemStableToken(tx_event[self.name],
-                                                              tx_receipt=self.tx_receipt)
-                self.index_event(d_event.event)
-                self.notifications(d_event.event)
-
-            tx_index += 1
+        d_event = MoCSettlementSettlementRedeemStableToken(tx_event, tx_receipt=self.tx_receipt)
+        self.index_event(d_event.event, log_index=log_index)
+        self.notifications(d_event.event, log_index=log_index)
 
 
 class IndexSettlementDeleveraging(BaseIndexEvent):
     name = 'SettlementDeleveraging'
 
-    def index_event(self, tx_event):
+    def index_event(self, tx_event, log_index=None):
 
-        if self.block_height_current - self.block_height > self.confirm_blocks:
-            status = 'confirmed'
-            confirmation_time = self.block_ts
-        else:
-            status = 'confirming'
-            confirmation_time = None
+        # status of tx
+        status, confirmation_time = self.status_tx()
 
         # get collection transaction
         collection_tx = mongo_manager.collection_transaction(self.m_client)
@@ -407,7 +295,7 @@ class IndexSettlementDeleveraging(BaseIndexEvent):
 
         # get all address who has bprox , at the time all users because
         # we dont know who hast bprox in certain block
-        collection_users = self.mm.collection_user_state(self.m_client)
+        collection_users = mongo_manager.collection_user_state(self.m_client)
         users = collection_users.find()
         l_users_riskprox = list()
         for user in users:
@@ -417,15 +305,14 @@ class IndexSettlementDeleveraging(BaseIndexEvent):
 
         d_tx = OrderedDict()
         d_tx["transactionHash"] = tx_hash
-        d_tx["blockNumber"] = tx_event["blockNumber"]
+        d_tx["blockNumber"] = self.tx_receipt.block_number
         d_tx["event"] = 'SettlementDeleveraging'
         d_tx["tokenInvolved"] = 'RISKPROX'
         d_tx["status"] = status
         d_tx["settlement_status"] = 0
         d_tx["confirmationTime"] = confirmation_time
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
-        gas_fee = self.tx_receipt['gasUsed'] * Web3.fromWei(moc_tx['gasPrice'],
-                                                       'ether')
+        gas_fee = self.tx_receipt.gas_used * Web3.fromWei(self.tx_receipt.gas_price, 'ether')
         # d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         # if self.app_mode != "RRC20":
         #    d_tx["gasFeeUSD"] = str(int(gas_fee * Web3.fromWei(tx_event.reservePrice, 'ether') * self.precision))
@@ -477,8 +364,8 @@ class IndexSettlementDeleveraging(BaseIndexEvent):
                     tx_hash))
 
                 # update user balances
-                self.update_balance_address(self.m_client, d_tx["address"],
-                                            self.block_height)
+                self.parent.update_balance_address(self.m_client, d_tx["address"],
+                                                   self.block_height)
 
                 l_transactions.append(d_tx)
 
@@ -492,7 +379,7 @@ class IndexSettlementDeleveraging(BaseIndexEvent):
 
         d_tx = dict()
         d_tx["inProcess"] = False
-        d_tx["startBlockNumber"] = tx_event["blockNumber"]
+        d_tx["startBlockNumber"] = self.tx_receipt.block_number
         d_tx["processLogs"] = True
 
         d_tx_insert = OrderedDict()
@@ -503,7 +390,7 @@ class IndexSettlementDeleveraging(BaseIndexEvent):
         d_tx_insert["createdAt"] = self.block_ts
 
         post_id = collection_tx.find_one_and_update(
-            {"startBlockNumber": tx_event["blockNumber"]},
+            {"startBlockNumber": self.tx_receipt.block_number},
             {"$set": d_tx,
              "$setOnInsert": d_tx_insert},
             upsert=True)
@@ -516,41 +403,18 @@ class IndexSettlementDeleveraging(BaseIndexEvent):
 
         return d_tx
 
-    def index_events(self):
-        """ Index  """
+    def on_event(self, tx_event, log_index=None):
+        """ Event """
 
-        if not self.tx_receipt.events:
-            # return if there are no logs events decoded
-            return
-
-        if not self.tx_receipt.logs:
-            # return if there are no logs events in raw mode
-            return
-
-        settlement_address = self.contract_MoC.sc_moc_settlement.address()
-
-        tx_index = 0
-        raw_logs = self.tx_receipt.logs
-
-        # SettlementStarted
-        for tx_event in self.tx_receipt.events:
-
-            if str(raw_logs[tx_index]['address']).lower() != str(settlement_address).lower():
-                continue
-
-            if self.name in tx_event:
-                d_event = MoCSettlementSettlementDeleveraging(tx_event[self.name],
-                                                                   tx_receipt=self.tx_receipt)
-                self.index_event(d_event.event)
-                self.set_settlement_state(d_event.event)
-
-            tx_index += 1
+        d_event = MoCSettlementSettlementDeleveraging(tx_event, tx_receipt=self.tx_receipt)
+        self.index_event(d_event.event, log_index=log_index)
+        self.set_settlement_state(d_event.event)
 
 
 class IndexSettlementCompleted(BaseIndexEvent):
     name = 'SettlementCompleted'
 
-    def index_event(self, tx_event):
+    def index_event(self, tx_event, log_index=None):
 
         return
 
@@ -569,32 +433,9 @@ class IndexSettlementCompleted(BaseIndexEvent):
         collection_tx.remove({"event": "RedeemRequestAlter",
                               "createdAt": {"$lte": old_records}})
 
-    def index_events(self):
-        """ Index  """
+    def on_event(self, tx_event, log_index=None):
+        """ Event """
 
-        if not self.tx_receipt.events:
-            # return if there are no logs events decoded
-            return
-
-        if not self.tx_receipt.logs:
-            # return if there are no logs events in raw mode
-            return
-
-        settlement_address = self.contract_MoC.sc_moc_settlement.address()
-
-        tx_index = 0
-        raw_logs = self.tx_receipt.logs
-
-        # SettlementStarted
-        for tx_event in self.tx_receipt.events:
-
-            if str(raw_logs[tx_index]['address']).lower() != str(settlement_address).lower():
-                continue
-
-            if self.name in tx_event:
-                d_event = MoCSettlementSettlementCompleted(tx_event[self.name],
-                                                              tx_receipt=self.tx_receipt)
-                self.index_event(d_event.event)
-                self.moc_settlement_completed(d_event.event)
-
-            tx_index += 1
+        d_event = MoCSettlementSettlementCompleted(tx_event, tx_receipt=self.tx_receipt)
+        self.index_event(d_event.event, log_index=log_index)
+        self.moc_settlement_completed(d_event.event)

@@ -1,6 +1,17 @@
 from .balances import Balances
 
 
+import logging
+import logging.config
+
+
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S')
+
+log = logging.getLogger('default')
+
+
 class BlockInfo(object):
     def __init__(self,
                  confirm_blocks=None,
@@ -28,6 +39,8 @@ class BaseIndexEvent(BlockInfo, Balances):
                  m_client=None,
                  parent=None,
                  contract_address=None,
+                 moc_address=None,
+                 reserve_address=None,
                  tx_receipt=None,
                  **tx_vars):
 
@@ -35,7 +48,24 @@ class BaseIndexEvent(BlockInfo, Balances):
         self.m_client = m_client
         self.parent = parent
         self.contract_address = contract_address
+        self.moc_address = moc_address
+        self.reserve_address = reserve_address
         self.tx_receipt = tx_receipt
+
+    def update_info(self, **tx_args):
+
+        if 'm_client' in tx_args:
+            self.m_client = tx_args['m_client']
+        if 'parent' in tx_args:
+            self.parent = tx_args['parent']
+        if 'block_height' in tx_args:
+            self.block_height = tx_args['block_height']
+        if 'block_height_current' in tx_args:
+            self.block_height_current = tx_args['block_height_current']
+        if 'transactions' in tx_args:
+            self.transactions = tx_args['transactions']
+        if 'block_ts' in tx_args:
+            self.block_ts = tx_args['block_ts']
 
     def status_tx(self):
 
@@ -48,10 +78,10 @@ class BaseIndexEvent(BlockInfo, Balances):
 
         return status, confirmation_time
 
-    def index_event(self, tx_event):
+    def index_event(self, tx_event, log_index=None):
         """ This is the event """
 
-    def on_event(self, tx_event):
+    def on_event(self, tx_event, log_index=None):
         """ On event"""
 
     def on_events(self):
@@ -61,9 +91,25 @@ class BaseIndexEvent(BlockInfo, Balances):
             # return if there are no logs events decoded
             return
 
+        log_index = []
+        if self.contract_address:
+            for raw_log in self.tx_receipt.logs:
+                if str.lower(raw_log['address']) == str.lower(self.contract_address):
+                    log_index.append(raw_log['logIndex'])
+
+            if not log_index:
+                # return if there are no event with contract address
+                return
+
         if self.name in self.tx_receipt.events:
+            count_index = 0
             for tx_event in self.tx_receipt.events[self.name]:
-                self.on_event(tx_event)
+                if log_index:
+                    self.on_event(tx_event, log_index=log_index[count_index])
+                else:
+                    self.on_event(tx_event)
+
+                count_index += 1
 
     def index_from_receipt(self, tx_receipt, block_info=None):
         """ Index from receipt """

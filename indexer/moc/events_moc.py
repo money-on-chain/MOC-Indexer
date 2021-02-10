@@ -4,8 +4,8 @@ from web3 import Web3
 
 from moneyonchain.moc import MoCBucketLiquidation
 
-from .mongo_manager import mongo_manager
-from .base import BaseIndexEvent
+from indexer.mongo_manager import mongo_manager
+from .events import BaseIndexEvent
 
 import logging
 import logging.config
@@ -18,22 +18,14 @@ logging.basicConfig(level=logging.INFO,
 log = logging.getLogger('default')
 
 
-BUCKET_X2 = '0x5832000000000000000000000000000000000000000000000000000000000000'
-BUCKET_C0 = '0x4330000000000000000000000000000000000000000000000000000000000000'
-
-
 class IndexBucketLiquidation(BaseIndexEvent):
 
     name = 'BucketLiquidation'
 
-    def index_event(self, tx_event):
+    def index_event(self, tx_event, log_index=None):
 
-        if self.block_height_current - self.block_height > self.confirm_blocks:
-            status = 'confirmed'
-            confirmation_time = self.block_ts
-        else:
-            status = 'confirming'
-            confirmation_time = None
+        # status of tx
+        status, confirmation_time = self.status_tx()
 
         # get collection transaction
         collection_tx = mongo_manager.collection_transaction(self.m_client)
@@ -53,19 +45,19 @@ class IndexBucketLiquidation(BaseIndexEvent):
 
         d_tx = OrderedDict()
         d_tx["transactionHash"] = tx_hash
-        d_tx["blockNumber"] = tx_event["blockNumber"]
+        d_tx["blockNumber"] = self.tx_receipt.block_number
         d_tx["event"] = 'BucketLiquidation'
         d_tx["tokenInvolved"] = 'RISKPROX'
         d_tx["bucket"] = 'X2'
         d_tx["status"] = status
         d_tx["confirmationTime"] = confirmation_time
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
-        gas_fee = self.tx_receipt['gasUsed'] * Web3.fromWei(moc_tx['gasPrice'], 'ether')
+        gas_fee = self.tx_receipt.gas_used * Web3.fromWei(self.tx_receipt.gas_price, 'ether')
         # d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         d_tx["processLogs"] = True
         d_tx["createdAt"] = self.block_ts
 
-        prior_block_to_liquidation = tx_event["blockNumber"] - 1
+        prior_block_to_liquidation = self.tx_receipt.block_number - 1
         l_transactions = list()
         for user_riskprox in l_users_riskprox:
             try:
@@ -92,17 +84,16 @@ class IndexBucketLiquidation(BaseIndexEvent):
                     tx_hash))
 
                 # update user balances
-                self.update_balance_address(self.m_client, d_tx["address"], self.block_height)
+                self.parent.update_balance_address(self.m_client, d_tx["address"], self.block_height)
 
                 l_transactions.append(d_tx)
 
-    def notifications(self, tx_event):
+    def notifications(self, tx_event, log_index=None):
         """Event: """
 
         collection_tx = mongo_manager.collection_notification(self.m_client)
         tx_hash = self.tx_receipt.txid
         event_name = 'BucketLiquidation'
-        log_index = self.tx_log['logIndex']
 
         d_tx = OrderedDict()
         d_tx["event"] = event_name
@@ -121,33 +112,9 @@ class IndexBucketLiquidation(BaseIndexEvent):
 
         return d_tx
 
-    def index_events(self):
-        """ Index  """
+    def on_event(self, tx_event, log_index=None):
+        """ Event """
 
-        if not self.tx_receipt.events:
-            # return if there are no logs events decoded
-            return
-
-        if not self.tx_receipt.logs:
-            # return if there are no logs events in raw mode
-            return
-
-        filter_address = self.contract_MoC.address()
-
-        tx_index = 0
-        raw_logs = self.tx_receipt.logs
-
-        # SettlementStarted
-        for tx_event in self.tx_receipt.events:
-
-            if str(raw_logs[tx_index]['address']).lower() != str(filter_address).lower():
-                continue
-
-            if self.name in tx_event:
-                d_event = MoCBucketLiquidation(tx_event[self.name],
-                                                 tx_receipt=self.tx_receipt)
-                self.index_event(d_event.event)
-                self.notifications(d_event.event)
-
-            tx_index += 1
-
+        d_event = MoCBucketLiquidation(tx_event, tx_receipt=self.tx_receipt)
+        self.index_event(d_event.event, log_index=log_index)
+        self.notifications(d_event.event, log_index=log_index)

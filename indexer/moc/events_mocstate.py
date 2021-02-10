@@ -1,11 +1,9 @@
-import datetime
 from collections import OrderedDict
-from web3 import Web3
 
 from moneyonchain.moc import MoCStateStateTransition
 
-from .mongo_manager import mongo_manager
-from .base import BaseIndexEvent
+from indexer.mongo_manager import mongo_manager
+from .events import BaseIndexEvent
 
 import logging
 import logging.config
@@ -17,9 +15,6 @@ logging.basicConfig(level=logging.INFO,
 
 log = logging.getLogger('default')
 
-
-BUCKET_X2 = '0x5832000000000000000000000000000000000000000000000000000000000000'
-BUCKET_C0 = '0x4330000000000000000000000000000000000000000000000000000000000000'
 
 d_states = {
     0: "Liquidated",
@@ -33,17 +28,16 @@ class IndexStateTransition(BaseIndexEvent):
 
     name = 'StateTransition'
 
-    def index_event(self, tx_event):
+    def index_event(self, tx_event, log_index=None):
 
         return
 
-    def notifications(self, tx_event):
+    def notifications(self, tx_event, log_index=None):
         """Event: """
 
         collection_tx = mongo_manager.collection_notification(self.m_client)
         tx_hash = self.tx_receipt.txid
         event_name = 'StateTransition'
-        log_index = self.tx_log['logIndex']
 
         d_tx = OrderedDict()
         d_tx["event"] = event_name
@@ -62,33 +56,10 @@ class IndexStateTransition(BaseIndexEvent):
 
         return d_tx
 
-    def index_events(self):
-        """ Index  """
+    def on_event(self, tx_event, log_index=None):
+        """ Event """
 
-        if not self.tx_receipt.events:
-            # return if there are no logs events decoded
-            return
-
-        if not self.tx_receipt.logs:
-            # return if there are no logs events in raw mode
-            return
-
-        filter_address = self.contract_MoC.contract_MoCInrate.address()
-
-        tx_index = 0
-        raw_logs = self.tx_receipt.logs
-
-        # SettlementStarted
-        for tx_event in self.tx_receipt.events:
-
-            if str(raw_logs[tx_index]['address']).lower() != str(filter_address).lower():
-                continue
-
-            if self.name in tx_event:
-                d_event = MoCStateStateTransition(tx_event[self.name],
-                                                 tx_receipt=self.tx_receipt)
-                self.index_event(d_event.event)
-                self.notifications(d_event.event)
-
-            tx_index += 1
+        d_event = MoCStateStateTransition(tx_event, tx_receipt=self.tx_receipt)
+        self.index_event(d_event.event)
+        self.notifications(d_event.event, log_index=log_index)
 
