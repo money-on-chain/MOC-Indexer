@@ -48,6 +48,28 @@ Make sure to change **settings/settings-moc-alpha-testnet.json** to point to you
 `python ./app_run_indexer.py --config=settings/settings-moc-alpha-testnet.json --network=mocTestnetAlpha`
 
 
+**Usage Docker**
+
+Build
+
+```
+./build.sh -e ec2_tyd
+```
+
+Run
+
+```
+docker run -d \
+--name ec2_tyd_1 \
+--env APP_MONGO_URI=mongodb://192.168.56.2:27017/ \
+--env APP_MONGO_DB=local_tyd \
+--env APP_CONFIG_NETWORK=mocTestTyD \
+--env APP_CONNECTION_NETWORK=rskTesnetPublic \
+moc_indexer_ec2_tyd
+```
+  
+
+
 
 ## AWS
 

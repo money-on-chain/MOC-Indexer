@@ -20,7 +20,7 @@ WORKDIR /home/www-data/app/
 COPY app_run_moc_indexer.py ./
 COPY config.json ./
 COPY config_parser.py ./
-COPY indexer/ ./
+COPY indexer/ ./indexer/
 
 ENV PATH "$PATH:/home/www-data/app/"
 ENV AWS_DEFAULT_REGION=us-west-1
