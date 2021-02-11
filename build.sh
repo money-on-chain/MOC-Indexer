@@ -9,26 +9,8 @@ while getopts ":e:" o; do
     case "${o}" in
         e)
             e=${OPTARG}
-             ((e == "moc-alphatestnet" || e == "moc-testnet" || e == "moc-mainnet" || e == "rdoc-mainnet" || e == "rdoc-testnet" || e == "rdoc-alpha-testnet" || e == "ec2_alphatestnet" || e=="ec2_testnet" || e=="ec2_testnet_historic" || e=="ec2_mainnet" || e=="ec2_mainnet_historic" || e=="ec2_rdoc_alphatestnet" || e=="ec2_rdoc_testnet" || e=="ec2_rdoc_testnet_historic" || e=="ec2_rdoc_mainnet" || e=="ec2_rdoc_mainnet_historic")) || usage
+             (( e == "ec2_alphatestnet" || e=="ec2_testnet" || e=="ec2_testnet_historic" || e=="ec2_mainnet" || e=="ec2_mainnet_historic" || e=="ec2_rdoc_alphatestnet" || e=="ec2_rdoc_testnet" || e=="ec2_rdoc_testnet_historic" || e=="ec2_rdoc_mainnet" || e=="ec2_rdoc_mainnet_historic")) || usage
             case $e in
-                moc-alphatestnet)
-                    ENV=$e
-                    ;;
-                moc-testnet)
-                    ENV=$e
-                    ;;
-                moc-mainnet)
-                    ENV=$e
-                    ;;
-                rdoc-alpha-testnet)
-                    ENV=$e
-                    ;;
-                rdoc-testnet)
-                    ENV=$e
-                    ;;
-                rdoc-mainnet)
-                    ENV=$e
-                    ;;
                 ec2_alphatestnet)
                     ENV=$e
                     ;;  
@@ -76,5 +58,4 @@ if [ -z "${e}" ]; then
 fi
 
 docker image build -t moc_indexer_$ENV -f Dockerfile .
-
 echo "Build done! Exiting!"
