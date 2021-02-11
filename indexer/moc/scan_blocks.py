@@ -7,6 +7,9 @@ from moneyonchain.utils import filter_transactions
 
 from web3.exceptions import TransactionNotFound
 from indexer.mongo_manager import mongo_manager
+from indexer.utils import transactions_receipt
+from indexer.logger import log
+
 
 from .events_mocexchange import IndexRiskProMint, \
     IndexRiskProRedeem, \
@@ -36,19 +39,7 @@ from .events_token_reserve import IndexRESERVETransfer
 from .events_token_riskpro import IndexRISKPROTransfer
 from .events_token_stable import IndexSTABLETransfer
 
-
-from .utils import transactions_receipt
 from .balances import Balances
-
-import logging
-import logging.config
-
-
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                    datefmt='%Y-%m-%d %H:%M:%S')
-
-log = logging.getLogger('default')
 
 
 class ScanBlocks(Balances):
