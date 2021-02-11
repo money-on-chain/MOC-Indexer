@@ -13,7 +13,7 @@ from indexer.moc import ScanBlocks, \
     ScanStatus, \
     ScanUser
 
-from logger import log
+from .logger import log
 
 
 class JobsIndexer(ScanBlocks, ScanPrices, ScanState, ScanStatus, ScanUser):
