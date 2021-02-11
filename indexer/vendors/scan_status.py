@@ -1,6 +1,7 @@
 import datetime
 import time
 
+from brownie.network.transaction import Status
 from moneyonchain.networks import network_manager, chain
 
 from web3.exceptions import TransactionNotFound
@@ -44,13 +45,13 @@ class ScanStatus(State):
 
             if tx_receipt:
                 d_tx_up = dict()
-                if tx_receipt['status'] == 1:
+                if tx_receipt.status == Status.Confirmed:
                     d_tx_up['status'], d_tx_up['confirmationTime'], d_tx_up['confirmingPercent'] = \
                         self.is_confirmed_block(
-                            tx_receipt['blockNumber'],
+                            tx_receipt.block_number,
                             block_height,
                             block_height_ts)
-                elif tx_receipt['status'] == 0:
+                elif tx_receipt.status == Status.Reverted:
                     d_tx_up['status'] = 'failed'
                     d_tx_up['confirmationTime'] = block_height_ts
                 else:
@@ -76,17 +77,17 @@ class ScanStatus(State):
 
             if tx_receipt:
                 d_tx_up = dict()
-                if tx_receipt['status'] == 1:
+                if tx_receipt.status == Status.Confirmed:
                     d_tx_up['status'], d_tx_up['confirmationTime'], d_tx_up['confirmingPercent'] = \
                         self.is_confirmed_block(
-                            tx_receipt['blockNumber'],
+                            tx_receipt.block_number,
                             block_height,
                             block_height_ts)
                     # if d_tx_up['status'] == 'confirming':
                     #    # is already on confirming status
                     #    # not write to db
                     #    continue
-                elif tx_receipt['status'] == 0:
+                elif tx_receipt.status == Status.Reverted:
                     d_tx_up['status'] = 'failed'
                     d_tx_up['confirmationTime'] = block_height_ts
                 else:

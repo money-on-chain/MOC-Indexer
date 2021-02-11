@@ -553,7 +553,7 @@ class ScanBlocks(Balances):
 
                 log.info("[SCAN BLOCK NOT PROCESSED] PROCESSING HASH: [{0}]".format(moc_tx['transactionHash']))
 
-                self.scan_moc_block(tx_receipt['blockNumber'], last_block, m_client)
+                self.scan_moc_block(tx_receipt.block_number, last_block, m_client)
 
         duration = time.time() - start_time
 

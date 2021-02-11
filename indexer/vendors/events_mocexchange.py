@@ -146,7 +146,7 @@ class IndexRiskProRedeem(BaseIndexEvent):
         d_tx["isPositive"] = False
         d_tx["reservePrice"] = str(tx_event["reservePrice"])
         d_tx["mocCommissionValue"] = str(moc_commission)
-        d_tx["mocPrice"] = str(tx_event.mocPrice)
+        d_tx["mocPrice"] = str(tx_event["mocPrice"])
         gas_fee = self.tx_receipt.gas_used * Web3.fromWei(self.tx_receipt.gas_price, 'ether')
         d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         if self.app_mode != "RRC20":
