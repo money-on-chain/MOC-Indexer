@@ -4,4 +4,4 @@ timeloop
 boto3
 pymongo
 requests
-moneyonchain==2.0.12
+moneyonchain==2.0.15

@@ -230,9 +230,9 @@ class JobsIndexer(ScanBlocks, ScanPrices, ScanState, ScanStatus, ScanUser):
 
     def time_loop_start(self):
 
-        if self.options['index_mode'] in ['normal']:
+        if self.options['index_mode'] in ['normal', 'vendors']:
             self.add_jobs()
-        elif self.options['index_mode'] in ['history']:
+        elif self.options['index_mode'] in ['history', 'vendors_history']:
             self.add_jobs_tx_history()
         else:
             raise Exception("Index mode not recognize")

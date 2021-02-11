@@ -47,14 +47,6 @@
     "mocTestTyD": {
       "app_mode": "MoC",
       "project": "MoC",
-      "uri": ["http://18.218.165.234:4444"],
-      "chain_id": 31,
-      "accounts": [
-        {
-          "address": "0x9032F510A5B54A005f04e81B5C98B7f201C4daC1",
-          "private_key": ""
-        }
-      ],
       "addresses": {
         "MoC": "0x71d0921010CA8367835D34F7F3d215047E307581"
       }

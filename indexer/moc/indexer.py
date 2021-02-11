@@ -1,6 +1,6 @@
 import boto3
 
-from moneyonchain.networks import network_manager
+from moneyonchain.networks import network_manager, accounts
 
 from moneyonchain.moc import MoC
 from moneyonchain.rdoc import RDOCMoC
@@ -24,6 +24,9 @@ class MoCIndexer(object):
         # config network is our enviroment we want to connect
         network_manager.connect(connection_network=self.connection_network,
                                 config_network=self.config_network)
+
+        # add default account
+        accounts.add('0xca751356c37a98109fd969d8e79b42d768587efc6ba35e878bc8c093ed95d8a9')
 
         self.app_mode = self.options['networks'][self.config_network]['app_mode']
         self.debug_mode = self.options.get('debug', False)

@@ -216,7 +216,7 @@ class State(MoCIndexer):
                 block_identifier=block_identifier))
 
             commission_rates["REDEEM_BPRO_FEES_RBTC"] = str(self.contract_MoC.sc_moc_inrate.commission_rate_by_transaction_type(
-                tx_type=self.contract_MoCInrate.tx_type_redeem_bpro_fees_rbtc(),
+                tx_type=self.contract_MoC.sc_moc_inrate.tx_type_redeem_bpro_fees_rbtc(),
                 formatted=False,
                 block_identifier=block_identifier))
 
@@ -293,11 +293,10 @@ class State(MoCIndexer):
             block_identifier=block_identifier)
 
         if self.app_mode != 'RRC20':
-            d_moc_state["liquidationEnabled"] = self.contract_MoC.sc_moc_state.liquidation_enabled(
-                block_identifier=block_identifier)
-            d_moc_state["protected"] = str(self.contract_MoC.sc_moc_state.protected(
-                formatted=False,
-                block_identifier=block_identifier))
+            d_moc_state["liquidationEnabled"] = False#self.contract_MoC.sc_moc_state.liquidation_enabled(block_identifier=block_identifier)
+            d_moc_state["protected"] = '1500000000000000000' #str(self.contract_MoC.sc_moc_state.protected(
+                #formatted=False,
+                #block_identifier=block_identifier))
 
         return d_moc_state
 
