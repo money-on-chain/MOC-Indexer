@@ -7,7 +7,7 @@
   "timeout_wait": 300,
   "gas_price": 60000000,
   "debug": true,
-  "index_mode": "normal",
+  "index_mode": "vendors",
   "tasks": {
     "scan_moc_blocks": {"interval":  20},
     "scan_moc_prices": {"interval":  25},
