@@ -1,3 +1,4 @@
+from brownie.network.event import _decode_logs
 from indexer.logger import log
 from .balances import Balances
 
@@ -81,25 +82,21 @@ class BaseIndexEvent(BlockInfo, Balances):
             # return if there are no logs events decoded
             return
 
-        log_index = []
-        if self.contract_address:
-            for raw_log in self.tx_receipt.logs:
-                if str.lower(raw_log['address']) == str.lower(self.contract_address):
-                    log_index.append(raw_log['logIndex'])
+        if self.name not in self.tx_receipt.events:
+            # no events
+            return
 
-            if not log_index:
-                # return if there are no event with contract address
-                return
+        if not self.contract_address:
+            log.warning("No contract address set for the event: {0}".format(self.name))
 
-        if self.name in self.tx_receipt.events:
-            count_index = 0
-            for tx_event in self.tx_receipt.events[self.name]:
-                if log_index:
-                    self.on_event(tx_event, log_index=log_index[count_index])
-                else:
-                    self.on_event(tx_event)
+        for raw_log in self.tx_receipt.logs:
 
-                count_index += 1
+            if self.contract_address and str.lower(raw_log['address']) != str.lower(self.contract_address):
+                log.warning("[WARN] Event with the same name but different address: {0}".format(raw_log['address']))
+                continue
+
+            tx_event = _decode_logs([raw_log])
+            self.on_event(tx_event[self.name], log_index=raw_log['logIndex'])
 
     def index_from_receipt(self, tx_receipt, block_info=None):
         """ Index from receipt """
