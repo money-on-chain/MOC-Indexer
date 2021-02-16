@@ -78,6 +78,10 @@ class BaseIndexEvent(BlockInfo, Balances):
     def on_events(self):
         """ Iterate on events  """
 
+        if not self.tx_receipt.logs:
+            # no events so no logs
+            return
+
         if not self.tx_receipt.events:
             # return if there are no logs events decoded
             return
