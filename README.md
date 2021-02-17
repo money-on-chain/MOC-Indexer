@@ -2,50 +2,61 @@
 
 ## Introduction
 
-to speed up the app we need an indexer of the blockchain of our contracts. The indexer query the status of the contracts
+To speed up the app we need an indexer of the blockchain of our contracts. 
+The indexer query the status of the contracts
 and write to mongo database, so the app query the mongo instead of blockchain (slow).
-
-This tasks run every time, updating the mongo database with the blockchain information. We have 5 tasks running independently:
-
-1) Scan MoC Blocks. Run every 20 seconds. This tasks watch get the new blocks and filter if there are any transactions 
-corresponding to our contracts or tokens. 
-
-2) Scan MoC Prices. Run every 20 seconds. Query the prices for the new blocks.
-
-3) Scan MoC States. Run every 20 seconds. Query the MoCState contract, here we have a lot of status of MOC like prices, 
-cobj, leverage, etc. Also save historic states.
-
-4) Scan MoC Status. Run every 10 seconds. Status of the transactions
-
-5) Scan MoC State Status. Keep information about if there are price actives.
 
 
 ### Usage
 
 **Requirement and installation**
  
-*  We need Python 3.6+
+* We need Python 3.6+
+* Brownie
 
 Install libraries
 
 `pip install -r requirements.txt`
 
+[Brownie](https://github.com/eth-brownie/brownie) is a Python-based development and testing framework for smart contracts.
+Brownie is easy so we integrated it with Money on Chain.
+
+`pip install eth-brownie==1.12.2`
+
+**Network Connections**
+
+First we need to install custom networks (RSK Nodes) in brownie:
+
+```
+console> brownie networks add RskNetwork rskTestnetPublic host=https://public-node.testnet.rsk.co chainid=31 explorer=https://blockscout.com/rsk/mainnet/api
+console> brownie networks add RskNetwork rskTestnetLocal host=http://localhost:4444 chainid=31 explorer=https://blockscout.com/rsk/mainnet/api
+console> brownie networks add RskNetwork rskMainnetPublic host=https://public-node.rsk.co chainid=30 explorer=https://blockscout.com/rsk/mainnet/api
+console> brownie networks add RskNetwork rskMainnetLocal host=http://localhost:4444 chainid=30 explorer=https://blockscout.com/rsk/mainnet/api
+```
+
+**Connection table**
+
+| Network Name      | Network node          | Host                               | Chain    |
+|-------------------|-----------------------|------------------------------------|----------|
+| rskTestnetPublic   | RSK Testnet Public    | https://public-node.testnet.rsk.co | 31       |    
+| rskTestnetLocal    | RSK Testnet Local     | http://localhost:4444              | 31       |
+| rskMainnetPublic  | RSK Mainnet Public    | https://public-node.rsk.co         | 30       |
+| rskMainnetLocal   | RSK Mainnet Local     | http://localhost:4444              | 30       |
+
+
 **Usage**
-
-Make sure to change **settings/settings-xxx.json** to point to your mongo db.
-
-`python ./app_run_indexer.py --config=settings/settings-xxx.json --network=develop`
-
-**--config:** Path to config.json 
-
-**--network=mocTestnetAlpha:** Network name in the json
-
 
 **Example**
 
-Make sure to change **settings/settings-moc-alpha-testnet.json** to point to your **mongo db**.
+Make sure to change **settings/settings-xxx.json** to point to your mongo db.
 
-`python ./app_run_indexer.py --config=settings/settings-moc-alpha-testnet.json --network=mocTestnetAlpha`
+`python ./app_run_moc_indexer.py --config=settings/settings-moc-testtyd-martin.json --config_network=mocTestTyD --connection_network=rskTestnetPublic`
+
+**--config:** Path to config.json 
+
+**--config_network=mocTestTyD:** Config Network name in the json
+
+**--connection_network=rskTestnetPublic:** Connection network in brownie 
 
 
 **Usage Docker**
@@ -160,6 +171,7 @@ On the task definition it's important to set up the proper environment variables
 
 1. APP_CONFIG: The config.json you find in your _settings/deploy_XXX.json folder as json
 2. AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY: these are needed for the heartbeat function of the jobs, as it needs an account that has write access to a metric in Cloudwatch
-3. APP_NETWORK: The network here is listed in APP_NETWORK
+3. APP_CONFIG_NETWORK: The network here is listed in APP_NETWORK
+3. APP_CONNECTION_NETWORK: The network here is listed in APP_CONNECTION_NETWORK
 
 
