@@ -100,6 +100,11 @@ class BaseIndexEvent(BlockInfo, Balances):
                 continue
 
             tx_event = _decode_logs([raw_log])
+
+            if self.name not in tx_event:
+                log.warning("[WARN] Event not correspond with this class: {0} skipping! This ocurrs when multiple events on the same contract!".format(self.name))
+                continue
+
             self.on_event(tx_event[self.name], log_index=raw_log['logIndex'])
 
     def index_from_receipt(self, tx_receipt, block_info=None):
