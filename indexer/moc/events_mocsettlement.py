@@ -316,9 +316,10 @@ class IndexSettlementDeleveraging(BaseIndexEvent):
         start_block_number = tx_event["startBlockNumber"]
         prior_block_to_deleveraging = start_block_number - 1
         l_transactions = list()
+
         for user_riskprox in l_users_riskprox:
             try:
-                d_user_balances = self.riskprox_balances_from_address(
+                d_user_balances = self.parent.riskprox_balances_from_address(
                     user_riskprox["address"],
                     prior_block_to_deleveraging)
             except:

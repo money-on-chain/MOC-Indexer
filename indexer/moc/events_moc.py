@@ -52,7 +52,7 @@ class IndexBucketLiquidation(BaseIndexEvent):
         l_transactions = list()
         for user_riskprox in l_users_riskprox:
             try:
-                d_user_balances = self.riskprox_balances_from_address(user_riskprox["address"],
+                d_user_balances = self.parent.riskprox_balances_from_address(user_riskprox["address"],
                                                                       prior_block_to_liquidation)
             except:
                 continue
