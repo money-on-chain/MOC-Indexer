@@ -1,9 +1,10 @@
+import os
 import boto3
 
 from moneyonchain.networks import network_manager, accounts
 
 from moneyonchain.moc_vendors import VENDORSMoC
-from moneyonchain.rdoc import RDOCMoC
+from moneyonchain.rdoc_vendors import VENDORS_RDOCMoC
 from moneyonchain.medianizer import MoCMedianizer, RDOCMoCMedianizer
 
 
@@ -32,7 +33,7 @@ class MoCIndexer(object):
         self.debug_mode = self.options.get('debug', False)
 
         if self.app_mode == "RRC20":
-            self.contract_MoC = RDOCMoC(
+            self.contract_MoC = VENDORS_RDOCMoC(
                 network_manager,
                 load_sub_contract=False).from_abi().contracts_discovery()
         else:
@@ -55,8 +56,9 @@ class MoCIndexer(object):
         # initialize mongo db
         mongo_manager.set_connection(uri=self.options['mongo']['uri'], db=self.options['mongo']['db'])
 
-        # Create CloudWatch client
-        self.cloudwatch = boto3.client('cloudwatch')
+        if 'AWS_ACCESS_KEY_ID' in os.environ:
+            # Create CloudWatch client
+            self.cloudwatch = boto3.client('cloudwatch')
 
     def moc_contract_addresses(self):
 
@@ -77,12 +79,11 @@ class MoCIndexer(object):
             str.lower(self.contract_MoC.sc_moc_inrate.address()))
         moc_addresses.append(
             str.lower(self.contract_MoCMedianizer.address()))
+        moc_addresses.append(
+                str.lower(self.contract_MoC.sc_moc_vendors.address()))
 
         if self.app_mode == 'RRC20':
             moc_addresses.append(
                 str.lower(self.contract_ReserveToken.address()))
-        else:
-            moc_addresses.append(
-                str.lower(self.contract_MoC.sc_moc_vendors.address()))
 
         return moc_addresses
