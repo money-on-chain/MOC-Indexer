@@ -7,7 +7,7 @@
   "timeout_wait": 300,
   "gas_price": 60000000,
   "debug": true,
-  "index_mode": "normal",
+  "index_mode": "vendors",
   "tasks": {
     "scan_moc_blocks": {"interval":  20},
     "scan_moc_prices": {"interval":  25},
@@ -50,10 +50,7 @@
       "addresses": {
         "MoC": "0x01AD6f8E884ed4DDC089fA3efC075E9ba45C9039"
       }
-
     }
-
-
-  }
-
+  },
+  "vendor_account": "0x0000000000000000000000000000000000000000"
 }
