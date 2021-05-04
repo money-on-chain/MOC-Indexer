@@ -16,7 +16,14 @@ class Balances(MoCIndexer):
     def balances_from_address(self, address, block_height):
 
         d_user_balance = OrderedDict()
-        d_user_balance["mocBalance"] = str(0)
+        d_user_balance["mocBalance"] = str(self.contract_MoC.moc_balance_of(
+            address,
+            formatted=False,
+            block_identifier=block_height))
+        d_user_balance["mocAllowance"] = str(self.contract_MoC.moc_allowance(
+            address,
+            formatted=False,
+            block_identifier=block_height))
         d_user_balance["bProHoldIncentive"] = str(0)
         d_user_balance["docBalance"] = str(self.contract_MoC.doc_balance_of(
             address,
