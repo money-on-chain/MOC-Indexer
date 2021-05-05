@@ -146,11 +146,15 @@ class State(MoCIndexer):
             self.contract_MoC.sc_moc_state.bpro_discount_rate(
                 formatted=False,
                 block_identifier=block_identifier))
-        d_moc_state["mocPrice"] = str(
+        try:
+            d_moc_state["mocPrice"] = str(
             self.contract_MoC.moc_price(
                 formatted=False,
                 block_identifier=block_identifier
             ))
+        except HTTPError:
+            log.error("No MOC price valid in BLOCKHEIGHT: [{0}] skipping!".format(
+                block_identifier))
         try:
             d_moc_state["maxBproWithDiscount"] = str(
                 self.contract_MoC.sc_moc_state.max_bpro_with_discount(
