@@ -47,14 +47,6 @@
     "rdocMainnet": {
       "app_mode": "RRC20",
       "project": "RDoC",
-      "uri": ["https://public-node.rsk.co"],
-      "chain_id": 30,
-      "accounts": [
-        {
-          "address": "0xC67D9eE30d2119A384E02de568BE80FE785074Ba",
-          "private_key": ""
-        }
-      ],
       "addresses": {
         "MoC": "0xCfF3fcaeC2352C672C38d77cb1a064B7D50ce7e1"
       }

@@ -1,9 +1,13 @@
-from moc_config import MoCCfg
-from taskrunner import JobsRunner
+from indexer.moc import ScanBlocks
+from config_parser import ConfigParser
 
 
 if __name__ == '__main__':
-    moccfg = MoCCfg(prog='app_scan_moc_blocks.py')
-    runner = JobsRunner(moccfg=moccfg)
-    runner.add_jobdesc("jobs:scan_moc_blocks")
-    runner.time_loop_start()
+
+    config_parser = ConfigParser()
+
+    moc_inc = ScanBlocks(
+        config_parser.config,
+        config_parser.config_network,
+        config_parser.connection_network)
+    moc_inc.scan_moc_blocks()

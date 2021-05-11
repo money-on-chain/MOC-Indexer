@@ -47,14 +47,6 @@
     "rdocTestnet": {
       "app_mode": "RRC20",
       "project": "RDoC",
-      "uri": ["http://moc-rsk-node-testnet.moneyonchain.com:4454"],
-      "chain_id": 31,
-      "accounts": [
-        {
-          "address": "0xC67D9eE30d2119A384E02de568BE80FE785074Ba",
-          "private_key": ""
-        }
-      ],
       "addresses": {
         "MoC": "0x7e2F245F7dc8e78576ECB13AEFc0a101E9BE1AD3"
       }
