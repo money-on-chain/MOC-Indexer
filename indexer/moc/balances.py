@@ -22,6 +22,7 @@ class Balances(MoCIndexer):
             block_identifier=block_height))
         d_user_balance["mocAllowance"] = str(self.contract_MoC.moc_allowance(
             address,
+            self.contract_MoC.address(),
             formatted=False,
             block_identifier=block_height))
         d_user_balance["bProHoldIncentive"] = str(0)

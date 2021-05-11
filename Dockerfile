@@ -15,10 +15,12 @@ RUN brownie networks add RskNetwork rskMainnetCustom host=$BROWNIE_CUSTOM_HOST_M
 
 RUN mkdir /home/www-data && mkdir /home/www-data/app
 
+ARG CONFIG=config.json
+
 WORKDIR /home/www-data/app/
 
 COPY app_run_moc_indexer.py ./
-COPY config.json ./
+ADD $CONFIG ./config.json
 COPY config_parser.py ./
 COPY indexer/ ./indexer/
 

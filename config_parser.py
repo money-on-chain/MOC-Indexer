@@ -50,7 +50,17 @@ class ConfigParser(object):
             self.config = json.loads(os.environ['APP_CONFIG'])
         else:
             if not options.config:
-                config_path = self.config
+                # if there are no config try to read config.json from current folder
+                config_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'config.json')
+                if not os.path.isfile(config_path):
+                    raise Exception("Please select path to config or env APP_CONFIG. "
+                                    "Ex. /settings/settings-moc-alpha-testnet.json "
+                                    "Full Ex.:"
+                                    "python app_run_moc_indexer.py "
+                                    "--connection_network=rskTestnetPublic "
+                                    "--config_network=mocTestnetAlpha "
+                                    "--config ./settings/settings-moc-alpha-testnet.json"
+                                    )
             else:
                 config_path = options.config
 
@@ -60,7 +70,14 @@ class ConfigParser(object):
             self.connection_network = os.environ['APP_CONNECTION_NETWORK']
         else:
             if not options.connection_network:
-                self.connection_network = 'rskTesnetPublic'
+                raise Exception("Please select connection network or env APP_CONNECTION_NETWORK. "
+                                "Ex.: rskTesnetPublic. "
+                                "Full Ex.:"
+                                "python app_run_moc_indexer.py "
+                                "--connection_network=rskTestnetPublic "
+                                "--config_network=mocTestnetAlpha "
+                                "--config ./settings/settings-moc-alpha-testnet.json"
+                                )
             else:
                 self.connection_network = options.connection_network
 
@@ -68,7 +85,14 @@ class ConfigParser(object):
             self.config_network = os.environ['APP_CONFIG_NETWORK']
         else:
             if not options.config_network:
-                self.config_network = 'mocTestnetAlpha'
+                raise Exception("Please select enviroment of your config or env APP_CONFIG_NETWORK. "
+                                "Ex.: rdocTestnetAlpha"
+                                "Full Ex.:"
+                                "python app_run_moc_indexer.py "
+                                "--connection_network=rskTestnetPublic "
+                                "--config_network=mocTestnetAlpha "
+                                "--config ./settings/settings-moc-alpha-testnet.json"
+                                )
             else:
                 self.config_network = options.config_network
 

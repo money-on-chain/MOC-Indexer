@@ -47,14 +47,6 @@
     "mocMainnet2": {
       "app_mode": "MoC",
       "project": "MoC",
-      "uri": ["https://public-node.rsk.co"],
-      "chain_id": 30,
-      "accounts": [
-        {
-          "address": "0xEA14c08764c9e5F212c916E11a5c47Eaf92571e4",
-          "private_key": ""
-        }
-      ],
       "addresses": {
         "MoC": "0xf773B590aF754D597770937Fa8ea7AbDf2668370"
       }

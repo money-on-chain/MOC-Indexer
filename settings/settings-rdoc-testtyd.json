@@ -47,14 +47,6 @@
     "rdocTestTyD": {
       "app_mode": "RRC20",
       "project": "RDoC",
-      "uri": ["https://public-node.testnet.rsk.co"],
-      "chain_id": 31,
-      "accounts": [
-        {
-          "address": "0x9032F510A5B54A005f04e81B5C98B7f201C4daC1",
-          "private_key": ""
-        }
-      ],
       "addresses": {
         "MoC": ""
       }

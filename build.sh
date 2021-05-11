@@ -3,9 +3,9 @@
 # exit as soon as an error happen
 set -e
 
-usage() { echo "Usage: $0 -e <environment>" 1>&2; exit 1; }
+usage() { echo "Usage: $0 -e <environment> -c <config file>" 1>&2; exit 1; }
 
-while getopts ":e:" o; do
+while getopts ":e:c:" o; do
     case "${o}" in
         e)
             e=${OPTARG}
@@ -16,7 +16,7 @@ while getopts ":e:" o; do
                     ;;
                 ec2_alphatestnet)
                     ENV=$e
-                    ;;  
+                    ;;
                 ec2_testnet)
                     ENV=$e
                     ;;
@@ -49,6 +49,10 @@ while getopts ":e:" o; do
                     ;;
             esac
             ;;
+        c)
+            c=${OPTARG}
+            CONFIG_FILE=$c
+            ;;
         *)
             usage
             ;;
@@ -56,9 +60,9 @@ while getopts ":e:" o; do
 done
 shift $((OPTIND-1))
 
-if [ -z "${e}" ]; then
+if [ -z "${e}" ] || [ -z "${c}" ]; then
     usage
 fi
 
-docker image build -t moc_indexer_$ENV -f Dockerfile .
-echo "Build done! Exiting!"
+docker image build -t moc_indexer_$ENV -f Dockerfile --build-arg CONFIG=$CONFIG_FILE .
+echo "Build done!"

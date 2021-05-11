@@ -64,7 +64,7 @@ Make sure to change **settings/settings-xxx.json** to point to your mongo db.
 Build
 
 ```
-./build.sh -e ec2_tyd
+./build.sh -e ec2_tyd -c ./settings/settings-moc-testtyd.json
 ```
 
 Run
@@ -102,10 +102,10 @@ sudo su builder -s /bin/bash
 ```
 
 
-### **Building image** 
+### AWS **Building image** 
 
 ```
-./build.sh -e <environment>
+./aws_build_and_push.sh -e <environment> -c <config file> -i <aws id>
 ```
 
  Where environment could be
@@ -120,50 +120,19 @@ sudo su builder -s /bin/bash
 Finally it will build the docker image.
 
 
-### Pushing Image to repository
+**Example:**
 
 Before pushing the image, we need to check if ecr image exist, go to [https://us-west-1.console.aws.amazon.com/ecr/repositories?region=us-west-1](https://us-west-1.console.aws.amazon.com/ecr/repositories?region=us-west-1) and create it
 
 Ensure you have installed the latest version of the AWS CLI and Docker.
 
-Make sure you have built your image before pushing it. Then execute **./tag_and_push.sh -e  &lt;environment>**
+Make sure you have built your image before pushing it. 
 
 This script will tag with _latest_ and push to the proper repository.
 
 ```
-$ ./tag_and_push.sh -e ec2_alphatestnet
+$ ./aws_build_and_push.sh -e ec2_alphatestnet -c ./settings/aws-moc-mainnet2.json -i 123456 
 ```
-
-Result 
-
-```
-
-WARNING! Using --password via the CLI is insecure. Use --password-stdin.
-Login Succeeded
-The push refers to repository [551471957915.dkr.ecr.us-west-1.amazonaws.com/moc_jobs_moc-alphatestnet]
-1ec27b2766b2: Pushed 
-45dbe5a18fd6: Pushed 
-4d4bec2e685f: Pushed 
-9da1af2983d7: Pushed 
-b24985db57b9: Pushed 
-d22eb95b7a94: Pushed 
-bb1af9323ea6: Pushed 
-48ea5aa9c3a2: Pushed 
-c2dfe15f7892: Pushed 
-013b3c7b17e1: Pushed 
-8c40e5337dcd: Pushed 
-978eb45ee4b6: Pushed 
-3f53405f239c: Pushed 
-48ebd1638acd: Pushed 
-31f78d833a92: Pushed 
-2ea751c0f96c: Pushed 
-7a435d49206f: Pushed 
-9674e3075904: Pushed 
-831b66a484dc: Pushed 
-latest: digest: sha256:131df4bd072586f2808143129d8d396dcf304f758771c46b3470ae474fbf0e37 size: 4306
-```
-
-Image should be now available in the AWS repository for Fargate usage
 
 ## Setting up in AWS ECS
 
