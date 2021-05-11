@@ -79,4 +79,12 @@ class Prices(MoCIndexer):
                 d_price["reservePrecision"]))
         d_price["createdAt"] = block_ts
 
+        try:
+            d_price["mocPrice"] = str(self.contract_MoC.moc_price(
+                formatted=False,
+                block_identifier=block_identifier))
+        except HTTPError:
+            log.error("No price valid for MoC in BLOCKHEIGHT: [{0}] skipping!".format(block_identifier))
+            return
+
         return d_price
