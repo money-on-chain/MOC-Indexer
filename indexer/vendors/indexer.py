@@ -4,7 +4,7 @@ import boto3
 from moneyonchain.networks import network_manager, accounts
 
 from moneyonchain.moc_vendors import VENDORSMoC
-from moneyonchain.rdoc_vendors import VENDORS_RDOCMoC
+from moneyonchain.rdoc_vendors import VENDORSRDOCMoC
 from moneyonchain.medianizer import MoCMedianizer, RDOCMoCMedianizer
 
 
@@ -33,7 +33,7 @@ class MoCIndexer(object):
         self.debug_mode = self.options.get('debug', False)
 
         if self.app_mode == "RRC20":
-            self.contract_MoC = VENDORS_RDOCMoC(
+            self.contract_MoC = VENDORSRDOCMoC(
                 network_manager,
                 load_sub_contract=False).from_abi().contracts_discovery()
         else:
