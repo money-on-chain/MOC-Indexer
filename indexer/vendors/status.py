@@ -47,12 +47,6 @@ class State(MoCIndexer):
             log.error("No price valid for MoC in BLOCKHEIGHT: [{0}] skipping!".format(block_identifier))
             return
 
-        if self.app_mode == 'RRC20':
-            d_moc_state["bproAvailableToMint"] = str(self.contract_MoC.sc_moc_state.max_mint_bpro_available(
-                formatted=False,
-                block_identifier=block_identifier))
-        else:
-            d_moc_state["bproAvailableToMint"] = '0'
         d_moc_state["bproAvailableToRedeem"] = str(
             self.contract_MoC.sc_moc_state.absolute_max_bpro(
                 formatted=False,
@@ -202,14 +196,70 @@ class State(MoCIndexer):
                 block_identifier))
             d_moc_state["spotInrate"] = '0'
 
+        # Start: Commission rates by transaction types
+        commission_rates = {}
+
         if self.app_mode == 'RRC20':
-            d_moc_state["commissionRate"] = str(self.contract_MoC.sc_moc_inrate.commission_rate(
+            commission_rates["MINT_RISKPRO_FEES_RESERVE"] = str(self.contract_MoC.sc_moc_inrate.commission_rate_by_transaction_type(
+                tx_type=self.contract_MoC.sc_moc_inrate.tx_type_mint_riskpro_fees_reserve(),
+                formatted=False,
+                block_identifier=block_identifier))
+
+            commission_rates["REDEEM_RISKPRO_FEES_RESERVE"] = str(self.contract_MoC.sc_moc_inrate.commission_rate_by_transaction_type(
+                tx_type=self.contract_MoC.sc_moc_inrate.tx_type_redeem_riskpro_fees_reserve(),
+                formatted=False,
+                block_identifier=block_identifier))
+
+            commission_rates["MINT_STABLETOKEN_FEES_RESERVE"] = str(self.contract_MoC.sc_moc_inrate.commission_rate_by_transaction_type(
+                tx_type=self.contract_MoC.sc_moc_inrate.tx_type_mint_stabletoken_fees_reserve(),
+                formatted=False,
+                block_identifier=block_identifier))
+
+            commission_rates["REDEEM_STABLETOKEN_FEES_RESERVE"] = str(self.contract_MoC.sc_moc_inrate.commission_rate_by_transaction_type(
+                tx_type=self.contract_MoC.sc_moc_inrate.tx_type_redeem_stabletoken_fees_reserve(),
+                formatted=False,
+                block_identifier=block_identifier))
+
+            commission_rates["MINT_RISKPROX_FEES_RESERVE"] = str(self.contract_MoC.sc_moc_inrate.commission_rate_by_transaction_type(
+                tx_type=self.contract_MoC.sc_moc_inrate.tx_type_mint_riskprox_fees_reserve(),
+                formatted=False,
+                block_identifier=block_identifier))
+
+            commission_rates["REDEEM_RISKPROX_FEES_RESERVE"] = str(self.contract_MoC.sc_moc_inrate.commission_rate_by_transaction_type(
+                tx_type=self.contract_MoC.sc_moc_inrate.tx_type_redeem_riskprox_fees_reserve(),
+                formatted=False,
+                block_identifier=block_identifier))
+
+            commission_rates["MINT_RISKPRO_FEES_MOC"] = str(self.contract_MoC.sc_moc_inrate.commission_rate_by_transaction_type(
+                tx_type=self.contract_MoC.sc_moc_inrate.tx_type_mint_riskpro_fees_moc(),
+                formatted=False,
+                block_identifier=block_identifier))
+
+            commission_rates["REDEEM_RISKPRO_FEES_MOC"] = str(self.contract_MoC.sc_moc_inrate.commission_rate_by_transaction_type(
+                tx_type=self.contract_MoC.sc_moc_inrate.tx_type_redeem_riskpro_fees_moc(),
+                formatted=False,
+                block_identifier=block_identifier))
+
+            commission_rates["MINT_STABLETOKEN_FEES_MOC"] = str(self.contract_MoC.sc_moc_inrate.commission_rate_by_transaction_type(
+                tx_type=self.contract_MoC.sc_moc_inrate.tx_type_mint_stabletoken_fees_moc(),
+                formatted=False,
+                block_identifier=block_identifier))
+
+            commission_rates["REDEEM_STABLETOKEN_FEES_MOC"] = str(self.contract_MoC.sc_moc_inrate.commission_rate_by_transaction_type(
+                tx_type=self.contract_MoC.sc_moc_inrate.tx_type_redeem_stabletoken_fees_moc(),
+                formatted=False,
+                block_identifier=block_identifier))
+
+            commission_rates["MINT_RISKPROX_FEES_MOC"] = str(self.contract_MoC.sc_moc_inrate.commission_rate_by_transaction_type(
+                tx_type=self.contract_MoC.sc_moc_inrate.tx_type_mint_riskprox_fees_moc(),
+                formatted=False,
+                block_identifier=block_identifier))
+
+            commission_rates["REDEEM_RISKPROX_FEES_MOC"] = str(self.contract_MoC.sc_moc_inrate.commission_rate_by_transaction_type(
+                tx_type=self.contract_MoC.sc_moc_inrate.tx_type_redeem_riskprox_fees_moc(),
                 formatted=False,
                 block_identifier=block_identifier))
         else:
-            # Start: Commission rates by transaction types
-            commission_rates = {}
-
             commission_rates["MINT_BPRO_FEES_RBTC"] = str(self.contract_MoC.sc_moc_inrate.commission_rate_by_transaction_type(
                 tx_type=self.contract_MoC.sc_moc_inrate.tx_type_mint_bpro_fees_rbtc(),
                 formatted=False,
@@ -270,8 +320,8 @@ class State(MoCIndexer):
                 formatted=False,
                 block_identifier=block_identifier))
 
-            d_moc_state["commissionRates"] = commission_rates
-            # End: Commission rates by transaction types
+        d_moc_state["commissionRates"] = commission_rates
+        # End: Commission rates by transaction types
 
         d_moc_state["bprox2PriceInUsd"] = str(
             int(d_moc_state["bprox2PriceInRbtc"]) * int(
@@ -292,11 +342,10 @@ class State(MoCIndexer):
         d_moc_state["paused"] = self.contract_MoC.paused(
             block_identifier=block_identifier)
 
-        if self.app_mode != 'RRC20':
-            d_moc_state["liquidationEnabled"] = False#self.contract_MoC.sc_moc_state.liquidation_enabled(block_identifier=block_identifier)
-            d_moc_state["protected"] = '1500000000000000000' #str(self.contract_MoC.sc_moc_state.protected(
-                #formatted=False,
-                #block_identifier=block_identifier))
+        d_moc_state["liquidationEnabled"] = self.contract_MoC.sc_moc_state.liquidation_enabled(block_identifier=block_identifier)
+        d_moc_state["protected"] = str(self.contract_MoC.sc_moc_state.protected(
+            formatted=False,
+            block_identifier=block_identifier))
 
         return d_moc_state
 

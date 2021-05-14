@@ -76,7 +76,7 @@ class ScanState(State):
         # update or insert the new info on mocstate
         collection_moc_state.find_one_and_update(
             {},
-            {"$set": d_moc_state, "$unset": {"commissionRate": ""}},
+            {"$set": d_moc_state, "$unset": {"commissionRate": "", "bproAvailableToMint": ""}},
             upsert=True)
 
         # history
