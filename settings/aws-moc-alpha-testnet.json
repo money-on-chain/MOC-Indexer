@@ -5,7 +5,7 @@
   },
   "timeout": 60,
   "timeout_wait": 300,
-  "gas_price": 66000000,
+  "gas_price": 60000000,
   "debug": true,
   "index_mode": "vendors",
   "tasks": {
@@ -45,15 +45,10 @@
   },
   "networks": {
     "mocTestnetAlpha": {
-      "agent": {
-        "address": "0x9b7FdFBb0D6bBA88568D157CF77E4400A7AB2C98",
-        "key": ""
-      },
       "app_mode": "MoC",
       "project": "MoC",
       "addresses": {
-        "MoC": "0x01AD6f8E884ed4DDC089fA3efC075E9ba45C9039",
-        "MoCToken": "0x0399c7F7B37E21cB9dAE04Fb57E24c68ed0B4635"
+        "MoC": "0x01AD6f8E884ed4DDC089fA3efC075E9ba45C9039"
       }
     }
   },
