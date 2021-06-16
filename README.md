@@ -21,7 +21,7 @@ Install libraries
 [Brownie](https://github.com/eth-brownie/brownie) is a Python-based development and testing framework for smart contracts.
 Brownie is easy so we integrated it with Money on Chain.
 
-`pip install eth-brownie==1.12.2`
+`pip install eth-brownie==1.14.6`
 
 **Network Connections**
 
@@ -50,11 +50,11 @@ console> brownie networks add RskNetwork rskMainnetLocal host=http://localhost:4
 
 Make sure to change **settings/settings-xxx.json** to point to your mongo db.
 
-`python ./app_run_moc_indexer.py --config=settings/settings-moc-testtyd-martin.json --config_network=mocTestTyD --connection_network=rskTestnetPublic`
+`python ./app_run_moc_indexer.py --config=settings/aws-moc-alpha-testnet.json --config_network=mocTestnetAlpha --connection_network=rskTestnetPublic`
 
 **--config:** Path to config.json 
 
-**--config_network=mocTestTyD:** Config Network name in the json
+**--config_network=mocTestnetAlpha:** Config Network name in the json
 
 **--connection_network=rskTestnetPublic:** Connection network in brownie 
 
@@ -64,21 +64,24 @@ Make sure to change **settings/settings-xxx.json** to point to your mongo db.
 Build
 
 ```
-./build.sh -e ec2_tyd -c ./settings/settings-moc-testtyd.json
+bash ./docker_build.sh -e ec2_alphatestnet -c ./settings/aws-moc-alpha-testnet.json
 ```
 
 Run
 
 ```
 docker run -d \
---name ec2_tyd_1 \
+--name ec2_alphatestnet_1 \
 --env APP_MONGO_URI=mongodb://192.168.56.2:27017/ \
---env APP_MONGO_DB=local_tyd \
---env APP_CONFIG_NETWORK=mocTestTyD \
---env APP_CONNECTION_NETWORK=rskTesnetPublic \
-moc_indexer_ec2_tyd
+--env APP_MONGO_DB=local_alpha_testnet2 \
+--env APP_CONFIG_NETWORK=mocTestnetAlpha \
+--env APP_CONNECTION_NETWORK=https://public-node.testnet.rsk.co,31 \
+moc_indexer_ec2_alphatestnet
 ```
   
+### Custom node
+
+**APP_CONNECTION_NETWORK:** https://public-node.testnet.rsk.co,31
 
 
 
@@ -141,6 +144,7 @@ On the task definition it's important to set up the proper environment variables
 1. APP_CONFIG: The config.json you find in your _settings/deploy_XXX.json folder as json
 2. AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY: these are needed for the heartbeat function of the jobs, as it needs an account that has write access to a metric in Cloudwatch
 3. APP_CONFIG_NETWORK: The network here is listed in APP_NETWORK
-3. APP_CONNECTION_NETWORK: The network here is listed in APP_CONNECTION_NETWORK
-
+4. APP_CONNECTION_NETWORK: The network here is listed in APP_CONNECTION_NETWORK
+5. APP_MONGO_URI: mongo uri
+6. APP_MONGO_DB: mongo db
 
