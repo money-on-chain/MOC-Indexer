@@ -167,4 +167,33 @@ class Balances(MoCIndexer):
 
         return d_user_balance
 
+    def update_user_state_moc_allowance(self,
+                                        user_address,
+                                        m_client,
+                                        block_identifier: BlockIdentifier = 'latest'):
+        user_state = mongo_manager.collection_user_state(m_client)
+        exist_user = user_state.find_one(
+            {"address": user_address}
+        )
+        if exist_user:
+            d_user_balance = OrderedDict()
+
+            d_user_balance["mocAllowance"] = str(self.contract_MoC.moc_allowance(
+                user_address,
+                self.contract_MoC.address(),
+                formatted=False,
+                block_identifier=block_identifier))
+
+            post_id = user_state.find_one_and_update(
+                {"address": user_address},
+                {"$set": d_user_balance}
+            )
+            if self.debug_mode:
+                log.info(
+                    "Update user MoC Token approval: [{0}] -> {1} -> Mongo _id: {2}".format(
+                        user_address,
+                        d_user_balance,
+                        post_id))
+
+
 

@@ -99,6 +99,8 @@ class MoCIndexer(object):
             str.lower(self.contract_MoCMedianizer.address()))
         moc_addresses.append(
                 str.lower(self.contract_MoC.sc_moc_vendors.address()))
+        moc_addresses.append(
+            str.lower(self.contract_MoC.sc_moc_moc_token.address()))
 
         if self.app_mode == 'RRC20':
             moc_addresses.append(
