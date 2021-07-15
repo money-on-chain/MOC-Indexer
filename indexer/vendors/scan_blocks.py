@@ -29,6 +29,7 @@ from indexer.moc.events_token_riskpro import IndexRISKPROTransfer
 from indexer.moc.events_token_stable import IndexSTABLETransfer
 
 from .events_moc import IndexBucketLiquidation, IndexContractLiquidated
+from .events_approval import IndexApprovalMoCToken
 
 from .events_mocexchange import IndexRiskProMint, \
     IndexRiskProRedeem, \
@@ -80,6 +81,8 @@ class ScanBlocks(Balances):
         self.index_stable_transfer = None
 
         self.index_contract_liquidated = None
+
+        self.index_approval_moc_token = None
 
         self.init_indexer()
 
@@ -151,6 +154,12 @@ class ScanBlocks(Balances):
         self.index_stable_transfer = IndexSTABLETransfer(contract_address=address_stable,
                                                          moc_address=address_moc,
                                                          **index_info)
+        # 9. MoC Token Aproval
+        address_moc_token = self.contract_MoC.sc_moc_moc_token.address()
+        self.index_approval_moc_token = IndexApprovalMoCToken(
+            contract_address=address_moc_token,
+            moc_address=address_moc,
+            **index_info)
 
     def scan_moc_block(self, current_block, block_reference, m_client, scan_transfer=True):
 
@@ -213,6 +222,8 @@ class ScanBlocks(Balances):
         self.index_riskpro_transfer.update_info(**index_info)
 
         self.index_stable_transfer.update_info(**index_info)
+
+        self.index_approval_moc_token.update_info(**index_info)
 
         # process only MoC contract transactions
         for tx_receipt in moc_transactions_receipts:
@@ -288,6 +299,9 @@ class ScanBlocks(Balances):
                 self.index_reserve_transfer.index_from_receipt(tx_receipt)
             else:
                 self.index_contract_liquidated.index_from_receipt(tx_receipt)
+
+            # 6b. Approval MoC Token
+            self.index_approval_moc_token.index_from_receipt(tx_receipt)
 
             # 7. Transfer from MOC
             # Process transfer for MOC 2020-06-23
