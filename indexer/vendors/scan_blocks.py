@@ -156,8 +156,6 @@ class ScanBlocks(Balances):
                                                          **index_info)
         # 9. MoC Token Aproval
         address_moc_token = self.contract_MoC.sc_moc_moc_token.address()
-        log.info("MOC_TOKEN: {0}".format(address_moc_token))
-        log.info("MOC_CONTRACT: {0}".format(address_moc))
         self.index_approval_moc_token = IndexApprovalMoCToken(
             contract_address=address_moc_token,
             moc_address=address_moc,
