@@ -1,9 +1,7 @@
-import os
 import datetime
 
 
 from timeloop import Timeloop
-import boto3
 import time
 
 
@@ -14,6 +12,7 @@ from indexer.vendors import ScanBlocks, \
     ScanUser
 
 from .logger import log
+from .utils import aws_put_metric_heart_beat
 
 
 class JobsIndexer(ScanBlocks, ScanPrices, ScanState, ScanStatus, ScanUser):
@@ -24,127 +23,74 @@ class JobsIndexer(ScanBlocks, ScanPrices, ScanState, ScanStatus, ScanUser):
 
         self.tl = Timeloop()
 
-    @staticmethod
-    def aws_put_metric_heart_beat(value):
-
-        if 'AWS_ACCESS_KEY_ID' not in os.environ:
-            return
-
-        # Create CloudWatch client
-        cloudwatch = boto3.client('cloudwatch')
-
-        # Put custom metrics
-        cloudwatch.put_metric_data(
-            MetricData=[
-                {
-                    'MetricName': os.environ['MOC_INDEXER_NAME'],
-                    'Dimensions': [
-                        {
-                            'Name': 'INDEXER',
-                            'Value': 'Error'
-                        },
-                    ],
-                    'Unit': 'None',
-                    'Value': value
-                },
-            ],
-            Namespace='MOC/EXCEPTIONS'
-        )
-
     def task_scan_moc_blocks(self):
 
-        try:
-            self.scan_moc_blocks()
-        except Exception as e:
-            log.error(e, exc_info=True)
-            self.aws_put_metric_heart_beat(1)
+        self.run_watch_exception(self.scan_moc_blocks)
 
     def task_scan_moc_blocks_history(self):
 
-        try:
-            self.scan_moc_blocks_history()
-        except Exception as e:
-            log.error(e, exc_info=True)
-            self.aws_put_metric_heart_beat(1)
+        self.run_watch_exception(self.scan_moc_blocks_history)
 
     def task_scan_moc_prices(self):
 
-        try:
-            self.scan_moc_prices()
-        except Exception as e:
-            log.error(e, exc_info=True)
-            self.aws_put_metric_heart_beat(1)
+        self.run_watch_exception(self.scan_moc_prices)
 
     def task_scan_moc_prices_history(self):
 
-        try:
-            self.scan_moc_prices_history()
-        except Exception as e:
-            log.error(e, exc_info=True)
-            self.aws_put_metric_heart_beat(1)
+        self.run_watch_exception(self.scan_moc_prices_history)
 
     def task_scan_moc_state(self):
 
-        try:
-            self.scan_moc_state()
-        except Exception as e:
-            log.error(e, exc_info=True)
-            self.aws_put_metric_heart_beat(1)
+        self.run_watch_exception(self.scan_moc_state)
 
     def task_scan_moc_state_history(self):
 
-        try:
-            self.scan_moc_state_history()
-        except Exception as e:
-            log.error(e, exc_info=True)
-            self.aws_put_metric_heart_beat(1)
+        self.run_watch_exception(self.scan_moc_state_history)
 
     def task_scan_moc_status(self):
 
-        try:
-            self.scan_transaction_status()
-        except Exception as e:
-            log.error(e, exc_info=True)
-            self.aws_put_metric_heart_beat(1)
+        self.run_watch_exception(self.scan_transaction_status)
 
     def task_scan_moc_state_status(self):
 
-        try:
-            self.scan_moc_state_status()
-        except Exception as e:
-            log.error(e, exc_info=True)
-            self.aws_put_metric_heart_beat(1)
+        self.run_watch_exception(self.scan_moc_state_status)
 
     def task_scan_moc_state_status_history(self):
 
-        try:
-            self.scan_moc_state_status_history()
-        except Exception as e:
-            log.error(e, exc_info=True)
-            self.aws_put_metric_heart_beat(1)
+        self.run_watch_exception(self.scan_moc_state_status_history)
 
     def task_scan_user_state_update(self):
 
-        try:
-            self.scan_user_state_update()
-        except Exception as e:
-            log.error(e, exc_info=True)
-            self.aws_put_metric_heart_beat(1)
+        self.run_watch_exception(self.scan_user_state_update)
 
     def task_scan_moc_blocks_not_processed(self):
 
+        self.run_watch_exception(self.scan_moc_blocks_not_processed)
+
+    @staticmethod
+    def run_watch_exception(task_function):
+
         try:
-            self.scan_moc_blocks_not_processed()
+            task_function()
         except Exception as e:
             log.error(e, exc_info=True)
-            self.aws_put_metric_heart_beat(1)
+            aws_put_metric_heart_beat(1)
+
+    def task_reconnect_on_lost_chain(self):
+        """ Task reconnect when lost connection on chain """
+
+        self.run_watch_exception(self.reconnect_on_lost_chain)
 
     def add_jobs(self):
 
         log.info("Starting adding jobs...")
 
         # creating the alarm
-        self.aws_put_metric_heart_beat(0)
+        aws_put_metric_heart_beat(0)
+
+        # Reconnect on lost chain
+        log.info("Jobs add reconnect on lost chain")
+        self.tl._add_job(self.task_reconnect_on_lost_chain, datetime.timedelta(seconds=180))
 
         # scan_moc_blocks
         log.info("Jobs add scan_moc_blocks")
@@ -190,7 +136,7 @@ class JobsIndexer(ScanBlocks, ScanPrices, ScanState, ScanStatus, ScanUser):
             self.force_start_history()
 
         # creating the alarm
-        self.aws_put_metric_heart_beat(0)
+        aws_put_metric_heart_beat(0)
 
         # task_scan_moc_blocks_history
         log.info("Jobs add task_scan_moc_blocks_history")
@@ -221,7 +167,7 @@ class JobsIndexer(ScanBlocks, ScanPrices, ScanState, ScanStatus, ScanUser):
             self.force_start_history()
 
         # creating the alarm
-        self.aws_put_metric_heart_beat(0)
+        aws_put_metric_heart_beat(0)
 
         # task_scan_moc_blocks_history
         log.info("Jobs add task_scan_moc_blocks_history")

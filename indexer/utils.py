@@ -1,3 +1,6 @@
+import os
+import boto3
+
 from moneyonchain.networks import chain
 
 from web3 import Web3
@@ -22,3 +25,30 @@ def transactions_receipt(transactions):
                 l_tx_receipt.append(tx_receipt)
 
     return l_tx_receipt
+
+
+def aws_put_metric_heart_beat(value):
+
+    if 'AWS_ACCESS_KEY_ID' not in os.environ:
+        return
+
+    # Create CloudWatch client
+    cloudwatch = boto3.client('cloudwatch')
+
+    # Put custom metrics
+    cloudwatch.put_metric_data(
+        MetricData=[
+            {
+                'MetricName': os.environ['MOC_INDEXER_NAME'],
+                'Dimensions': [
+                    {
+                        'Name': 'INDEXER',
+                        'Value': 'Error'
+                    },
+                ],
+                'Unit': 'None',
+                'Value': value
+            },
+        ],
+        Namespace='MOC/EXCEPTIONS'
+    )
