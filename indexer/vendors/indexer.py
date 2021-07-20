@@ -109,7 +109,7 @@ class MoCIndexer(object):
             # and then reconnect all again
             self.connect()
 
-        log.info("Task :: Reconnect on lost chain :: OK :: Block height: {1} / {0}".format(
+        log.info("[RECONNECT] :: Reconnect on lost chain :: OK :: Block height: {1} / {0}".format(
             block, self.last_block))
 
         # save the last block
