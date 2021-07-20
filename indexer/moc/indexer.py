@@ -44,9 +44,6 @@ class MoCIndexer(object):
 
             log.info("Using custom network... id: {}".format(self.connection_network))
 
-        # add default account
-        accounts.add('0xca751356c37a98109fd969d8e79b42d768587efc6ba35e878bc8c093ed95d8a9')
-
         # connect and init contracts
         self.connect()
 
@@ -64,6 +61,9 @@ class MoCIndexer(object):
         # config network is our enviroment we want to connect
         network_manager.connect(connection_network=self.connection_network,
                                 config_network=self.config_network)
+
+        # add default account
+        accounts.add('0xca751356c37a98109fd969d8e79b42d768587efc6ba35e878bc8c093ed95d8a9')
 
         if self.app_mode == "RRC20":
             self.contract_MoC = RDOCMoC(
