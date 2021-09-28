@@ -45,14 +45,23 @@ class IndexRiskProMint(BaseIndexEvent):
         d_tx["confirmationTime"] = confirmation_time
         d_tx["isPositive"] = True
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
-        d_tx["rbtcCommission"] = str(tx_event["commission"])
-        usd_commission = Web3.fromWei(tx_event["commission"],
-                                      'ether') * Web3.fromWei(
-            tx_event["reservePrice"], 'ether')
+
+        rbtc_commission = tx_event["commission"] + tx_event["btcMarkup"]
+        moc_commission = tx_event["mocCommissionValue"] + tx_event["mocMarkup"]
+        if rbtc_commission > 0:
+            usd_commission = Web3.fromWei(rbtc_commission, 'ether') * Web3.fromWei(tx_event["reservePrice"], 'ether')
+        else:
+            usd_commission = Web3.fromWei(moc_commission, 'ether') * Web3.fromWei(tx_event["mocPrice"], 'ether')
+        d_tx["rbtcCommission"] = str(rbtc_commission)
+
         d_tx["USDCommission"] = str(int(usd_commission * self.precision))
         d_tx["status"] = status
         d_tx["tokenInvolved"] = 'RISKPRO'
         d_tx["reservePrice"] = str(tx_event["reservePrice"])
+
+        d_tx["mocCommissionValue"] = str(moc_commission)
+        d_tx["mocPrice"] = str(tx_event["mocPrice"])
+
         gas_fee = self.tx_receipt.gas_used * Web3.fromWei(self.tx_receipt.gas_price, 'ether')
         #gas_fee = self.tx_receipt.gas_used * Web3.fromWei(moc_tx['gasPrice'],
         #                                               'ether')
@@ -126,13 +135,18 @@ class IndexRiskProRedeem(BaseIndexEvent):
         d_tx["USDAmount"] = str(int(usd_amount * self.precision))
         d_tx["amount"] = str(tx_event["amount"])
         d_tx["confirmationTime"] = confirmation_time
-        d_tx["rbtcCommission"] = str(tx_event["commission"])
-        usd_commission = Web3.fromWei(tx_event["commission"],
-                                      'ether') * Web3.fromWei(
-            tx_event["reservePrice"], 'ether')
+        rbtc_commission = tx_event["commission"] + tx_event["btcMarkup"]
+        moc_commission = tx_event["mocCommissionValue"] + tx_event["mocMarkup"]
+        if rbtc_commission > 0:
+            usd_commission = Web3.fromWei(rbtc_commission, 'ether') * Web3.fromWei(tx_event["reservePrice"], 'ether')
+        else:
+            usd_commission = Web3.fromWei(moc_commission, 'ether') * Web3.fromWei(tx_event["mocPrice"], 'ether')
+        d_tx["rbtcCommission"] = str(rbtc_commission)
         d_tx["USDCommission"] = str(int(usd_commission * self.precision))
         d_tx["isPositive"] = False
         d_tx["reservePrice"] = str(tx_event["reservePrice"])
+        d_tx["mocCommissionValue"] = str(moc_commission)
+        d_tx["mocPrice"] = str(tx_event["mocPrice"])
         gas_fee = self.tx_receipt.gas_used * Web3.fromWei(self.tx_receipt.gas_price, 'ether')
         d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         if self.app_mode != "RRC20":
@@ -208,16 +222,21 @@ class IndexRiskProxMint(BaseIndexEvent):
         d_tx["confirmationTime"] = confirmation_time
         d_tx["isPositive"] = True
         d_tx["leverage"] = str(tx_event["leverage"])
-        d_tx["rbtcCommission"] = str(tx_event["commission"])
-        usd_commission = Web3.fromWei(tx_event["commission"],
-                                      'ether') * Web3.fromWei(
-            tx_event["reservePrice"], 'ether')
+        rbtc_commission = tx_event["commission"] + tx_event["btcMarkup"]
+        moc_commission = tx_event["mocCommissionValue"] + tx_event["mocMarkup"]
+        if rbtc_commission > 0:
+            usd_commission = Web3.fromWei(rbtc_commission, 'ether') * Web3.fromWei(tx_event["reservePrice"], 'ether')
+        else:
+            usd_commission = Web3.fromWei(moc_commission, 'ether') * Web3.fromWei(tx_event["mocPrice"], 'ether')
+        d_tx["rbtcCommission"] = str(rbtc_commission)
         d_tx["USDCommission"] = str(int(usd_commission * self.precision))
         d_tx["rbtcInterests"] = str(tx_event["interests"])
         usd_interest = Web3.fromWei(tx_event["interests"], 'ether') * Web3.fromWei(
             tx_event["reservePrice"], 'ether')
         d_tx["USDInterests"] = str(int(usd_interest * self.precision))
         d_tx["reservePrice"] = str(tx_event["reservePrice"])
+        d_tx["mocCommissionValue"] = str(moc_commission)
+        d_tx["mocPrice"] = str(tx_event["mocPrice"])
         gas_fee = self.tx_receipt.gas_used * Web3.fromWei(self.tx_receipt.gas_price, 'ether')
         d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         if self.app_mode != "RRC20":
@@ -290,10 +309,13 @@ class IndexRiskProxRedeem(BaseIndexEvent):
         d_tx["amount"] = str(tx_event["amount"])
         d_tx["confirmationTime"] = confirmation_time
         d_tx["leverage"] = str(tx_event["leverage"])
-        d_tx["rbtcCommission"] = str(tx_event["commission"])
-        usd_commission = Web3.fromWei(tx_event["commission"],
-                                      'ether') * Web3.fromWei(
-            tx_event["reservePrice"], 'ether')
+        rbtc_commission = tx_event["commission"] + tx_event["btcMarkup"]
+        moc_commission = tx_event["mocCommissionValue"] + tx_event["mocMarkup"]
+        if rbtc_commission > 0:
+            usd_commission = Web3.fromWei(rbtc_commission, 'ether') * Web3.fromWei(tx_event["reservePrice"], 'ether')
+        else:
+            usd_commission = Web3.fromWei(moc_commission, 'ether') * Web3.fromWei(tx_event["mocPrice"], 'ether')
+        d_tx["rbtcCommission"] = str(rbtc_commission)
         d_tx["USDCommission"] = str(int(usd_commission * self.precision))
         d_tx["rbtcInterests"] = str(tx_event["interests"])
         usd_interest = Web3.fromWei(tx_event["interests"], 'ether') * Web3.fromWei(
@@ -301,6 +323,8 @@ class IndexRiskProxRedeem(BaseIndexEvent):
         d_tx["USDInterests"] = str(int(usd_interest * self.precision))
         d_tx["isPositive"] = False
         d_tx["reservePrice"] = str(tx_event["reservePrice"])
+        d_tx["mocCommissionValue"] = str(moc_commission)
+        d_tx["mocPrice"] = str(tx_event["mocPrice"])
         gas_fee = self.tx_receipt.gas_used * Web3.fromWei(self.tx_receipt.gas_price, 'ether')
         d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         if self.app_mode != "RRC20":
@@ -374,15 +398,20 @@ class IndexStableTokenMint(BaseIndexEvent):
                                   'ether') * Web3.fromWei(tx_event["reservePrice"],
                                                           'ether')
         d_tx["USDAmount"] = str(int(usd_amount * self.precision))
-        usd_commission = Web3.fromWei(tx_event["commission"],
-                                      'ether') * Web3.fromWei(
-            tx_event["reservePrice"], 'ether')
+        rbtc_commission = tx_event["commission"] + tx_event["btcMarkup"]
+        moc_commission = tx_event["mocCommissionValue"] + tx_event["mocMarkup"]
+        if rbtc_commission > 0:
+            usd_commission = Web3.fromWei(rbtc_commission, 'ether') * Web3.fromWei(tx_event["reservePrice"], 'ether')
+        else:
+            usd_commission = Web3.fromWei(moc_commission, 'ether') * Web3.fromWei(tx_event["mocPrice"], 'ether')
         d_tx["USDCommission"] = str(int(usd_commission * self.precision))
         d_tx["amount"] = str(tx_event["amount"])
         d_tx["confirmationTime"] = confirmation_time
         d_tx["isPositive"] = True
-        d_tx["rbtcCommission"] = str(tx_event["commission"])
+        d_tx["rbtcCommission"] = str(rbtc_commission)
         d_tx["reservePrice"] = str(tx_event["reservePrice"])
+        d_tx["mocCommissionValue"] = str(moc_commission)
+        d_tx["mocPrice"] = str(tx_event["mocPrice"])
         gas_fee = self.tx_receipt.gas_used * Web3.fromWei(self.tx_receipt.gas_price, 'ether')
         d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         if self.app_mode != "RRC20":
@@ -452,13 +481,18 @@ class IndexStableTokenRedeem(BaseIndexEvent):
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
         d_tx["status"] = status
         d_tx["tokenInvolved"] = 'STABLE'
-        d_tx["rbtcCommission"] = str(tx_event["commission"])
-        usd_commission = Web3.fromWei(tx_event["commission"],
-                                      'ether') * Web3.fromWei(
-            tx_event["reservePrice"], 'ether')
+        rbtc_commission = tx_event["commission"] + tx_event["btcMarkup"]
+        moc_commission = tx_event["mocCommissionValue"] + tx_event["mocMarkup"]
+        if rbtc_commission > 0:
+            usd_commission = Web3.fromWei(rbtc_commission, 'ether') * Web3.fromWei(tx_event["reservePrice"], 'ether')
+        else:
+            usd_commission = Web3.fromWei(moc_commission, 'ether') * Web3.fromWei(tx_event["mocPrice"], 'ether')
+        d_tx["rbtcCommission"] = str(rbtc_commission)
         d_tx["USDCommission"] = str(int(usd_commission * self.precision))
         d_tx["isPositive"] = False
         d_tx["reservePrice"] = str(tx_event["reservePrice"])
+        d_tx["mocCommissionValue"] = str(moc_commission)
+        d_tx["mocPrice"] = str(tx_event["mocPrice"])
         gas_fee = self.tx_receipt.gas_used * Web3.fromWei(self.tx_receipt.gas_price, 'ether')
         # d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         # if self.app_mode != "RRC20":
@@ -532,10 +566,13 @@ class IndexFreeStableTokenRedeem(BaseIndexEvent):
         d_tx["USDAmount"] = str(int(usd_amount * self.precision))
         d_tx["amount"] = str(tx_event["amount"])
         d_tx["confirmationTime"] = confirmation_time
-        d_tx["rbtcCommission"] = str(tx_event["commission"])
-        usd_commission = Web3.fromWei(tx_event["commission"],
-                                      'ether') * Web3.fromWei(
-            tx_event["reservePrice"], 'ether')
+        rbtc_commission = tx_event["commission"] + tx_event["btcMarkup"]
+        moc_commission = tx_event["mocCommissionValue"] + tx_event["mocMarkup"]
+        if rbtc_commission > 0:
+            usd_commission = Web3.fromWei(rbtc_commission, 'ether') * Web3.fromWei(tx_event["reservePrice"], 'ether')
+        else:
+            usd_commission = Web3.fromWei(moc_commission, 'ether') * Web3.fromWei(tx_event["mocPrice"], 'ether')
+        d_tx["rbtcCommission"] = str(rbtc_commission)
         d_tx["USDCommission"] = str(int(usd_commission * self.precision))
         d_tx["rbtcInterests"] = str(tx_event["interests"])
         usd_interest = Web3.fromWei(tx_event["interests"], 'ether') * Web3.fromWei(
@@ -543,6 +580,8 @@ class IndexFreeStableTokenRedeem(BaseIndexEvent):
         d_tx["USDInterests"] = str(int(usd_interest * self.precision))
         d_tx["isPositive"] = False
         d_tx["reservePrice"] = str(tx_event["reservePrice"])
+        d_tx["mocCommissionValue"] = str(moc_commission)
+        d_tx["mocPrice"] = str(tx_event["mocPrice"])
         gas_fee = self.tx_receipt.gas_used * Web3.fromWei(self.tx_receipt.gas_price, 'ether')
         d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         if self.app_mode != "RRC20":

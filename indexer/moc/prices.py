@@ -77,14 +77,15 @@ class Prices(MoCIndexer):
         d_price["bprox2PriceInUsd"] = str(
             int(d_price["bprox2PriceInRbtc"]) * int(d_price["bitcoinPrice"]) / int(
                 d_price["reservePrecision"]))
-        d_price["createdAt"] = block_ts
 
         try:
-            d_price["mocPrice"] = str(self.contract_MoC.moc_price(
+            d_price["mocPrice"] = str(self.contract_MoC.sc_moc_state.moc_price(
                 formatted=False,
                 block_identifier=block_identifier))
         except HTTPError:
             log.error("No price valid for MoC in BLOCKHEIGHT: [{0}] skipping!".format(block_identifier))
             return
+
+        d_price["createdAt"] = block_ts
 
         return d_price

@@ -64,6 +64,7 @@ class MoCIndexer(object):
 
         # add default account
         accounts.add('0xca751356c37a98109fd969d8e79b42d768587efc6ba35e878bc8c093ed95d8a9')
+        self.vendor_account = self.options['vendor_account']
 
         if self.app_mode == "RRC20":
             self.contract_MoC = RDOCMoC(
@@ -107,7 +108,7 @@ class MoCIndexer(object):
             # and then reconnect all again
             self.connect()
 
-        log.info("[RECONNECT] :: on lost chain :: OK :: Block height: {1} / {0}".format(
+        log.info("[RECONNECT] :: Reconnect on lost chain :: OK :: Block height: {1} / {0}".format(
             block, self.last_block))
 
         # save the last block
@@ -132,6 +133,10 @@ class MoCIndexer(object):
             str.lower(self.contract_MoC.sc_moc_inrate.address()))
         moc_addresses.append(
             str.lower(self.contract_MoCMedianizer.address()))
+        moc_addresses.append(
+                str.lower(self.contract_MoC.sc_moc_vendors.address()))
+        moc_addresses.append(
+            str.lower(self.contract_MoC.sc_moc_moc_token.address()))
 
         if self.app_mode == 'RRC20':
             moc_addresses.append(
