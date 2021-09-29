@@ -7,6 +7,18 @@ The indexer query the status of the contracts
 and write to mongo database, so the app query the mongo instead of blockchain (slow).
 
 
+### Indexer jobs
+
+ 1. **Scan Blocks**: Indexing events transactions
+ 2. **Scan Prices**: Scan prices 
+ 3. **Scan Moc State**: Scan current moc state
+ 4. **Scan Moc Status**
+ 5. **Scan MocState Status**
+ 6. **Scan User State Update** 
+ 7. **Scan Blocks not processed**
+ 99. **Reconnect on lost chain**
+ 
+
 ### Usage
 
 **Requirement and installation**

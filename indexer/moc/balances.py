@@ -7,10 +7,9 @@ from moneyonchain.networks import network_manager
 
 from indexer.mongo_manager import mongo_manager
 from indexer.logger import log
-from .indexer import MoCIndexer
 
 
-class Balances(MoCIndexer):
+class Balances:
 
     def balances_from_address(self, address, block_height):
 

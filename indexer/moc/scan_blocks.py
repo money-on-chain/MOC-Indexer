@@ -164,7 +164,7 @@ class ScanBlocks(Balances):
     def scan_moc_block(self, current_block, block_reference, m_client, scan_transfer=True):
 
         if self.debug_mode:
-            log.info("[SCAN TX] Starting to scan MOC transactions block height: [{0}] last block height: [{1}]".format(
+            log.info("[1. Scan Blocks] Starting to scan MOC transactions block height: [{0}] last block height: [{1}]".format(
                 current_block, block_reference))
 
         # get block time from node
@@ -315,7 +315,7 @@ class ScanBlocks(Balances):
         # process all transactions looking for transfers
         if scan_transfer:
             if self.debug_mode:
-                log.info("[SCAN TX] Starting to scan Transfer transactions block height: [{0}] last block height: [{1}]".format(
+                log.info("[1. Scan Blocks] Starting to scan Transfer transactions [{0} / {1}]".format(
                     current_block, block_reference))
 
             all_transactions_receipts = transactions_receipt(all_transactions)
@@ -395,7 +395,8 @@ class ScanBlocks(Balances):
         self.update_balance_address(m_client, d_tx["address"], block_height)
 
     def scan_moc_blocks(self,
-                        scan_transfer=True):
+                        scan_transfer=True,
+                        task=None):
 
         start_time = time.time()
 
@@ -423,13 +424,13 @@ class ScanBlocks(Balances):
 
         if from_block >= last_block:
             if self.debug_mode:
-                log.info("[SCAN TX] Its not the time to run indexer no new blocks avalaible!")
+                log.info("[1. Scan Blocks] Its not the time to run indexer no new blocks avalaible!")
             return
 
         to_block = last_block
 
         if from_block > to_block:
-            log.error("[SCAN TX] To block > from block!!??")
+            log.error("[1. Scan Blocks] To block > from block!!??")
             return
 
         # block reference is the last block, is to compare to... except you specified in the settings
@@ -439,13 +440,13 @@ class ScanBlocks(Balances):
         current_block = from_block
 
         if self.debug_mode:
-            log.info("[SCAN TX] Starting to Scan Transactions: {0} To Block: {1} ...".format(from_block, to_block))
+            log.info("[1. Scan Blocks] Starting to Scan Transactions [{0} / {1}]".format(from_block, to_block))
 
         while current_block <= to_block:
 
             self.scan_moc_block(current_block, block_reference, m_client, scan_transfer=scan_transfer)
 
-            log.info("[SCAN TX] DONE BLOCK HEIGHT: [{0}] / [{1}]".format(current_block, to_block))
+            log.info("[1. Scan Blocks] OK [{0}] / [{1}]".format(current_block, to_block))
             collection_moc_indexer.update_one({},
                                               {'$set': {'last_moc_block': current_block,
                                                         'updatedAt': datetime.datetime.now()}},
@@ -454,10 +455,11 @@ class ScanBlocks(Balances):
             current_block += 1
 
         duration = time.time() - start_time
-        log.info("[SCAN TX] LAST BLOCK HEIGHT: [{0}] Done in {1} seconds".format(current_block, duration))
+        log.info("[1. Scan Blocks] Done! [{1} seconds]".format(current_block, duration))
 
     def scan_moc_blocks_history(self,
-                                scan_transfer=True):
+                                scan_transfer=True,
+                                task=None):
 
         start_time = time.time()
 
@@ -487,20 +489,20 @@ class ScanBlocks(Balances):
 
         if from_block >= to_block:
             if self.debug_mode:
-                log.info("[SCAN TX HISTORY] Its not the time to run indexer no new blocks avalaible!")
+                log.info("[11. Scan Blocks history] Its not the time to run indexer no new blocks avalaible!")
             return
 
         # start with from block
         current_block = from_block
 
         if self.debug_mode:
-            log.info("[SCAN TX HISTORY] Starting to Scan Transactions: {0} To Block: {1} ...".format(from_block,
-                                                                                                     to_block))
+            log.info("[11. Scan Blocks history] Starting to Scan Transactions: [{0} / {1}]".format(from_block,
+                                                                                                   to_block))
 
         while current_block <= to_block:
             self.scan_moc_block(current_block, last_block, m_client, scan_transfer=scan_transfer)
 
-            log.info("[SCAN TX HISTORY] DONE BLOCK HEIGHT: [{0}] / [{1}]".format(current_block, to_block))
+            log.info("[11. Scan Blocks history] OK: [{0}] / [{1}]".format(current_block, to_block))
             collection_moc_indexer_history.update_one({},
                                               {'$set': {'last_moc_block': current_block,
                                                         'updatedAt': datetime.datetime.now()}},
@@ -510,7 +512,7 @@ class ScanBlocks(Balances):
             current_block += 1
 
         duration = time.time() - start_time
-        log.info("[SCAN TX HISTORY] LAST BLOCK HEIGHT: [{0}] Done in {1} seconds".format(current_block, duration))
+        log.info("[11. Scan Blocks history] Done! [{1} seconds]".format(current_block, duration))
 
     def is_confirmed_block(self, block_height, block_height_last, block_height_last_ts):
 
@@ -544,10 +546,10 @@ class ScanBlocks(Balances):
 
         log.info("[FORCE START HISTORY] DONE! Collection remove it!.")
 
-    def scan_moc_blocks_not_processed(self):
+    def scan_moc_blocks_not_processed(self, task=None):
 
         if self.debug_mode:
-            log.info("[SCAN BLOCK NOT PROCESSED] Starting to scan blocks Not processed ")
+            log.info("[7. Scan Blocks not processed] Starting to scan blocks Not processed ")
 
         start_time = time.time()
 
@@ -568,18 +570,18 @@ class ScanBlocks(Balances):
 
         if moc_txs:
             for moc_tx in moc_txs:
-                log.info("[SCAN BLOCK NOT PROCESSED] PROCESSING HASH: [{0}]".format(moc_tx['transactionHash']))
+                log.info("[7. Scan Blocks not processed] PROCESSING HASH: [{0}]".format(moc_tx['transactionHash']))
                 try:
                     tx_receipt = chain.get_transaction(moc_tx['transactionHash'])
                     #tx_receipt = self.connection_manager.web3.eth.getTransactionReceipt(moc_tx['transactionHash'])
                 except TransactionNotFound:
-                    log.error("[SCAN BLOCK NOT PROCESSED] TX NOT FOUND: [{0}]".format(moc_tx['transactionHash']))
+                    log.error("[7. Scan Blocks not processed] TX NOT FOUND: [{0}]".format(moc_tx['transactionHash']))
                     continue
 
-                log.info("[SCAN BLOCK NOT PROCESSED] PROCESSING HASH: [{0}]".format(moc_tx['transactionHash']))
+                log.info("[7. Scan Blocks not processed] PROCESSING HASH: [{0}]".format(moc_tx['transactionHash']))
 
                 self.scan_moc_block(tx_receipt['blockNumber'], last_block, m_client)
 
         duration = time.time() - start_time
 
-        log.info("[SCAN BLOCK NOT PROCESSED] Done in {0} seconds.".format(duration))
+        log.info("[7. Scan Blocks not processed] Done! [{0} seconds]".format(duration))
