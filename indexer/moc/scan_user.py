@@ -10,7 +10,7 @@ from .balances import Balances
 
 class ScanUser(Balances):
 
-    def scan_user_state_update(self):
+    def scan_user_state_update(self, task=None):
 
         # conect to mongo db
         m_client = mongo_manager.connect()
@@ -22,7 +22,7 @@ class ScanUser(Balances):
         users_pending_update = collection_user_state_update.find({})
 
         if self.debug_mode:
-            log.info("[SCAN USER STATE UPDATE] Starting to update user balance on block: {0} ".format(last_block))
+            log.info("[6. Scan User State Update] Starting to update user balance on block: {0} ".format(last_block))
 
         start_time = time.time()
 
@@ -37,9 +37,9 @@ class ScanUser(Balances):
             collection_user_state_update.remove({'account': user_update['account']})
 
             if self.debug_mode:
-                log.info("[SCAN USER STATE UPDATE] UPDATING ACCOUNT BALANCE: {0} BLOCKHEIGHT: {1}".format(
+                log.info("[6. Scan User State Update] UPDATING ACCOUNT BALANCE: {0} BLOCKHEIGHT: {1}".format(
                     user_update['account'],
                     block_height))
 
         duration = time.time() - start_time
-        log.info("[SCAN USER STATE UPDATE] BLOCK HEIGHT: [{0}] Done in {1} seconds.".format(last_block, duration))
+        log.info("[6. Scan User State Update] Done! [{0}] [{1} seconds.]".format(last_block, duration))

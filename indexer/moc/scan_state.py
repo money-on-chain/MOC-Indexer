@@ -10,7 +10,7 @@ from .status import State
 
 class ScanState(State):
 
-    def scan_moc_state(self):
+    def scan_moc_state(self, task=None):
 
         config_block_height = self.options['scan_moc_state']['block_height']
 
@@ -25,7 +25,7 @@ class ScanState(State):
             block_height = last_block
 
         if self.debug_mode:
-            log.info("[SCAN MOC STATE]  Starting to index MoC State on block height: {0}".format(block_height))
+            log.info("[3. Scan Moc State]  Starting to index MoC State on block height: {0}".format(block_height))
 
         # get collection moc_state from mongo
         collection_moc_state = mongo_manager.collection_moc_state(m_client)
@@ -33,7 +33,7 @@ class ScanState(State):
         exist_moc_state = collection_moc_state.find_one({"lastUpdateHeight": block_height})
         if exist_moc_state:
             if self.debug_mode:
-                log.info("[SCAN MOC STATE]  Not time to run moc state, already exist")
+                log.info("[3. Scan Moc State]  Not time to run moc state, already exist")
             return
 
         start_time = time.time()
@@ -87,9 +87,9 @@ class ScanState(State):
             upsert=True)
 
         duration = time.time() - start_time
-        log.info("[SCAN MOC STATE] BLOCKHEIGHT: [{0}] Done in {1} seconds.".format(block_height, duration))
+        log.info("[3. Scan Moc State] Done! [{0}] [{1} seconds.]".format(block_height, duration))
 
-    def scan_moc_state_history(self):
+    def scan_moc_state_history(self, task=None):
 
         # conect to mongo db
         m_client = mongo_manager.connect()

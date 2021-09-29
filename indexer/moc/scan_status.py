@@ -61,7 +61,7 @@ class ScanStatus(State):
                     {"_id": tx_pending["_id"]},
                     {"$set": d_tx_up})
 
-                log.info("[SCAN TX STATUS] Setting TX STATUS: {0} hash: {1}".format(
+                log.info("[4. Scan Moc Status] Setting TX STATUS: {0} hash: {1}".format(
                     d_tx_up['status'],
                     tx_pending['transactionHash']))
 
@@ -97,7 +97,7 @@ class ScanStatus(State):
                     {"_id": tx_pending["_id"]},
                     {"$set": d_tx_up})
 
-                log.info("[SCAN TX STATUS] Setting TX STATUS: {0} hash: {1}".format(
+                log.info("[4. Scan Moc Status] Setting TX STATUS: {0} hash: {1}".format(
                     d_tx_up['status'],
                     tx_pending['transactionHash']))
             else:
@@ -116,11 +116,11 @@ class ScanStatus(State):
                             {"_id": tx_pending["_id"]},
                             {"$set": d_tx_up})
 
-                        log.info("[SCAN TX STATUS] Setting TX STATUS: {0} hash: {1}".format(
+                        log.info("[4. Scan Moc Status] Setting TX STATUS: {0} hash: {1}".format(
                             d_tx_up['status'],
                             tx_pending['transactionHash']))
 
-    def scan_transaction_status(self):
+    def scan_transaction_status(self, task=None):
 
         # conect to mongo db
         m_client = mongo_manager.connect()
@@ -140,11 +140,11 @@ class ScanStatus(State):
 
         if last_block <= last_moc_status_block:
             if self.debug_mode:
-                log.info("[SCAN TX STATUS] Its not time to run Scan Transactions status")
+                log.info("[4. Scan Moc Status] Its not time to run Scan Transactions status")
             return
 
         if self.debug_mode:
-            log.info("[SCAN TX STATUS] Starting to Scan Transactions status last block: {0} ".format(last_block))
+            log.info("[4. Scan Moc Status] Starting to Scan Transactions status last block: {0} ".format(last_block))
 
         start_time = time.time()
 
@@ -156,7 +156,7 @@ class ScanStatus(State):
         self.scan_transaction_status_block(m_client, last_block, last_block_ts)
 
         duration = time.time() - start_time
-        log.info("[SCAN TX STATUS] BLOCK HEIGHT: [{0}] Done in {1} seconds.".format(last_block, duration))
+        log.info("[4. Scan Moc Status] Done!  [{0}] [{1} seconds.]".format(last_block, duration))
 
     def scan_moc_state_status_block(self, collection_moc_state_status, current_block):
 
@@ -176,7 +176,7 @@ class ScanStatus(State):
         if self.debug_mode:
             log.info("Done scan state status block height: [{0}]".format(current_block))
 
-    def scan_moc_state_status(self):
+    def scan_moc_state_status(self, task=None):
 
         # conect to mongo db
         m_client = mongo_manager.connect()
@@ -199,12 +199,12 @@ class ScanStatus(State):
 
         if from_block >= last_block:
             if self.debug_mode:
-                log.info("[SCAN STATE STATUS] Its not the time to run indexer no new blocks avalaible!")
+                log.info("[5. Scan MocState Status] Its not the time to run indexer no new blocks avalaible!")
             return
 
         to_block = last_block
         if from_block > to_block:
-            log.error("[SCAN STATE STATUS] To block > from block!!??")
+            log.error("[5. Scan MocState Status] To block > from block!!??")
             return
 
         current_block = from_block
@@ -213,14 +213,14 @@ class ScanStatus(State):
         collection_moc_state_status = mongo_manager.collection_moc_state_status(m_client)
 
         if self.debug_mode:
-            log.info("[SCAN STATE STATUS] Starting to Scan Moc State Status: {0} To Block: {1} ...".format(
+            log.info("[5. Scan MocState Status] Starting to Scan Moc State Status: {0} To Block: {1} ...".format(
                 from_block, to_block))
 
         start_time = time.time()
         while current_block <= to_block:
 
             if self.debug_mode:
-                log.info("[SCAN STATE STATUS] Starting to scan Moc State Status block height: [{0}]".format(
+                log.info("[5. Scan MocState Status] Starting to scan Moc State Status block height: [{0}]".format(
                     current_block))
 
             self.scan_moc_state_status_block(collection_moc_state_status, current_block)
@@ -233,9 +233,9 @@ class ScanStatus(State):
             current_block += 1
 
         duration = time.time() - start_time
-        log.info("[SCAN STATE STATUS] LAST BLOCK HEIGHT: [{0}] Done in {1} seconds.".format(current_block, duration))
+        log.info("[5. Scan MocState Status]  Done! [{0}] [{1} seconds.]".format(current_block, duration))
 
-    def scan_moc_state_status_history(self):
+    def scan_moc_state_status_history(self, task=None):
 
         # conect to mongo db
         m_client = mongo_manager.connect()

@@ -5,14 +5,12 @@ from web3.types import BlockIdentifier
 from moneyonchain.networks import network_manager
 from indexer.logger import log
 
-from .indexer import MoCIndexer
-
 
 BUCKET_X2 = '0x5832000000000000000000000000000000000000000000000000000000000000'
 BUCKET_C0 = '0x4330000000000000000000000000000000000000000000000000000000000000'
 
 
-class Prices(MoCIndexer):
+class Prices:
 
     def prices_from_sc(self, block_identifier: BlockIdentifier = 'latest'):
 
