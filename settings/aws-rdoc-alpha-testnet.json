@@ -6,12 +6,12 @@
   "timeout": 60,
   "timeout_wait": 300,
   "gas_price": 60000000,
-  "debug": true,
-  "index_mode": "normal",
+  "debug": false,
+  "index_mode": "vendors",
   "tasks": {
-    "scan_moc_blocks": {"interval":  20},
-    "scan_moc_prices": {"interval":  25},
-    "scan_moc_state": {"interval":  30},
+    "scan_moc_blocks": {"interval":  10},
+    "scan_moc_prices": {"interval":  15},
+    "scan_moc_state": {"interval":  10},
     "scan_moc_status": {"interval":  10},
     "scan_moc_state_status": {"interval":  10},
     "scan_user_state_update": {"interval":  10},
@@ -30,7 +30,7 @@
   },
   "scan_moc_blocks": {
     "confirm_blocks": 10,
-    "blocks_look_behind": 1000,
+    "blocks_look_behind": 100,
     "seconds_not_in_chain_error": 600,
     "blocks_recession": 1
   },
@@ -50,9 +50,7 @@
       "addresses": {
         "MoC": "0x4512f4C1d984bbf8B7f7404EddFb1881cFA79EfD"
       }
-
     }
-
   },
   "vendor_account": "0xDda74880D638451e6D2c8D3fC19987526A7Af730"
 }
