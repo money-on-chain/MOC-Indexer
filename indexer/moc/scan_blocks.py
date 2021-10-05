@@ -90,7 +90,8 @@ class ScanBlocks(Balances):
 
         index_info = dict(
             parent=self,
-            confirm_blocks=self.options['scan_moc_blocks']['confirm_blocks']
+            confirm_blocks=self.options['scan_moc_blocks']['confirm_blocks'],
+            app_mode=self.app_mode
         )
 
         address_exchange = self.contract_MoC.sc_moc_exchange.address()

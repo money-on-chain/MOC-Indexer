@@ -436,6 +436,8 @@ class IndexStableTokenMint(BaseIndexEvent):
                                   'ether') * Web3.fromWei(tx_event["reservePrice"],
                                                           'ether')
         d_tx["USDAmount"] = str(int(usd_amount * self.precision))
+        log.info("DEBUG>>")
+        log.info(self.app_mode)
         if self.app_mode != "RRC20":
             rbtc_commission = tx_event["commission"] + tx_event["btcMarkup"]
         else:

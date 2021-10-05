@@ -24,7 +24,6 @@ class BaseIndexEvent(BlockInfo, Balances):
 
     name = 'Name'
     precision = 10 ** 18
-    app_mode = 'MoC'
 
     def __init__(self,
                  m_client=None,
@@ -33,6 +32,7 @@ class BaseIndexEvent(BlockInfo, Balances):
                  moc_address=None,
                  reserve_address=None,
                  tx_receipt=None,
+                 app_mode=None,
                  **tx_vars):
 
         super().__init__(**tx_vars)
@@ -42,6 +42,7 @@ class BaseIndexEvent(BlockInfo, Balances):
         self.moc_address = moc_address
         self.reserve_address = reserve_address
         self.tx_receipt = tx_receipt
+        self.app_mode = app_mode
 
     def update_info(self, **tx_args):
 
