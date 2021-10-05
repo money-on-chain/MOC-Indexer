@@ -10,6 +10,15 @@ from moneyonchain.moc import MoCExchangeRiskProMint, \
     MoCExchangeRiskProxRedeem, \
     MoCExchangeStableTokenRedeem
 
+from moneyonchain.rdoc import MoCExchangeRiskProMint, \
+    MoCExchangeStableTokenMint, \
+    MoCExchangeRiskProxMint, \
+    MoCExchangeRiskProRedeem, \
+    MoCExchangeFreeStableTokenRedeem, \
+    MoCExchangeRiskProxRedeem, \
+    MoCExchangeStableTokenRedeem
+
+
 from indexer.mongo_manager import mongo_manager
 from indexer.logger import log
 
