@@ -10,13 +10,13 @@ from moneyonchain.moc import MoCExchangeRiskProMint, \
     MoCExchangeRiskProxRedeem, \
     MoCExchangeStableTokenRedeem
 
-from moneyonchain.rdoc import MoCExchangeRiskProMint, \
-    MoCExchangeStableTokenMint, \
-    MoCExchangeRiskProxMint, \
-    MoCExchangeRiskProRedeem, \
-    MoCExchangeFreeStableTokenRedeem, \
-    MoCExchangeRiskProxRedeem, \
-    MoCExchangeStableTokenRedeem
+from moneyonchain.rdoc import MoCExchangeRiskProMint as RDOCMoCExchangeRiskProMint, \
+    MoCExchangeStableTokenMint as RDOCMoCExchangeStableTokenMint, \
+    MoCExchangeRiskProxMint as RDOCMoCExchangeRiskProxMint, \
+    MoCExchangeRiskProRedeem as RDOCMoCExchangeRiskProRedeem, \
+    MoCExchangeFreeStableTokenRedeem as RDOCMoCExchangeFreeStableTokenRedeem, \
+    MoCExchangeRiskProxRedeem as RDOCMoCExchangeRiskProxRedeem, \
+    MoCExchangeStableTokenRedeem as RDOCMoCExchangeStableTokenRedeem
 
 
 from indexer.mongo_manager import mongo_manager
@@ -114,7 +114,11 @@ class IndexRiskProMint(BaseIndexEvent):
     def on_event(self, tx_event, log_index=None):
         """ Event """
 
-        d_event = MoCExchangeRiskProMint(tx_event, tx_receipt=self.tx_receipt)
+        if self.app_mode != "RRC20":
+            d_event = MoCExchangeRiskProMint(tx_event, tx_receipt=self.tx_receipt)
+        else:
+            d_event = RDOCMoCExchangeRiskProMint(tx_event, tx_receipt=self.tx_receipt)
+
         self.index_event(d_event.event, log_index=log_index)
 
 
@@ -202,7 +206,11 @@ class IndexRiskProRedeem(BaseIndexEvent):
     def on_event(self, tx_event, log_index=None):
         """ Event """
 
-        d_event = MoCExchangeRiskProRedeem(tx_event, tx_receipt=self.tx_receipt)
+        if self.app_mode != "RRC20":
+            d_event = MoCExchangeRiskProRedeem(tx_event, tx_receipt=self.tx_receipt)
+        else:
+            d_event = RDOCMoCExchangeRiskProRedeem(tx_event, tx_receipt=self.tx_receipt)
+
         self.index_event(d_event.event, log_index=log_index)
 
 
@@ -293,7 +301,11 @@ class IndexRiskProxMint(BaseIndexEvent):
     def on_event(self, tx_event, log_index=None):
         """ Event """
 
-        d_event = MoCExchangeRiskProxMint(tx_event, tx_receipt=self.tx_receipt)
+        if self.app_mode != "RRC20":
+            d_event = MoCExchangeRiskProxMint(tx_event, tx_receipt=self.tx_receipt)
+        else:
+            d_event = RDOCMoCExchangeRiskProxMint(tx_event, tx_receipt=self.tx_receipt)
+
         self.index_event(d_event.event, log_index=log_index)
 
 
@@ -387,7 +399,11 @@ class IndexRiskProxRedeem(BaseIndexEvent):
     def on_event(self, tx_event, log_index=None):
         """ Event """
 
-        d_event = MoCExchangeRiskProxRedeem(tx_event, tx_receipt=self.tx_receipt)
+        if self.app_mode != "RRC20":
+            d_event = MoCExchangeRiskProxRedeem(tx_event, tx_receipt=self.tx_receipt)
+        else:
+            d_event = RDOCMoCExchangeRiskProxRedeem(tx_event, tx_receipt=self.tx_receipt)
+
         self.index_event(d_event.event, log_index=log_index)
 
 
@@ -474,7 +490,11 @@ class IndexStableTokenMint(BaseIndexEvent):
     def on_event(self, tx_event, log_index=None):
         """ Event """
 
-        d_event = MoCExchangeStableTokenMint(tx_event, tx_receipt=self.tx_receipt)
+        if self.app_mode != "RRC20":
+            d_event = MoCExchangeStableTokenMint(tx_event, tx_receipt=self.tx_receipt)
+        else:
+            d_event = RDOCMoCExchangeStableTokenMint(tx_event, tx_receipt=self.tx_receipt)
+
         self.index_event(d_event.event, log_index=log_index)
 
 
@@ -561,7 +581,11 @@ class IndexStableTokenRedeem(BaseIndexEvent):
     def on_event(self, tx_event, log_index=None):
         """ Event """
 
-        d_event = MoCExchangeStableTokenRedeem(tx_event, tx_receipt=self.tx_receipt)
+        if self.app_mode != "RRC20":
+            d_event = MoCExchangeStableTokenRedeem(tx_event, tx_receipt=self.tx_receipt)
+        else:
+            d_event = RDOCMoCExchangeStableTokenRedeem(tx_event, tx_receipt=self.tx_receipt)
+
         self.index_event(d_event.event, log_index=log_index)
 
 
@@ -653,5 +677,9 @@ class IndexFreeStableTokenRedeem(BaseIndexEvent):
     def on_event(self, tx_event, log_index=None):
         """ Event """
 
-        d_event = MoCExchangeFreeStableTokenRedeem(tx_event, tx_receipt=self.tx_receipt)
+        if self.app_mode != "RRC20":
+            d_event = MoCExchangeFreeStableTokenRedeem(tx_event, tx_receipt=self.tx_receipt)
+        else:
+            d_event = RDOCMoCExchangeFreeStableTokenRedeem(tx_event, tx_receipt=self.tx_receipt)
+
         self.index_event(d_event.event, log_index=log_index)
