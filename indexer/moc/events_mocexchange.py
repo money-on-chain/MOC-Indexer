@@ -46,7 +46,11 @@ class IndexRiskProMint(BaseIndexEvent):
         d_tx["isPositive"] = True
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
 
-        rbtc_commission = tx_event["commission"] + tx_event["btcMarkup"]
+        if self.app_mode != "RRC20":
+            rbtc_commission = tx_event["commission"] + tx_event["btcMarkup"]
+        else:
+            rbtc_commission = tx_event["commission"] + tx_event["reserveTokenMarkup"]
+
         moc_commission = tx_event["mocCommissionValue"] + tx_event["mocMarkup"]
         if rbtc_commission > 0:
             usd_commission = Web3.fromWei(rbtc_commission, 'ether') * Web3.fromWei(tx_event["reservePrice"], 'ether')
@@ -135,7 +139,10 @@ class IndexRiskProRedeem(BaseIndexEvent):
         d_tx["USDAmount"] = str(int(usd_amount * self.precision))
         d_tx["amount"] = str(tx_event["amount"])
         d_tx["confirmationTime"] = confirmation_time
-        rbtc_commission = tx_event["commission"] + tx_event["btcMarkup"]
+        if self.app_mode != "RRC20":
+            rbtc_commission = tx_event["commission"] + tx_event["btcMarkup"]
+        else:
+            rbtc_commission = tx_event["commission"] + tx_event["reserveTokenMarkup"]
         moc_commission = tx_event["mocCommissionValue"] + tx_event["mocMarkup"]
         if rbtc_commission > 0:
             usd_commission = Web3.fromWei(rbtc_commission, 'ether') * Web3.fromWei(tx_event["reservePrice"], 'ether')
@@ -222,7 +229,10 @@ class IndexRiskProxMint(BaseIndexEvent):
         d_tx["confirmationTime"] = confirmation_time
         d_tx["isPositive"] = True
         d_tx["leverage"] = str(tx_event["leverage"])
-        rbtc_commission = tx_event["commission"] + tx_event["btcMarkup"]
+        if self.app_mode != "RRC20":
+            rbtc_commission = tx_event["commission"] + tx_event["btcMarkup"]
+        else:
+            rbtc_commission = tx_event["commission"] + tx_event["reserveTokenMarkup"]
         moc_commission = tx_event["mocCommissionValue"] + tx_event["mocMarkup"]
         if rbtc_commission > 0:
             usd_commission = Web3.fromWei(rbtc_commission, 'ether') * Web3.fromWei(tx_event["reservePrice"], 'ether')
@@ -309,7 +319,10 @@ class IndexRiskProxRedeem(BaseIndexEvent):
         d_tx["amount"] = str(tx_event["amount"])
         d_tx["confirmationTime"] = confirmation_time
         d_tx["leverage"] = str(tx_event["leverage"])
-        rbtc_commission = tx_event["commission"] + tx_event["btcMarkup"]
+        if self.app_mode != "RRC20":
+            rbtc_commission = tx_event["commission"] + tx_event["btcMarkup"]
+        else:
+            rbtc_commission = tx_event["commission"] + tx_event["reserveTokenMarkup"]
         moc_commission = tx_event["mocCommissionValue"] + tx_event["mocMarkup"]
         if rbtc_commission > 0:
             usd_commission = Web3.fromWei(rbtc_commission, 'ether') * Web3.fromWei(tx_event["reservePrice"], 'ether')
@@ -398,7 +411,10 @@ class IndexStableTokenMint(BaseIndexEvent):
                                   'ether') * Web3.fromWei(tx_event["reservePrice"],
                                                           'ether')
         d_tx["USDAmount"] = str(int(usd_amount * self.precision))
-        rbtc_commission = tx_event["commission"] + tx_event["btcMarkup"]
+        if self.app_mode != "RRC20":
+            rbtc_commission = tx_event["commission"] + tx_event["btcMarkup"]
+        else:
+            rbtc_commission = tx_event["commission"] + tx_event["reserveTokenMarkup"]
         moc_commission = tx_event["mocCommissionValue"] + tx_event["mocMarkup"]
         if rbtc_commission > 0:
             usd_commission = Web3.fromWei(rbtc_commission, 'ether') * Web3.fromWei(tx_event["reservePrice"], 'ether')
@@ -481,7 +497,10 @@ class IndexStableTokenRedeem(BaseIndexEvent):
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
         d_tx["status"] = status
         d_tx["tokenInvolved"] = 'STABLE'
-        rbtc_commission = tx_event["commission"] + tx_event["btcMarkup"]
+        if self.app_mode != "RRC20":
+            rbtc_commission = tx_event["commission"] + tx_event["btcMarkup"]
+        else:
+            rbtc_commission = tx_event["commission"] + tx_event["reserveTokenMarkup"]
         moc_commission = tx_event["mocCommissionValue"] + tx_event["mocMarkup"]
         if rbtc_commission > 0:
             usd_commission = Web3.fromWei(rbtc_commission, 'ether') * Web3.fromWei(tx_event["reservePrice"], 'ether')
@@ -566,7 +585,10 @@ class IndexFreeStableTokenRedeem(BaseIndexEvent):
         d_tx["USDAmount"] = str(int(usd_amount * self.precision))
         d_tx["amount"] = str(tx_event["amount"])
         d_tx["confirmationTime"] = confirmation_time
-        rbtc_commission = tx_event["commission"] + tx_event["btcMarkup"]
+        if self.app_mode != "RRC20":
+            rbtc_commission = tx_event["commission"] + tx_event["btcMarkup"]
+        else:
+            rbtc_commission = tx_event["commission"] + tx_event["reserveTokenMarkup"]
         moc_commission = tx_event["mocCommissionValue"] + tx_event["mocMarkup"]
         if rbtc_commission > 0:
             usd_commission = Web3.fromWei(rbtc_commission, 'ether') * Web3.fromWei(tx_event["reservePrice"], 'ether')
