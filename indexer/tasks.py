@@ -46,8 +46,6 @@ class MoCIndexerTasks(TasksManager, JobsIndexer):
         self.last_block = 0
 
         self.app_mode = self.options['networks'][self.config_network]['app_mode']
-        log.info("BIIII>>>>")
-        log.info(self.app_mode)
         self.debug_mode = self.options.get('debug', False)
 
         # install custom network if needit
