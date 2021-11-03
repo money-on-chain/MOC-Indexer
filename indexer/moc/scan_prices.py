@@ -42,9 +42,9 @@ class ScanPrices(Prices):
                 upsert=True)
 
             if self.debug_mode:
-                log.info("[SCAN PRICES] Done scan prices block height: [{0}]".format(current_block))
+                log.info("[2. Scan Prices] Done scan prices block height: [{0}]".format(current_block))
 
-    def scan_moc_prices(self):
+    def scan_moc_prices(self, task=None):
 
         # conect to mongo db
         m_client = mongo_manager.connect()
@@ -67,12 +67,12 @@ class ScanPrices(Prices):
 
         if from_block >= last_block:
             if self.debug_mode:
-                log.info("[SCAN PRICES] Its not the time to run indexer no new blocks avalaible!")
+                log.info("[2. Scan Prices] Its not the time to run indexer no new blocks avalaible!")
             return
 
         to_block = last_block
         if from_block > to_block:
-            log.error("[SCAN PRICES] To block > from block!!??")
+            log.error("[2. Scan Prices] To block > from block!!??")
             return
 
         current_block = from_block
@@ -81,15 +81,14 @@ class ScanPrices(Prices):
         collection_price = mongo_manager.collection_price(m_client)
 
         if self.debug_mode:
-            log.info("[SCAN PRICES] Starting to Scan prices: {0} To Block: {1} ...".format(
+            log.info("[2. Scan Prices] Starting to Scan prices: [{0} / {1}]".format(
                 from_block, to_block))
 
         start_time = time.time()
         while current_block <= to_block:
 
-            if self.debug_mode:
-                log.info("[SCAN PRICES] Starting to scan MOC prices block height: [{0}]".format(
-                    current_block))
+            log.info("[2. Scan Prices] Starting to scan MOC prices [{0} / {1}]".format(
+                current_block, to_block))
 
             self.scan_moc_prices_block(collection_price, current_block)
 
@@ -101,9 +100,9 @@ class ScanPrices(Prices):
             current_block += 1
 
         duration = time.time() - start_time
-        log.info("[SCAN PRICES] LAST BLOCK HEIGHT: [{0}] Done in {1} seconds.".format(current_block, duration))
+        log.info("[2. Scan Prices] Done! [{0}] [{1} seconds.]".format(current_block, duration))
 
-    def scan_moc_prices_history(self):
+    def scan_moc_prices_history(self, task=None):
 
         # conect to mongo db
         m_client = mongo_manager.connect()
@@ -151,4 +150,4 @@ class ScanPrices(Prices):
             current_block += 1
 
         duration = time.time() - start_time
-        log.info("[SCAN PRICES HISTORY] LAST BLOCK HEIGHT: [{0}] Done in {1} seconds.".format(current_block, duration))
+        log.info("[SCAN PRICES HISTORY] LAST BLOCK HEIGHT: [{0}] Done [{1} seconds.]".format(current_block, duration))

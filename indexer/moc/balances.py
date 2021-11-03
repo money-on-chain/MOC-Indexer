@@ -8,10 +8,8 @@ from moneyonchain.networks import network_manager
 from indexer.mongo_manager import mongo_manager
 from indexer.logger import log
 
-from .indexer import MoCIndexer
 
-
-class Balances(MoCIndexer):
+class Balances:
 
     def balances_from_address(self, address, block_height):
 
@@ -81,16 +79,30 @@ class Balances(MoCIndexer):
 
         d_user_balance["estimateGasMintBpro"] = str(
             self.contract_MoC.mint_bpro_gas_estimated(
-                int(d_user_balance["rbtcBalance"]))
+                int(d_user_balance["rbtcBalance"]),
+                self.vendor_account)
         )
         d_user_balance["estimateGasMintDoc"] = str(
             self.contract_MoC.mint_doc_gas_estimated(
-                int(d_user_balance["rbtcBalance"]))
+                int(d_user_balance["rbtcBalance"]),
+                self.vendor_account)
         )
         d_user_balance["estimateGasMintBprox2"] = str(
             self.contract_MoC.mint_bprox_gas_estimated(
-                int(d_user_balance["rbtcBalance"]))
+                int(d_user_balance["rbtcBalance"]),
+                self.vendor_account)
         )
+
+        return d_user_balance
+
+    def stable_balances_from_address(self, address, block_identifier: BlockIdentifier = 'latest'):
+
+        d_user_balance = OrderedDict()
+
+        d_user_balance["bprox2Balance"] = str(self.contract_MoC.doc_balance_of(
+            address,
+            formatted=False,
+            block_identifier=block_identifier))
 
         return d_user_balance
 
@@ -183,3 +195,34 @@ class Balances(MoCIndexer):
                         user_address,
                         d_user_balance,
                         post_id))
+
+    def update_user_state_moc_allowance(self,
+                                        user_address,
+                                        m_client,
+                                        block_identifier: BlockIdentifier = 'latest'):
+        user_state = mongo_manager.collection_user_state(m_client)
+        exist_user = user_state.find_one(
+            {"address": user_address}
+        )
+        if exist_user:
+            d_user_balance = OrderedDict()
+
+            d_user_balance["mocAllowance"] = str(self.contract_MoC.moc_allowance(
+                user_address,
+                self.contract_MoC.address(),
+                formatted=False,
+                block_identifier=block_identifier))
+
+            post_id = user_state.find_one_and_update(
+                {"address": user_address},
+                {"$set": d_user_balance}
+            )
+            if self.debug_mode:
+                log.info(
+                    "Update user MoC Token approval: [{0}] -> {1} -> Mongo _id: {2}".format(
+                        user_address,
+                        d_user_balance,
+                        post_id))
+
+
+
