@@ -73,7 +73,7 @@ class Balances:
                     precision=False
                 )
             )
-        except HTTPError:
+        except (HTTPError, ValueError):
             log.error("[WARNING] potentialBprox2MaxInterest Exception!")
             d_user_balance["potentialBprox2MaxInterest"] = '0'
 
