@@ -3,15 +3,15 @@
     "uri": "mongodb://192.168.56.2:27017/",
     "db": "local_rdoc_testnet"
   },
-  "timeout": 60,
-  "timeout_wait": 300,
+  "timeout": 180,
+  "timeout_wait": 180,
   "gas_price": 60000000,
-  "debug": true,
-  "index_mode": "normal",
+  "debug": false,
+  "index_mode": "vendors",
   "tasks": {
-    "scan_moc_blocks": {"interval":  20},
-    "scan_moc_prices": {"interval":  25},
-    "scan_moc_state": {"interval":  30},
+    "scan_moc_blocks": {"interval":  10},
+    "scan_moc_prices": {"interval":  15},
+    "scan_moc_state": {"interval":  10},
     "scan_moc_status": {"interval":  10},
     "scan_moc_state_status": {"interval":  10},
     "scan_user_state_update": {"interval":  10},
@@ -30,7 +30,7 @@
   },
   "scan_moc_blocks": {
     "confirm_blocks": 10,
-    "blocks_look_behind": 100,
+    "blocks_look_behind": 1000,
     "seconds_not_in_chain_error": 600,
     "blocks_recession": 1
   },
@@ -38,10 +38,10 @@
     "block_height": 0
   },
   "scan_moc_prices": {
-    "blocks_look_behind": 10
+    "blocks_look_behind": 60
   },
   "scan_moc_state_status": {
-    "blocks_look_behind": 10
+    "blocks_look_behind": 60
   },
   "networks": {
     "rdocTestnet": {
@@ -50,10 +50,7 @@
       "addresses": {
         "MoC": "0x7e2F245F7dc8e78576ECB13AEFc0a101E9BE1AD3"
       }
-
     }
-
-
   },
   "vendor_account": "0xf69287F5Ca3cC3C6d3981f2412109110cB8af076"
 }
