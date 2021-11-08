@@ -1,6 +1,5 @@
 from collections import OrderedDict
 from requests.exceptions import HTTPError
-from brownie.exceptions import VirtualMachineError
 from web3.types import BlockIdentifier
 
 from moneyonchain.networks import network_manager
@@ -32,7 +31,7 @@ class Prices:
             d_price["bitcoinPrice"] = str(self.contract_MoC.sc_moc_state.bitcoin_price(
                 formatted=False,
                 block_identifier=block_identifier))
-        except (HTTPError, VirtualMachineError):
+        except (HTTPError, ValueError):
             log.error("No price valid in BLOCKHEIGHT: [{0}] skipping!".format(
                 block_identifier))
             return
@@ -49,7 +48,7 @@ class Prices:
                 self.contract_MoC.sc_moc_state.bpro_discount_price(
                     formatted=False,
                     block_identifier=block_identifier))
-        except (HTTPError, VirtualMachineError):
+        except (HTTPError, ValueError):
             log.error(
                 "No bproDiscountPrice valid in BLOCKHEIGHT: [{0}] skipping!".format(block_identifier))
             return
@@ -66,7 +65,7 @@ class Prices:
                     bucket_x2,
                     formatted=False,
                     block_identifier=block_identifier))
-        except (HTTPError, VirtualMachineError):
+        except (HTTPError, ValueError):
             log.error("No bprox2PriceInBpro valid in BLOCKHEIGHT: [{0}] skipping!".format(block_identifier))
             return
 
@@ -81,7 +80,7 @@ class Prices:
             d_price["mocPrice"] = str(self.contract_MoC.sc_moc_state.moc_price(
                 formatted=False,
                 block_identifier=block_identifier))
-        except (HTTPError, VirtualMachineError):
+        except (HTTPError, ValueError):
             log.error("No price valid for MoC in BLOCKHEIGHT: [{0}] skipping!".format(block_identifier))
             return
 
