@@ -48,7 +48,8 @@
       "app_mode": "RRC20",
       "project": "RDoC",
       "addresses": {
-        "MoC": "0x7e2F245F7dc8e78576ECB13AEFc0a101E9BE1AD3"
+        "MoC": "0x7e2F245F7dc8e78576ECB13AEFc0a101E9BE1AD3",
+        "BProToken": "0x4dA7997A819bb46B6758B9102234c289dD2Ad3bf"
       }
     }
   },

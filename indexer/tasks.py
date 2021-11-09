@@ -5,6 +5,7 @@ from moneyonchain.networks import network_manager, accounts
 from moneyonchain.moc import MoC
 from moneyonchain.rdoc import RDOCMoC
 from moneyonchain.medianizer import MoCMedianizer, RDOCMoCMedianizer
+from moneyonchain.tokens import BProToken
 
 
 from indexer.mongo_manager import mongo_manager
@@ -112,6 +113,10 @@ class MoCIndexerTasks(TasksManager, JobsIndexer):
             self.contract_MoCMedianizer = MoCMedianizer(
                 network_manager,
                 contract_address=self.contract_MoC.sc_moc_state.price_provider()).from_abi()
+
+        if self.app_mode == "RRC20":
+            address_bpro_token = self.options['networks'][self.config_network]['addresses']['BProToken']
+            self.contract_MoC_BProToken = BProToken(network_manager, contract_address=address_bpro_token).from_abi()
 
     def reconnect_on_lost_chain(self, exit_on_error=False, task=None):
 
