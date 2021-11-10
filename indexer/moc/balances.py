@@ -32,6 +32,13 @@ class Balances:
             address,
             formatted=False,
             block_identifier=block_height))
+
+        if self.app_mode == "RRC20":
+            d_user_balance["bproMoCBalance"] = str(self.contract_MoC_BProToken.balance_of(
+                address,
+                formatted=False,
+                block_identifier=block_height))
+
         d_user_balance["bprox2Balance"] = str(
             self.contract_MoC.bprox_balance_of(
                 address,
@@ -73,7 +80,7 @@ class Balances:
                     precision=False
                 )
             )
-        except HTTPError:
+        except (HTTPError, ValueError):
             log.error("[WARNING] potentialBprox2MaxInterest Exception!")
             d_user_balance["potentialBprox2MaxInterest"] = '0'
 

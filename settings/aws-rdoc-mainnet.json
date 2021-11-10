@@ -6,12 +6,12 @@
   "timeout": 60,
   "timeout_wait": 300,
   "gas_price": 60000000,
-  "debug": true,
-  "index_mode": "normal",
+  "debug": false,
+  "index_mode": "vendors",
   "tasks": {
-    "scan_moc_blocks": {"interval":  20},
-    "scan_moc_prices": {"interval":  25},
-    "scan_moc_state": {"interval":  30},
+    "scan_moc_blocks": {"interval":  10},
+    "scan_moc_prices": {"interval":  15},
+    "scan_moc_state": {"interval":  10},
     "scan_moc_status": {"interval":  10},
     "scan_moc_state_status": {"interval":  10},
     "scan_user_state_update": {"interval":  10},
@@ -48,11 +48,10 @@
       "app_mode": "RRC20",
       "project": "RDoC",
       "addresses": {
-        "MoC": "0xCfF3fcaeC2352C672C38d77cb1a064B7D50ce7e1"
+        "MoC": "0xCfF3fcaeC2352C672C38d77cb1a064B7D50ce7e1",
+        "BProToken": "0x440CD83C160De5C96Ddb20246815eA44C7aBBCa8"
       }
-
     }
-
   },
-  "vendor_account": "0xDda74880D638451e6D2c8D3fC19987526A7Af730"
+  "vendor_account": "0xC61820bFB8F87391d62Cd3976dDc1d35e0cf7128"
 }

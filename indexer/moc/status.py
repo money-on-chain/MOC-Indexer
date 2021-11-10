@@ -32,7 +32,7 @@ class State:
                 self.contract_MoC.sc_moc_state.bitcoin_price(
                     formatted=False,
                     block_identifier=block_identifier))
-        except HTTPError:
+        except (HTTPError, ValueError):
             log.error("No price valid in BLOCKHEIGHT: [{0}] skipping!".format(
                 block_identifier))
             return
@@ -41,7 +41,7 @@ class State:
             d_moc_state["mocPrice"] = str(self.contract_MoC.sc_moc_state.moc_price(
                 formatted=False,
                 block_identifier=block_identifier))
-        except HTTPError:
+        except (HTTPError, ValueError):
             log.error("No price valid for MoC in BLOCKHEIGHT: [{0}] skipping!".format(block_identifier))
             return
 
@@ -153,7 +153,7 @@ class State:
                 self.contract_MoC.sc_moc_state.max_bpro_with_discount(
                     formatted=False,
                     block_identifier=block_identifier))
-        except HTTPError:
+        except (HTTPError, ValueError):
             log.error("[WARNING] maxBproWithDiscount Exception! [{0}]".format(
                 block_identifier))
             d_moc_state["maxBproWithDiscount"] = '0'
@@ -163,7 +163,7 @@ class State:
                 self.contract_MoC.sc_moc_state.bpro_discount_price(
                     formatted=False,
                     block_identifier=block_identifier))
-        except HTTPError:
+        except (HTTPError, ValueError):
             log.error("[WARNING] bproDiscountPrice Exception! [{0}]".format(
                 block_identifier))
             d_moc_state["bproDiscountPrice"] = '0'
@@ -179,7 +179,7 @@ class State:
                     bucket_x2,
                     formatted=False,
                     block_identifier=block_identifier))
-        except HTTPError:
+        except (HTTPError, ValueError):
             log.error("[WARNING] bprox2PriceInBpro Exception! [{0}]".format(
                 block_identifier))
             d_moc_state["bprox2PriceInBpro"] = '0'
@@ -189,7 +189,7 @@ class State:
                 self.contract_MoC.sc_moc_inrate.spot_inrate(
                     formatted=False,
                     block_identifier=block_identifier))
-        except HTTPError:
+        except (HTTPError, ValueError):
             log.error("[WARNING] spotInrate Exception [{0}]".format(
                 block_identifier))
             d_moc_state["spotInrate"] = '0'
@@ -356,7 +356,7 @@ class State:
             str(self.contract_MoC.sc_moc_state.bitcoin_price(
                 formatted=False,
                 block_identifier=block_identifier))
-        except HTTPError:
+        except (HTTPError, ValueError):
             price_active = False
         else:
             price_active = True
@@ -367,7 +367,7 @@ class State:
             str(self.contract_MoC.sc_moc_state.moc_price(
                 formatted=False,
                 block_identifier=block_identifier))
-        except HTTPError:
+        except (HTTPError, ValueError):
             moc_price_active = False
         else:
             moc_price_active = True
