@@ -6,7 +6,7 @@
   "timeout": 60,
   "timeout_wait": 300,
   "gas_price": 60000000,
-  "debug": true,
+  "debug": false,
   "index_mode": "vendors",
   "tasks": {
     "scan_moc_blocks": {"interval":  20},
