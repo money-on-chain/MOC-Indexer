@@ -264,65 +264,65 @@ class MoCIndexerTasks(TasksManager, JobsIndexer):
                           timeout=180,
                           task_name='1. Scan Blocks')
 
-        # 2. Scan Prices
-        if 'scan_moc_prices' in self.options['tasks']:
-            log.info("Jobs add: 2. Scan Prices")
-            interval = self.options['tasks']['scan_moc_prices']['interval']
-            self.add_task(self.task_scan_moc_prices,
-                          args=[],
-                          wait=interval,
-                          timeout=180,
-                          task_name='2. Scan Prices')
-
-        # 3. Scan Moc State
-        if 'scan_moc_state' in self.options['tasks']:
-            log.info("Jobs add: 3. Scan Moc State")
-            interval = self.options['tasks']['scan_moc_state']['interval']
-            self.add_task(self.task_scan_moc_state,
-                          args=[],
-                          wait=interval,
-                          timeout=180,
-                          task_name='3. Scan Moc State')
-
-        # 4. Scan Moc Status
-        if 'scan_moc_status' in self.options['tasks']:
-            log.info("Jobs add: 4. Scan Moc Status")
-            interval = self.options['tasks']['scan_moc_status']['interval']
-            self.add_task(self.task_scan_moc_status,
-                          args=[],
-                          wait=interval,
-                          timeout=180,
-                          task_name='4. Scan Moc Status')
-
-        # 5. Scan MocState Status
-        if 'scan_moc_state_status' in self.options['tasks']:
-            log.info("Jobs add: 5. Scan MocState Status")
-            interval = self.options['tasks']['scan_moc_state_status']['interval']
-            self.add_task(self.task_scan_moc_state_status,
-                          args=[],
-                          wait=interval,
-                          timeout=180,
-                          task_name='5. Scan MocState Status')
-
-        # 6. Scan User State Update
-        if 'scan_user_state_update' in self.options['tasks']:
-            log.info("Jobs add: 6. Scan User State Update")
-            interval = self.options['tasks']['scan_user_state_update']['interval']
-            self.add_task(self.task_scan_user_state_update,
-                          args=[],
-                          wait=interval,
-                          timeout=180,
-                          task_name='6. Scan User State Update')
-
-        # 7. Scan Blocks not processed
-        if 'scan_moc_blocks_not_processed' in self.options['tasks']:
-            log.info("Jobs add: 7. Scan Blocks not processed")
-            interval = self.options['tasks']['scan_moc_blocks_not_processed']['interval']
-            self.add_task(self.task_scan_moc_blocks_not_processed,
-                          args=[],
-                          wait=interval,
-                          timeout=180,
-                          task_name='7. Scan Blocks not processed')
+        # # 2. Scan Prices
+        # if 'scan_moc_prices' in self.options['tasks']:
+        #     log.info("Jobs add: 2. Scan Prices")
+        #     interval = self.options['tasks']['scan_moc_prices']['interval']
+        #     self.add_task(self.task_scan_moc_prices,
+        #                   args=[],
+        #                   wait=interval,
+        #                   timeout=180,
+        #                   task_name='2. Scan Prices')
+        #
+        # # 3. Scan Moc State
+        # if 'scan_moc_state' in self.options['tasks']:
+        #     log.info("Jobs add: 3. Scan Moc State")
+        #     interval = self.options['tasks']['scan_moc_state']['interval']
+        #     self.add_task(self.task_scan_moc_state,
+        #                   args=[],
+        #                   wait=interval,
+        #                   timeout=180,
+        #                   task_name='3. Scan Moc State')
+        #
+        # # 4. Scan Moc Status
+        # if 'scan_moc_status' in self.options['tasks']:
+        #     log.info("Jobs add: 4. Scan Moc Status")
+        #     interval = self.options['tasks']['scan_moc_status']['interval']
+        #     self.add_task(self.task_scan_moc_status,
+        #                   args=[],
+        #                   wait=interval,
+        #                   timeout=180,
+        #                   task_name='4. Scan Moc Status')
+        #
+        # # 5. Scan MocState Status
+        # if 'scan_moc_state_status' in self.options['tasks']:
+        #     log.info("Jobs add: 5. Scan MocState Status")
+        #     interval = self.options['tasks']['scan_moc_state_status']['interval']
+        #     self.add_task(self.task_scan_moc_state_status,
+        #                   args=[],
+        #                   wait=interval,
+        #                   timeout=180,
+        #                   task_name='5. Scan MocState Status')
+        #
+        # # 6. Scan User State Update
+        # if 'scan_user_state_update' in self.options['tasks']:
+        #     log.info("Jobs add: 6. Scan User State Update")
+        #     interval = self.options['tasks']['scan_user_state_update']['interval']
+        #     self.add_task(self.task_scan_user_state_update,
+        #                   args=[],
+        #                   wait=interval,
+        #                   timeout=180,
+        #                   task_name='6. Scan User State Update')
+        #
+        # # 7. Scan Blocks not processed
+        # if 'scan_moc_blocks_not_processed' in self.options['tasks']:
+        #     log.info("Jobs add: 7. Scan Blocks not processed")
+        #     interval = self.options['tasks']['scan_moc_blocks_not_processed']['interval']
+        #     self.add_task(self.task_scan_moc_blocks_not_processed,
+        #                   args=[],
+        #                   wait=interval,
+        #                   timeout=180,
+        #                   task_name='7. Scan Blocks not processed')
 
         # Set max workers
         self.max_tasks = len(self.tasks)

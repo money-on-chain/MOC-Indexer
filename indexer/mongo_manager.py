@@ -191,5 +191,73 @@ class MongoManager:
 
         return collection
 
+    def collection_filtered_transactions(self, client, create=True):
+
+        mongo_db = self.db
+        db = client[mongo_db]
+        col_name = 'filtered_transactions'
+
+        if create:
+            schema = {
+                '$jsonSchema': {
+                    'bsonType': 'object',
+                    'additionalProperties': True,
+                    'required': ['hash', 'blockNumber'],
+                    'properties': {
+                        'hash': {
+                            'bsonType': 'string'
+                        },
+                        'blockNumber': {
+                            'bsonType': 'int'
+                        },
+                        'from': {
+                            'bsonType': 'string'
+                        },
+                        'to': {
+                            'bsonType': 'string'
+                        },
+                        'value': {
+                            'bsonType': 'string'
+                        },
+                        'gas': {
+                            'bsonType': 'int'
+                        },
+                        'gasPrice': {
+                            'bsonType': 'string'
+                        },
+                        'input': {
+                            'bsonType': 'string'
+                        },
+                        'receipt': {
+                            'bsonType': 'bool'
+                        },
+                        'processed': {
+                            'bsonType': 'bool'
+                        },
+                        'gas_used': {
+                            'bsonType': 'int'
+                        },
+                        'confirmations': {
+                            'bsonType': 'int'
+                        },
+                        'timestamp': {
+                            'bsonType': 'timestamp'
+                        },
+                        'logs': {
+                            'bsonType': 'string'
+                        },
+                        'status': {
+                            'bsonType': 'string'
+                        },
+                    }
+                }
+            }
+            result = db.create_collection(col_name, validator=schema)
+            result.create_index([('blockNumber', pymongo.DESCENDING)], unique=False)
+
+        collection = db[col_name]
+
+        return collection
+
 
 mongo_manager = MongoManager()

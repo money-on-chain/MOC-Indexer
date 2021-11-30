@@ -227,104 +227,104 @@ class ScanBlocks(Balances):
         self.index_approval_moc_token.update_info(**index_info)
 
         # process only MoC contract transactions
-        for tx_receipt in moc_transactions_receipts:
+        # for tx_receipt in moc_transactions_receipts:
+        #
+        #     # 1. MoC Exchange
+        #
+        #     # IndexRiskProMint
+        #     self.index_riskpro_mint.index_from_receipt(tx_receipt)
+        #
+        #     # IndexRiskProRedeem
+        #     self.index_riskpro_redeem.index_from_receipt(tx_receipt)
+        #
+        #     # IndexRiskProxMint
+        #     self.index_riskprox_mint.index_from_receipt(tx_receipt)
+        #
+        #     # IndexRiskProxRedeem
+        #     self.index_riskprox_redeem.index_from_receipt(tx_receipt)
+        #
+        #     # IndexStableTokenMint
+        #     self.index_stabletoken_mint.index_from_receipt(tx_receipt)
+        #
+        #     # IndexStableTokenRedeem
+        #     self.index_stabletoken_redeem.index_from_receipt(tx_receipt)
+        #
+        #     # IndexFreeStableTokenRedeem
+        #     self.index_freestabletoken_redeem.index_from_receipt(tx_receipt)
+        #
+        #     # 2. MoC Settlement
+        #
+        #     # IndexSettlementStarted
+        #     self.index_settlement_started.index_from_receipt(tx_receipt)
+        #
+        #     # IndexRedeemRequestAlter
+        #     self.index_redeem_request_alter.index_from_receipt(tx_receipt)
+        #
+        #     # IndexRedeemRequestProcessed
+        #     self.index_redeem_request_processed.index_from_receipt(tx_receipt)
+        #
+        #     # IndexSettlementRedeemStableToken
+        #     self.index_settlement_redeem_stabletoken.index_from_receipt(tx_receipt)
+        #
+        #     # IndexSettlementDeleveraging
+        #     self.index_settlement_deleveraging.index_from_receipt(tx_receipt)
+        #
+        #     # IndexSettlementCompleted
+        #     self.index_settlement_completed.index_from_receipt(tx_receipt)
+        #
+        #     # 3. MoC Inrate
+        #
+        #     # IndexInrateDailyPay
+        #     self.index_inrate_dailypay.index_from_receipt(tx_receipt)
+        #
+        #     # IndexRiskProHoldersInterestPay
+        #     self.index_riskproholders_interestpay.index_from_receipt(tx_receipt)
+        #
+        #     # 4. MoC
+        #
+        #     # IndexBucketLiquidation
+        #     self.index_bucket_liquidation.index_from_receipt(tx_receipt)
+        #
+        #     # 5. MoC State
+        #
+        #     # IndexStateTransition
+        #     self.index_state_transition.index_from_receipt(tx_receipt)
+        #
+        #     # 6. Approval
+        #     if self.app_mode == "RRC20":
+        #
+        #         # IndexApproval
+        #         self.index_approval.index_from_receipt(tx_receipt)
+        #
+        #         # IndexRESERVETransfer
+        #         self.index_reserve_transfer.index_from_receipt(tx_receipt)
+        #     else:
+        #         self.index_contract_liquidated.index_from_receipt(tx_receipt)
+        #
+        #     # 6b. Approval MoC Token
+        #     self.index_approval_moc_token.index_from_receipt(tx_receipt)
+        #
+        #     # 7. Transfer from MOC
+        #     # Process transfer for MOC 2020-06-23
+        #     self.process_transfer_from_moc(tx_receipt,
+        #                                    d_moc_transactions,
+        #                                    m_client,
+        #                                    current_block,
+        #                                    block_reference,
+        #                                    block_ts)
 
-            # 1. MoC Exchange
-
-            # IndexRiskProMint
-            self.index_riskpro_mint.index_from_receipt(tx_receipt)
-
-            # IndexRiskProRedeem
-            self.index_riskpro_redeem.index_from_receipt(tx_receipt)
-
-            # IndexRiskProxMint
-            self.index_riskprox_mint.index_from_receipt(tx_receipt)
-
-            # IndexRiskProxRedeem
-            self.index_riskprox_redeem.index_from_receipt(tx_receipt)
-
-            # IndexStableTokenMint
-            self.index_stabletoken_mint.index_from_receipt(tx_receipt)
-
-            # IndexStableTokenRedeem
-            self.index_stabletoken_redeem.index_from_receipt(tx_receipt)
-
-            # IndexFreeStableTokenRedeem
-            self.index_freestabletoken_redeem.index_from_receipt(tx_receipt)
-
-            # 2. MoC Settlement
-
-            # IndexSettlementStarted
-            self.index_settlement_started.index_from_receipt(tx_receipt)
-
-            # IndexRedeemRequestAlter
-            self.index_redeem_request_alter.index_from_receipt(tx_receipt)
-
-            # IndexRedeemRequestProcessed
-            self.index_redeem_request_processed.index_from_receipt(tx_receipt)
-
-            # IndexSettlementRedeemStableToken
-            self.index_settlement_redeem_stabletoken.index_from_receipt(tx_receipt)
-
-            # IndexSettlementDeleveraging
-            self.index_settlement_deleveraging.index_from_receipt(tx_receipt)
-
-            # IndexSettlementCompleted
-            self.index_settlement_completed.index_from_receipt(tx_receipt)
-
-            # 3. MoC Inrate
-
-            # IndexInrateDailyPay
-            self.index_inrate_dailypay.index_from_receipt(tx_receipt)
-
-            # IndexRiskProHoldersInterestPay
-            self.index_riskproholders_interestpay.index_from_receipt(tx_receipt)
-
-            # 4. MoC
-
-            # IndexBucketLiquidation
-            self.index_bucket_liquidation.index_from_receipt(tx_receipt)
-
-            # 5. MoC State
-
-            # IndexStateTransition
-            self.index_state_transition.index_from_receipt(tx_receipt)
-
-            # 6. Approval
-            if self.app_mode == "RRC20":
-
-                # IndexApproval
-                self.index_approval.index_from_receipt(tx_receipt)
-
-                # IndexRESERVETransfer
-                self.index_reserve_transfer.index_from_receipt(tx_receipt)
-            else:
-                self.index_contract_liquidated.index_from_receipt(tx_receipt)
-
-            # 6b. Approval MoC Token
-            self.index_approval_moc_token.index_from_receipt(tx_receipt)
-
-            # 7. Transfer from MOC
-            # Process transfer for MOC 2020-06-23
-            self.process_transfer_from_moc(tx_receipt,
-                                           d_moc_transactions,
-                                           m_client,
-                                           current_block,
-                                           block_reference,
-                                           block_ts)
-
-        # process all transactions looking for transfers
-        if scan_transfer:
-            if self.debug_mode:
-                log.info("[1. Scan Blocks] Starting to scan Transfer transactions [{0} / {1}]".format(
-                    current_block, block_reference))
-
-            all_transactions_receipts = transactions_receipt(all_transactions)
-            for tx_receipt in all_transactions_receipts:
-                self.index_riskpro_transfer.index_from_receipt(tx_receipt)
-                self.index_stable_transfer.index_from_receipt(tx_receipt)
-                if self.app_mode == 'RRC20':
-                    self.index_reserve_transfer.index_from_receipt(tx_receipt)
+        # # process all transactions looking for transfers
+        # if scan_transfer:
+        #     if self.debug_mode:
+        #         log.info("[1. Scan Blocks] Starting to scan Transfer transactions [{0} / {1}]".format(
+        #             current_block, block_reference))
+        #
+        #     all_transactions_receipts = transactions_receipt(all_transactions)
+        #     for tx_receipt in all_transactions_receipts:
+        #         self.index_riskpro_transfer.index_from_receipt(tx_receipt)
+        #         self.index_stable_transfer.index_from_receipt(tx_receipt)
+        #         if self.app_mode == 'RRC20':
+        #             self.index_reserve_transfer.index_from_receipt(tx_receipt)
 
     def process_transfer_from_moc(self,
                                   tx_receipt,
@@ -410,6 +410,7 @@ class ScanBlocks(Balances):
 
         # get last block from node compare 2 blocks older than new
         last_block = network_manager.block_number - config_blocks_recession
+        log.info(">>> Last Block: {0}".format(last_block))
 
         collection_moc_indexer = mongo_manager.collection_moc_indexer(m_client)
         moc_index = collection_moc_indexer.find_one(sort=[("updatedAt", -1)])
@@ -418,10 +419,14 @@ class ScanBlocks(Balances):
             if 'last_moc_block' in moc_index:
                 last_block_indexed = moc_index['last_moc_block']
 
+        log.info(">>> Last Block Indexed: {0}".format(last_block_indexed))
+
         config_blocks_look_behind = self.options['scan_moc_blocks']['blocks_look_behind']
         from_block = last_block - config_blocks_look_behind
         if last_block_indexed > 0:
             from_block = last_block_indexed + 1
+
+        log.info(">>> From Block: {0}".format(from_block))
 
         if from_block >= last_block:
             if self.debug_mode:

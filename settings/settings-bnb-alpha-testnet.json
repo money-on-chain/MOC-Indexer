@@ -9,7 +9,7 @@
   "debug": true,
   "index_mode": "vendors",
   "tasks": {
-    "scan_moc_blocks": {"interval":  20},
+    "scan_moc_blocks": {"interval":  5},
     "scan_moc_prices": {"interval":  25},
     "scan_moc_state": {"interval":  30},
     "scan_moc_status": {"interval":  10},
@@ -30,7 +30,7 @@
   },
   "scan_moc_blocks": {
     "confirm_blocks": 10,
-    "blocks_look_behind": 100,
+    "blocks_look_behind": 1,
     "seconds_not_in_chain_error": 600,
     "blocks_recession": 1
   },
@@ -38,10 +38,10 @@
     "block_height": 0
   },
   "scan_moc_prices": {
-    "blocks_look_behind": 10
+    "blocks_look_behind": 1
   },
   "scan_moc_state_status": {
-    "blocks_look_behind": 10
+    "blocks_look_behind": 1
   },
   "networks": {
     "bnbAlphaTestnet": {
