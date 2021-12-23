@@ -39,6 +39,8 @@ from .events_mocexchange import IndexRiskProMint, \
     IndexStableTokenRedeem, \
     IndexFreeStableTokenRedeem
 
+from indexer.chain import block_filtered_transactions
+
 
 from .balances import Balances
 
@@ -455,6 +457,126 @@ class ScanBlocks(Balances):
             log.info("[1. Scan Blocks] OK [{0}] / [{1}]".format(current_block, to_block))
             collection_moc_indexer.update_one({},
                                               {'$set': {'last_moc_block': current_block,
+                                                        'updatedAt': datetime.datetime.now()}},
+                                              upsert=True)
+            # Go to next block
+            current_block += 1
+
+        duration = time.time() - start_time
+        log.info("[1. Scan Blocks] Done! [{1} seconds]".format(current_block, duration))
+
+    def scan_raw_tx(self, current_block, block_reference, m_client, scan_transfer=True):
+
+        if self.debug_mode:
+            log.info("[1. Scan Blocks] Starting to scan MOC transactions block height: [{0}] last block height: [{1}]".format(
+                current_block, block_reference))
+
+        # get block time from node
+        block_ts = network_manager.block_timestamp(current_block)
+
+        collection_raw_transactions = mongo_manager.collection_raw_transactions(m_client)
+
+        fil_txs = block_filtered_transactions(current_block, filter_tx=self.moc_addresses)
+        receipts = fil_txs["receipts"]
+
+        if receipts:
+            for tx_rcp in receipts:
+
+                d_tx = OrderedDict()
+                d_tx["hash"] = str(tx_rcp.txid)
+                d_tx["blockNumber"] = tx_rcp.block_number
+                d_tx["from"] = tx_rcp.sender
+                d_tx["to"] = tx_rcp.receiver
+                d_tx["value"] = str(tx_rcp.value)
+                d_tx["gas"] = tx_rcp.gas_limit
+                d_tx["gasPrice"] = str(tx_rcp.gas_price)
+                d_tx["input"] = tx_rcp.input
+                d_tx["receipt"] = True
+                d_tx["processed"] = False
+                d_tx["gas_used"] = tx_rcp.gas_used
+                d_tx["confirmations"] = tx_rcp.confirmations
+                d_tx["timestamp"] = tx_rcp.timestamp
+                d_tx["logs"] = tx_rcp.logs
+                d_tx["status"] = tx_rcp.status
+                d_tx["createdAt"] = datetime.datetime.now()
+                d_tx["lastUpdatedAt"] = datetime.datetime.now()
+
+                post_id = collection_raw_transactions.find_one_and_update(
+                    {"hash": str(tx_rcp.txid)},
+                    {"$set": d_tx},
+                    upsert=True)
+
+
+        # # get block and full transactions
+        # f_block = chain.get_block(current_block)
+        # all_transactions = f_block['transactions']
+        #
+        # # From MOC Contract transactions
+        # moc_transactions, d_moc_transactions = filter_transactions(all_transactions, moc_addresses)
+        #
+        # # get transactions receipts
+        # moc_transactions_receipts = transactions_receipt(moc_transactions)
+
+    def scan_moc_blocks_new(self,
+                            scan_transfer=True,
+                            task=None):
+
+        start_time = time.time()
+
+        # conect to mongo db
+        m_client = mongo_manager.connect()
+
+        # get the block recesion is a margin of problems to not get the inmediat new instead
+        # 2 older blocks from new.
+        config_blocks_recession = self.options['scan_moc_blocks']['blocks_recession']
+
+        # get last block from node compare 2 blocks older than new
+        last_block = network_manager.block_number - config_blocks_recession
+        log.info(">>> Last Block: {0}".format(last_block))
+
+        collection_moc_indexer = mongo_manager.collection_moc_indexer(m_client)
+        moc_index = collection_moc_indexer.find_one(sort=[("updatedAt", -1)])
+        last_block_indexed = 0
+        if moc_index:
+            if 'last_raw_tx_block' in moc_index:
+                last_block_indexed = moc_index['last_raw_tx_block']
+
+        log.info(">>> Last Block Indexed: {0}".format(last_block_indexed))
+
+        config_blocks_look_behind = self.options['scan_moc_blocks']['blocks_look_behind']
+        from_block = last_block - config_blocks_look_behind
+        if last_block_indexed > 0:
+            from_block = last_block_indexed + 1
+
+        log.info(">>> From Block: {0}".format(from_block))
+
+        if from_block >= last_block:
+            if self.debug_mode:
+                log.info("[1. Scan Blocks] Its not the time to run indexer no new blocks avalaible!")
+            return
+
+        to_block = last_block
+
+        if from_block > to_block:
+            log.error("[1. Scan Blocks] To block > from block!!??")
+            return
+
+        # block reference is the last block, is to compare to... except you specified in the settings
+        block_reference = last_block
+
+        # start with from block
+        current_block = from_block
+
+        if self.debug_mode:
+            log.info("[1. Scan Blocks] Starting to Scan Transactions [{0} / {1}]".format(from_block, to_block))
+
+        while current_block <= to_block:
+
+            self.scan_raw_tx(current_block, block_reference, m_client, scan_transfer=scan_transfer)
+
+            log.info("[1. Scan Blocks] OK [{0}] / [{1}]".format(current_block, to_block))
+            collection_moc_indexer.update_one({},
+                                              {'$set': {'last_raw_tx_block': current_block,
                                                         'updatedAt': datetime.datetime.now()}},
                                               upsert=True)
             # Go to next block

@@ -191,11 +191,11 @@ class MongoManager:
 
         return collection
 
-    def collection_filtered_transactions(self, client, create=True):
+    def collection_raw_transactions(self, client, create=False, start_index=True):
 
         mongo_db = self.db
         db = client[mongo_db]
-        col_name = 'filtered_transactions'
+        col_name = 'raw_transactions'
 
         if create:
             schema = {
@@ -253,9 +253,12 @@ class MongoManager:
                 }
             }
             result = db.create_collection(col_name, validator=schema)
-            result.create_index([('blockNumber', pymongo.DESCENDING)], unique=False)
 
         collection = db[col_name]
+
+        # index creation
+        if start_index:
+            collection.create_index([('blockNumber', pymongo.ASCENDING)], unique=False)
 
         return collection
 

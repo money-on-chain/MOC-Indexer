@@ -18,6 +18,9 @@ from indexer.moc import ScanBlocks, \
 from .tasks_manager import TasksManager
 from .logger import log
 from .utils import aws_put_metric_heart_beat
+from .scan_raw_txs import ScanRawTxs
+from .scan_events_txs import ScanEventsTxs
+
 
 __VERSION__ = '2.1.0'
 
@@ -69,6 +72,9 @@ class MoCIndexerTasks(TasksManager, JobsIndexer):
 
         # connect and init contracts
         self.connect()
+
+        # Get addresses
+        self.moc_addresses = self.moc_contract_addresses()
 
         # initialize mongo db
         mongo_manager.set_connection(uri=self.options['mongo']['uri'], db=self.options['mongo']['db'])
@@ -191,6 +197,24 @@ class MoCIndexerTasks(TasksManager, JobsIndexer):
 
         return moc_addresses
 
+    def map_contract_addresses(self):
+
+        map_contracts = dict()
+        map_contracts["MoC"] = str.lower(self.contract_MoC.address())
+        map_contracts["MoCSettlement"] = str.lower(self.contract_MoC.sc_moc_settlement.address())
+        map_contracts["MoCExchange"] = str.lower(self.contract_MoC.sc_moc_exchange.address())
+        map_contracts["BProToken"] = str.lower(self.contract_MoC.sc_moc_bpro_token.address())
+        map_contracts["DoCToken"] = str.lower(self.contract_MoC.sc_moc_doc_token.address())
+        map_contracts["MoCState"] = str.lower(self.contract_MoC.sc_moc_state.address())
+        map_contracts["MoCInrate"] = str.lower(self.contract_MoC.sc_moc_inrate.address())
+        map_contracts["MoCMedianizer"] = str.lower(self.contract_MoCMedianizer.address())
+        map_contracts["MoCVendors"] = str.lower(self.contract_MoC.sc_moc_vendors.address())
+        map_contracts["MoCToken"] = str.lower(self.contract_MoC.sc_moc_moc_token.address())
+        if self.app_mode == 'RRC20':
+            map_contracts["ReserveToken"] = str.lower(self.contract_ReserveToken.address())
+
+        return map_contracts
+
     def task_scan_moc_blocks(self, task=None):
 
         return self.scan_moc_blocks(task=task)
@@ -248,21 +272,33 @@ class MoCIndexerTasks(TasksManager, JobsIndexer):
         aws_put_metric_heart_beat(0)
 
         # set max workers
-        self.max_workers = 4
+        self.max_workers = 1
 
         # Reconnect on lost chain
         log.info("Jobs add: 99. Reconnect on lost chain")
         self.add_task(self.task_reconnect_on_lost_chain, args=[], kwargs={'exit_on_error': True}, wait=180, timeout=180)
 
-        # 1. Scan Blocks
+        # # 1. Scan Blocks
+        # if 'scan_moc_blocks' in self.options['tasks']:
+        #     log.info("Jobs add: 1. Scan Raw Txs")
+        #     interval = self.options['tasks']['scan_moc_blocks']['interval']
+        #     scan_raw_txs = ScanRawTxs(self.options, self.moc_addresses)
+        #     self.add_task(scan_raw_txs.on_task,
+        #                   args=[],
+        #                   wait=interval,
+        #                   timeout=180,
+        #                   task_name='1. Scan Raw Txs')
+
+        # 1. Scan Events Txs
         if 'scan_moc_blocks' in self.options['tasks']:
-            log.info("Jobs add: 1. Scan Blocks")
+            log.info("Jobs add: 1. Scan Events Txs")
             interval = self.options['tasks']['scan_moc_blocks']['interval']
-            self.add_task(self.task_scan_moc_blocks,
+            scan_events_txs = ScanEventsTxs(self.options, self.app_mode, self.map_contract_addresses())
+            self.add_task(scan_events_txs.on_task,
                           args=[],
                           wait=interval,
                           timeout=180,
-                          task_name='1. Scan Blocks')
+                          task_name='1. Scan Events Txs')
 
         # # 2. Scan Prices
         # if 'scan_moc_prices' in self.options['tasks']:

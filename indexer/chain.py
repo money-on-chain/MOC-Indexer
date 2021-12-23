@@ -1,6 +1,4 @@
-
 from web3 import Web3
-from web3.types import BlockData
 from web3.exceptions import TransactionNotFound
 
 from hexbytes import HexBytes
@@ -44,34 +42,47 @@ def get_transaction(txid: Union[str, bytes], required_confs=1) -> TransactionRec
     return TransactionReceipt(txid, silent=True, required_confs=required_confs)
 
 
-def transactions_receipt(transactions):
+def transactions_receipt(transactions, index_status=Status.Confirmed, index_min_confirmation=1):
+    """ Get transaction receipt by default only confirmed and 1 block confirmation"""
+
     l_tx_receipt = list()
     for tx in transactions:
         try:
-            tx_receipt = get_transaction(Web3.toHex(tx['hash']))
+            tx_receipt = get_transaction(Web3.toHex(tx['hash']), required_confs=index_min_confirmation)
         except TransactionNotFound:
             log.error("No transaction receipt for hash: [{0}]".format(
                 Web3.toHex(tx['hash'])))
             tx_receipt = None
         if tx_receipt:
-            if tx_receipt.status == Status.Confirmed:
+            if tx_receipt.status == index_status and tx_receipt.confirmations >= index_min_confirmation:
                 l_tx_receipt.append(tx_receipt)
 
     return l_tx_receipt
 
 
-class ChainBase:
+def block_filtered_transactions(block_number: int, full_transactions=True, filter_tx=None, index_min_confirmation=1):
+    """ Get only interested transactions"""
 
-    def __init__(self, filter_tx):
-        self.filter_tx = filter_tx
+    # get block and full transactions
+    f_block = web3.eth.get_block(block_number, full_transactions=full_transactions)
 
-    def block_moc_transactions(self, block_number: int, full_transactions=True) -> BlockData:
+    # Filter to only tx
+    fil_transactions, d_fil_transactions = filter_transactions(f_block['transactions'], filter_tx)
 
-        # get block and full transactions
-        f_block = web3.eth.get_block(block_number, full_transactions=full_transactions)
+    # get transactions receipts
+    fil_transactions_receipts = transactions_receipt(fil_transactions, index_min_confirmation=index_min_confirmation)
 
-        # Filter to only tx From MOC Contracts and tokens
-        moc_transactions, d_moc_transactions = filter_transactions(f_block['transactions'], self.filter_tx)
+    txs = dict()
+    txs['txs'] = fil_transactions
+    txs['d_txs'] = d_fil_transactions
+    txs['receipts'] = fil_transactions_receipts
 
-        # get transactions receipts
-        moc_transactions_receipts = transactions_receipt(moc_transactions)
+    return txs
+
+
+class ChainBlock:
+    def __init__(self,
+                 block_number,
+                 last_block_number):
+        self.block_number = block_number
+        self.last_block_number = last_block_number
