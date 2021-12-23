@@ -417,12 +417,12 @@ class IndexSettlementCompleted(BaseIndexEvent):
         collection_tx = mongo_manager.collection_transaction(self.m_client)
 
         # remove all RedeemRequestAlter
-        collection_tx.remove({"event": "RedeemRequestAlter",
+        collection_tx.delete_many({"event": "RedeemRequestAlter",
                               "blockHeight": {"$lte": self.block_height}})
 
         # also delete with created at < 31 days
         old_records = self.block_ts - datetime.timedelta(days=31)
-        collection_tx.remove({"event": "RedeemRequestAlter",
+        collection_tx.delete_many({"event": "RedeemRequestAlter",
                               "createdAt": {"$lte": old_records}})
 
     def on_event(self, tx_event, log_index=None):

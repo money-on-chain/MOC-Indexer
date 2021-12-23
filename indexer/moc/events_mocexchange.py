@@ -574,7 +574,7 @@ class IndexStableTokenRedeem(BaseIndexEvent):
         self.parent.update_balance_address(self.m_client, d_tx["address"], self.block_height)
 
         # Update the queue operation to delete
-        collection_tx.remove({'address': d_tx["address"], 'event': 'QueueDOC'})
+        collection_tx.delete_many({'address': d_tx["address"], 'event': 'QueueDOC'})
 
         return d_tx
 
