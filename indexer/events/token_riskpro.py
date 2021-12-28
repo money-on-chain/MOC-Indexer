@@ -13,16 +13,24 @@ class IndexRISKPROTransfer(BaseIndexEvent):
 
     name = 'Transfer'
 
+    def __init__(self, options, app_mode, moc_contract):
+
+        self.options = options
+        self.app_mode = app_mode
+        self.moc_contract = moc_contract
+
+        super().__init__(options, app_mode)
+
     def index_event(self, m_client, parse_receipt, tx_event):
 
         token_involved = 'RISKPRO'
 
         # status of tx
-        status, confirmation_time = self.status_tx()
+        status, confirmation_time = self.status_tx(parse_receipt)
 
         address_from_contract = '0x0000000000000000000000000000000000000000'
 
-        address_not_allowed = [str.lower(address_from_contract), str.lower(self.moc_address)]
+        address_not_allowed = [str.lower(address_from_contract), str.lower(self.moc_contract)]
         if str.lower(tx_event["from"]) in address_not_allowed or \
                 str.lower(tx_event["to"]) in address_not_allowed:
             # Transfer from our Contract we dont add because already done

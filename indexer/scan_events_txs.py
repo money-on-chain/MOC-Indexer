@@ -58,10 +58,10 @@ class ScanEventsTxs:
             "FreeStableTokenRedeem": IndexFreeStableTokenRedeem(self.options, self.app_mode)
         }
         d_event[self.map_contract_addresses["BProToken"]] = {
-            "Transfer": ""#IndexRISKPROTransfer(self.options, self.app_mode)
+            "Transfer": IndexRISKPROTransfer(self.options, self.app_mode, self.map_contract_addresses["MoC"])
         }
         d_event[self.map_contract_addresses["DoCToken"]] = {
-            "Transfer": ""#IndexSTABLETransfer(self.options, self.app_mode)
+            "Transfer": IndexSTABLETransfer(self.options, self.app_mode, self.map_contract_addresses["MoC"])
         }
         d_event[self.map_contract_addresses["MoCState"]] = {
             "StateTransition": IndexStateTransition(self.options, self.app_mode)
@@ -73,14 +73,17 @@ class ScanEventsTxs:
         d_event[self.map_contract_addresses["MoCVendors"]] = {
             "VendorReceivedMarkup": ""
         }
+        d_event[self.map_contract_addresses["MoCBProxManager"]] = {
+            "BucketMovement": ""
+        }
         d_event[self.map_contract_addresses["MoCToken"]] = {
             "Transfer": "",
-            "Approval": "" #IndexApprovalMoCToken(self.options, self.app_mode)
+            "Approval": IndexApprovalMoCToken(self.options, self.app_mode, self.map_contract_addresses["MoC"])
         }
         if self.app_mode == 'RRC20':
             d_event[self.map_contract_addresses["ReserveToken"]] = {
-                "Transfer": "", #IndexRESERVETransfer(self.options, self.app_mode),
-                "Approval": "" #IndexApproval(self.options, self.app_mode)
+                "Transfer": IndexRESERVETransfer(self.options, self.app_mode, self.map_contract_addresses["MoC"]),
+                "Approval": IndexApproval(self.options, self.app_mode, self.map_contract_addresses["MoC"])
             }
 
         return d_event

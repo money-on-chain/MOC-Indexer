@@ -134,6 +134,35 @@ def insert_update_balance_address(m_client, account_address):
     return post_id
 
 
+def stable_balances_from_address(contract_loaded, address, block_identifier: BlockIdentifier = 'latest'):
+
+    doc_token = contract_loaded["DoCToken"]
+
+    d_user_balance = OrderedDict()
+    d_user_balance["docBalance"] = str(doc_token.sc.balanceOf(
+        address,
+        block_identifier=block_identifier))
+
+    return d_user_balance
+
+
+def riskprox_balances_from_address(contract_loaded,
+                                   address,
+                                   block_identifier: BlockIdentifier = 'latest'):
+
+    moc = contract_loaded["MoC"]
+
+    d_user_balance = OrderedDict()
+
+    d_user_balance["bprox2Balance"] = str(
+        moc.sc.bproxBalanceOf(
+            BUCKET_X2,
+            address,
+            block_identifier=block_identifier))
+
+    return d_user_balance
+
+
 class Balances:
 
 

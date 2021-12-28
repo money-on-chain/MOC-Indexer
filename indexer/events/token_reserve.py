@@ -11,11 +11,19 @@ class IndexRESERVETransfer(BaseIndexEvent):
 
     name = 'Transfer'
 
+    def __init__(self, options, app_mode, moc_contract):
+
+        self.options = options
+        self.app_mode = app_mode
+        self.moc_contract = moc_contract
+
+        super().__init__(options, app_mode)
+
     def index_event(self, m_client, parse_receipt, tx_event):
 
         address_from_contract = '0x0000000000000000000000000000000000000000'
 
-        address_not_allowed = [str.lower(address_from_contract), str.lower(self.moc_address)]
+        address_not_allowed = [str.lower(address_from_contract), str.lower(self.moc_contract)]
         if str.lower(tx_event["from"]) in address_not_allowed or \
                 str.lower(tx_event["to"]) in address_not_allowed:
             # Transfer from our Contract we dont add because already done
@@ -66,20 +74,26 @@ class IndexApproval(BaseIndexEvent):
 
     name = 'Approval'
 
+    def __init__(self, options, app_mode, moc_contract):
+
+        self.options = options
+        self.app_mode = app_mode
+        self.moc_contract = moc_contract
+
+        super().__init__(options, app_mode)
+
     def index_event(self, m_client, parse_receipt, tx_event):
 
         user_address = tx_event["owner"]
         spender_address = tx_event["spender"]
         block_identifier = parse_receipt["blockNumber"]
 
-        if str.lower(spender_address) not in [str.lower(self.moc_address)]:
+        if str.lower(spender_address) not in [str.lower(self.moc_contract)]:
             # Approval is not from our contract
             return
 
-        self.parent.update_user_state_reserve(
-            user_address,
-            m_client,
-            block_identifier=block_identifier)
+        # Insert as pending to update user balances
+        insert_update_balance_address(m_client, user_address)
 
     def on_event(self, m_client, parse_receipt):
         """ Event """

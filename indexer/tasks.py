@@ -242,16 +242,19 @@ class MoCIndexerTasks(TasksManager):
         #                   timeout=180,
         #                   task_name='1. Scan Raw Txs')
 
-        # # 1. Scan Events Txs
-        # if 'scan_moc_blocks' in self.options['tasks']:
-        #     log.info("Jobs add: 1. Scan Events Txs")
-        #     interval = self.options['tasks']['scan_moc_blocks']['interval']
-        #     scan_events_txs = ScanEventsTxs(self.options, self.app_mode, self.contracts_addresses)
-        #     self.add_task(scan_events_txs.on_task,
-        #                   args=[],
-        #                   wait=interval,
-        #                   timeout=180,
-        #                   task_name='1. Scan Events Txs')
+        # 1. Scan Events Txs
+        if 'scan_moc_blocks' in self.options['tasks']:
+            log.info("Jobs add: 1. Scan Events Txs")
+            interval = self.options['tasks']['scan_moc_blocks']['interval']
+            scan_events_txs = ScanEventsTxs(
+                self.options,
+                self.app_mode,
+                self.contracts_addresses)
+            self.add_task(scan_events_txs.on_task,
+                          args=[],
+                          wait=interval,
+                          timeout=180,
+                          task_name='1. Scan Events Txs')
 
         # # 2. Scan Prices
         # if 'scan_moc_prices' in self.options['tasks']:

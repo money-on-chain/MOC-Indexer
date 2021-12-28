@@ -11,7 +11,7 @@ from moneyonchain.moc import MoCSettlementRedeemRequestAlter, \
 
 from indexer.mongo_manager import mongo_manager
 from indexer.logger import log
-from indexer.moc_balances import insert_update_balance_address
+from indexer.moc_balances import insert_update_balance_address, riskprox_balances_from_address
 from .events import BaseIndexEvent
 
 
@@ -314,7 +314,7 @@ class IndexSettlementDeleveraging(BaseIndexEvent):
 
         for user_riskprox in l_users_riskprox:
             try:
-                d_user_balances = self.parent.riskprox_balances_from_address(
+                d_user_balances = riskprox_balances_from_address(
                     user_riskprox["address"],
                     prior_block_to_deleveraging)
             except:

@@ -6,7 +6,8 @@ from moneyonchain.moc import MoCBucketLiquidation, MoCContractLiquidated
 
 from indexer.mongo_manager import mongo_manager
 from indexer.logger import log
-from indexer.moc_balances import insert_update_balance_address
+from indexer.moc_balances import insert_update_balance_address, stable_balances_from_address, \
+    riskprox_balances_from_address
 from .events import BaseIndexEvent
 
 
@@ -52,8 +53,8 @@ class IndexBucketLiquidation(BaseIndexEvent):
         l_transactions = list()
         for user_riskprox in l_users_riskprox:
             try:
-                d_user_balances = self.parent.riskprox_balances_from_address(user_riskprox["address"],
-                                                                      prior_block_to_liquidation)
+                d_user_balances = riskprox_balances_from_address(user_riskprox["address"],
+                                                                 prior_block_to_liquidation)
             except:
                 continue
 
@@ -150,8 +151,8 @@ class IndexContractLiquidated(BaseIndexEvent):
         l_transactions = list()
         for user_stable in l_users_stable:
             try:
-                d_user_balances = self.parent.stable_balances_from_address(user_stable["address"],
-                                                                           prior_block_to_liquidation)
+                d_user_balances = stable_balances_from_address(user_stable["address"],
+                                                               prior_block_to_liquidation)
             except:
                 continue
 
