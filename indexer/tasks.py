@@ -5,7 +5,7 @@ from moneyonchain.networks import network_manager, accounts
 from moneyonchain.moc import MoC, MoCConnector, MoCState, MoCInrate, MoCSettlement
 from moneyonchain.rdoc import RDOCMoC, RDOCMoCConnector, RDOCMoCState, RDOCMoCInrate, RDOCMoCSettlement
 from moneyonchain.medianizer import MoCMedianizer, RDOCMoCMedianizer
-from moneyonchain.tokens import BProToken
+from moneyonchain.tokens import BProToken, DoCToken, StableToken, RiskProToken, MoCToken
 from moneyonchain.multicall import Multicall2
 
 from indexer.mongo_manager import mongo_manager
@@ -19,6 +19,8 @@ from .scan_moc_prices import ScanMoCPrices
 from .scan_moc_state import ScanMoCState
 from .scan_moc_state_status import ScanMoCStateStatus
 from .scan_transaction_status import ScanTransactionStatus
+from .scan_moc_user import ScanUser
+from .scan_utils import BlockchainUtils
 
 
 __VERSION__ = '3.0.0'
@@ -35,7 +37,7 @@ class MoCIndexerTasks(TasksManager):
         self.options = app_config
         self.config_network = config_net
         self.connection_network = connection_net
-        self.last_block = 0
+
         self.contracts_loaded = dict()
 
         self.app_mode = self.options['networks'][self.config_network]['app_mode']
@@ -113,49 +115,6 @@ class MoCIndexerTasks(TasksManager):
         #     address_bpro_token = self.options['networks'][self.config_network]['addresses']['BProToken']
         #     self.contract_MoC_BProToken = BProToken(network_manager, contract_address=address_bpro_token).from_abi()
 
-    def reconnect_on_lost_chain(self, exit_on_error=False, task=None):
-
-        block = network_manager.block_number
-
-        if not self.last_block:
-            log.info("Task :: Reconnect on lost chain :: Ok :: [{0}/{1}]".format(
-                self.last_block, block))
-            last_block = block
-
-            return last_block
-
-        if block <= self.last_block:
-            # this means no new blocks from the last call,
-            # so this means a halt node, try to reconnect.
-
-            # this means no new blocks from the last call,
-            # so this means a halt node, try to reconnect.
-
-            log.error("Task :: Reconnect on lost chain :: "
-                      "[ERROR] :: Same block from the last time! Terminate Task Manager! [{0}/{1}]".format(
-                        self.last_block, block))
-
-            # Put alarm in aws
-            aws_put_metric_heart_beat(1)
-
-            if exit_on_error:
-                # terminate all tasks
-                return dict(shutdown=True)
-
-            # first disconnect
-            network_manager.disconnect()
-
-            # and then reconnect all again
-            self.connect()
-
-        log.info("Task :: Reconnect on lost chain :: Ok :: [{0}/{1}]".format(
-            self.last_block, block))
-
-        # save the last block
-        self.last_block = block
-
-        return block
-
     def connector_addresses(self):
         """ Get contract address to use later """
 
@@ -199,6 +158,12 @@ class MoCIndexerTasks(TasksManager):
             contract_moc_settlement = RDOCMoCSettlement(
                 network_manager,
                 contract_address=contracts_addresses['MoCSettlement']).from_abi()
+            contract_bpro_token = RiskProToken(
+                network_manager,
+                contract_address=contracts_addresses['BProToken']).from_abi()
+            contract_doc_token = StableToken(
+                network_manager,
+                contract_address=contracts_addresses['DoCToken']).from_abi()
         elif self.app_mode == 'MoC':
             contract_moc_state = MoCState(
                 network_manager,
@@ -209,12 +174,24 @@ class MoCIndexerTasks(TasksManager):
             contract_moc_settlement = MoCSettlement(
                 network_manager,
                 contract_address=contracts_addresses['MoCSettlement']).from_abi()
+            contract_bpro_token = BProToken(
+                network_manager,
+                contract_address=contracts_addresses['BProToken']).from_abi()
+            contract_doc_token = DoCToken(
+                network_manager,
+                contract_address=contracts_addresses['DoCToken']).from_abi()
         else:
             raise Exception("Not valid APP Mode")
+
+        # Load MoC Token
+        contract_moc_token = MoCToken(
+            network_manager,
+            contract_address=contract_moc_state.moc_token()).from_abi()
 
         contracts_addresses['MoCMedianizer'] = contract_moc_state.price_provider()
         contracts_addresses['MoCToken'] = contract_moc_state.moc_token()
         contracts_addresses['MoCVendors'] = contract_moc_state.moc_vendors()
+        contracts_addresses['Multicall2'] = '0xaf7be1ef9537018feda5397d9e3bb9a1e4e27ac8'
 
         if 'BProToken' in self.options['networks'][self.config_network]['addresses']:
             contracts_addresses['MoC_BProToken'] = self.options['networks'][self.config_network]['addresses']['BProToken']
@@ -228,17 +205,16 @@ class MoCIndexerTasks(TasksManager):
         self.contracts_loaded["MoCState"] = contract_moc_state
         self.contracts_loaded["MoCInrate"] = contract_moc_inrate
         self.contracts_loaded["MoCSettlement"] = contract_moc_settlement
+        self.contracts_loaded["BProToken"] = contract_bpro_token
+        self.contracts_loaded["DoCToken"] = contract_doc_token
+        self.contracts_loaded["MoCToken"] = contract_moc_token
 
+        # Multicall
         self.contracts_loaded["Multicall2"] = Multicall2(
             network_manager,
-            contract_address='0xaf7be1ef9537018feda5397d9e3bb9a1e4e27ac8').from_abi()
+            contract_address=contracts_addresses['Multicall2']).from_abi()
 
         return contracts_addresses
-
-    def task_reconnect_on_lost_chain(self, exit_on_error=False, task=None):
-        """ Task reconnect when lost connection on chain """
-
-        return self.reconnect_on_lost_chain(exit_on_error=exit_on_error, task=None)
 
     def schedule_tasks(self):
 
@@ -252,7 +228,8 @@ class MoCIndexerTasks(TasksManager):
 
         # Reconnect on lost chain
         log.info("Jobs add: 99. Reconnect on lost chain")
-        self.add_task(self.task_reconnect_on_lost_chain, args=[], kwargs={'exit_on_error': True}, wait=180, timeout=180)
+        task_reconnect_on_lost_chain = BlockchainUtils(self.options, self.config_network, self.connection_network)
+        self.add_task(task_reconnect_on_lost_chain.on_task, args=[], wait=180, timeout=180)
 
         # # 1. Scan Blocks
         # if 'scan_moc_blocks' in self.options['tasks']:
@@ -304,20 +281,20 @@ class MoCIndexerTasks(TasksManager):
         #                   timeout=180,
         #                   task_name='3. Scan Moc State')
 
-        # 4. Scan Moc Status
-        if 'scan_moc_status' in self.options['tasks']:
-            log.info("Jobs add: 4. Scan Transactions Status")
-            interval = self.options['tasks']['scan_moc_status']['interval']
-            task_scan_transaction_status = ScanTransactionStatus(
-                self.options,
-                self.app_mode,
-                self.contracts_loaded,
-                self.contracts_addresses)
-            self.add_task(task_scan_transaction_status.on_task,
-                          args=[],
-                          wait=interval,
-                          timeout=180,
-                          task_name='4. Scan Transactions Status')
+        # # 4. Scan Moc Status
+        # if 'scan_moc_status' in self.options['tasks']:
+        #     log.info("Jobs add: 4. Scan Transactions Status")
+        #     interval = self.options['tasks']['scan_moc_status']['interval']
+        #     task_scan_transaction_status = ScanTransactionStatus(
+        #         self.options,
+        #         self.app_mode,
+        #         self.contracts_loaded,
+        #         self.contracts_addresses)
+        #     self.add_task(task_scan_transaction_status.on_task,
+        #                   args=[],
+        #                   wait=interval,
+        #                   timeout=180,
+        #                   task_name='4. Scan Transactions Status')
         #
         # # 5. Scan MocState Status
         # if 'scan_moc_state_status' in self.options['tasks']:
@@ -338,7 +315,12 @@ class MoCIndexerTasks(TasksManager):
         # if 'scan_user_state_update' in self.options['tasks']:
         #     log.info("Jobs add: 6. Scan User State Update")
         #     interval = self.options['tasks']['scan_user_state_update']['interval']
-        #     self.add_task(self.task_scan_user_state_update,
+        #     task_scan_user_state_update = ScanUser(
+        #         self.options,
+        #         self.app_mode,
+        #         self.contracts_loaded,
+        #         self.contracts_addresses)
+        #     self.add_task(task_scan_user_state_update.on_task,
         #                   args=[],
         #                   wait=interval,
         #                   timeout=180,
@@ -348,7 +330,8 @@ class MoCIndexerTasks(TasksManager):
         # if 'scan_moc_blocks_not_processed' in self.options['tasks']:
         #     log.info("Jobs add: 7. Scan Blocks not processed")
         #     interval = self.options['tasks']['scan_moc_blocks_not_processed']['interval']
-        #     self.add_task(self.task_scan_moc_blocks_not_processed,
+        #     task_scan_moc_blocks_not_processed = ScanEventsTxs(self.options, self.app_mode, self.contracts_addresses)
+        #     self.add_task(task_scan_moc_blocks_not_processed.on_task_not_processed,
         #                   args=[],
         #                   wait=interval,
         #                   timeout=180,

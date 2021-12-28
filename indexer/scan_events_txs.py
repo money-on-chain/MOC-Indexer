@@ -1,4 +1,5 @@
 import time
+import datetime
 
 from brownie.network.event import _decode_logs
 
@@ -159,5 +160,34 @@ class ScanEventsTxs:
         duration = time.time() - start_time
         log.info("[1. Scan Events Txs] Processed: [{0}] Done! [{1} seconds]".format(count, duration))
 
+    def scan_events_not_processed_txs(self, task=None):
+
+        start_time = time.time()
+
+        # connect to mongo db
+        m_client = mongo_manager.connect()
+
+        collection_raw_transactions = mongo_manager.collection_raw_transactions(m_client)
+
+        # we need to query tx with processLogs=None and in the last 60 minutes
+        only_new_ones = datetime.datetime.now() - datetime.timedelta(minutes=10)
+        raw_txs = collection_raw_transactions.find({
+            "processed": True,
+            "processLogs": None,
+            "status": "confirmed",
+            "createdAt": {"$gte": only_new_ones}}, sort=[("blockNumber", 1)])
+
+        count = 0
+        if raw_txs:
+            for raw_tx in raw_txs:
+                count += 1
+                self.process_logs(m_client, raw_tx)
+
+        duration = time.time() - start_time
+        log.info("[7. Scan Blocks not processed] Done! Processed: [{0}] [{1} seconds]".format(count, duration))
+
     def on_task(self, task=None):
         self.scan_events_txs(task=task)
+
+    def on_task_not_processed(self, task=None):
+        self.scan_events_not_processed_txs(task=task)
