@@ -6,6 +6,7 @@ from moneyonchain.moc import MoCBucketLiquidation, MoCContractLiquidated
 
 from indexer.mongo_manager import mongo_manager
 from indexer.logger import log
+from indexer.moc_balances import insert_update_balance_address
 from .events import BaseIndexEvent
 
 
@@ -73,8 +74,8 @@ class IndexBucketLiquidation(BaseIndexEvent):
                     d_tx["amount"],
                     tx_hash))
 
-                # update user balances
-                #self.parent.update_balance_address(self.m_client, d_tx["address"], self.block_height)
+                # Insert as pending to update user balances
+                insert_update_balance_address(m_client, d_tx["address"])
 
                 l_transactions.append(d_tx)
 
@@ -171,8 +172,8 @@ class IndexContractLiquidated(BaseIndexEvent):
                     d_tx["amount"],
                     tx_hash))
 
-                # update user balances
-                #self.parent.update_balance_address(self.m_client, d_tx["address"], self.block_height)
+                # Insert as pending to update user balances
+                insert_update_balance_address(m_client, d_tx["address"])
 
                 l_transactions.append(d_tx)
 

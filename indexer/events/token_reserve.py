@@ -3,6 +3,7 @@ from moneyonchain.moc import ERC20Approval
 
 from indexer.mongo_manager import mongo_manager
 from indexer.logger import log
+from indexer.moc_balances import insert_update_balance_address
 from .events import BaseIndexEvent
 
 
@@ -31,7 +32,8 @@ class IndexRESERVETransfer(BaseIndexEvent):
         )
 
         if exist_user:
-            self.parent.update_balance_address(m_client, tx_event["from"], parse_receipt['chain']['last_block'])
+            # Insert as pending to update user balances
+            insert_update_balance_address(m_client, tx_event["from"])
 
             log.info("Tx Transfer {0} From: [{1}] To: [{2}] Amount: {3}".format(
                 'RESERVE',
@@ -44,7 +46,8 @@ class IndexRESERVETransfer(BaseIndexEvent):
         )
 
         if exist_user:
-            self.parent.update_balance_address(m_client, tx_event["to"], parse_receipt['chain']['last_block'])
+            # Insert as pending to update user balances
+            insert_update_balance_address(m_client, tx_event["to"])
 
             log.info("Tx Transfer {0} From: [{1}] To: [{2}] Amount: {3}".format(
                 'RESERVE',

@@ -11,6 +11,7 @@ from moneyonchain.moc import MoCSettlementRedeemRequestAlter, \
 
 from indexer.mongo_manager import mongo_manager
 from indexer.logger import log
+from indexer.moc_balances import insert_update_balance_address
 from .events import BaseIndexEvent
 
 
@@ -117,15 +118,14 @@ class IndexRedeemRequestAlter(BaseIndexEvent):
             d_tx["amount"],
             tx_hash))
 
-        # update user balances
-        #info_balance = self.parent.update_balance_address(self.m_client, d_tx["address"],
-        #                                                  self.block_height)
+        # Insert as pending to update user balances
+        insert_update_balance_address(m_client, d_tx["address"])
 
         # QUEUE DOC
         # Is the operation of sending or cancel doc to queue is
         # always the absolute value
         # first we need to delete previous queue doc
-        # collection_tx.remove({'address': tx_event.redeemer, 'event': 'QueueDOC'})
+        # collection_tx.delete_many({'address': tx_event.redeemer, 'event': 'QueueDOC'})
         #
         # d_tx = OrderedDict()
         # d_tx["transactionHash"] = tx_hash
@@ -208,8 +208,8 @@ class IndexRedeemRequestProcessed(BaseIndexEvent):
             d_tx["amount"],
             tx_hash))
 
-        # update user balances
-        #self.parent.update_balance_address(self.m_client, d_tx["address"], self.block_height)
+        # Insert as pending to update user balances
+        insert_update_balance_address(m_client, d_tx["address"])
 
         return d_tx
 
@@ -350,9 +350,8 @@ class IndexSettlementDeleveraging(BaseIndexEvent):
                     d_tx["amount"],
                     tx_hash))
 
-                # update user balances
-                #self.parent.update_balance_address(self.m_client, d_tx["address"],
-                #                                   self.block_height)
+                # Insert as pending to update user balances
+                insert_update_balance_address(m_client, d_tx["address"])
 
                 l_transactions.append(d_tx)
 
@@ -411,12 +410,12 @@ class IndexSettlementCompleted(BaseIndexEvent):
         collection_tx = mongo_manager.collection_transaction(m_client)
 
         # remove all RedeemRequestAlter
-        collection_tx.remove({"event": "RedeemRequestAlter",
+        collection_tx.delete_many({"event": "RedeemRequestAlter",
                               "blockHeight": {"$lte": parse_receipt["blockNumber"]}})
 
         # also delete with created at < 31 days
         old_records = parse_receipt["blockNumber"] - datetime.timedelta(days=31)
-        collection_tx.remove({"event": "RedeemRequestAlter",
+        collection_tx.delete_many({"event": "RedeemRequestAlter",
                               "createdAt": {"$lte": old_records}})
 
     def on_event(self, m_client, parse_receipt):

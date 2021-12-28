@@ -20,6 +20,7 @@ from moneyonchain.rdoc import MoCExchangeRiskProMint as RDOCMoCExchangeRiskProMi
 
 from indexer.mongo_manager import mongo_manager
 from indexer.logger import log
+from indexer.moc_balances import insert_update_balance_address
 from .events import BaseIndexEvent
 
 
@@ -103,8 +104,8 @@ class IndexRiskProMint(BaseIndexEvent):
             d_tx["amount"],
             tx_hash))
 
-        # update user balances
-        #self.parent.update_balance_address(self.m_client, d_tx["address"], self.block_height)
+        # Insert as pending to update user balances
+        insert_update_balance_address(m_client, d_tx["address"])
 
         return d_tx
 
@@ -195,8 +196,8 @@ class IndexRiskProRedeem(BaseIndexEvent):
             d_tx["amount"],
             tx_hash))
 
-        # update user balances
-        #self.parent.update_balance_address(self.m_client, d_tx["address"], self.block_height)
+        # Insert as pending to update user balances
+        insert_update_balance_address(m_client, d_tx["address"])
 
         return d_tx
 
@@ -290,8 +291,8 @@ class IndexRiskProxMint(BaseIndexEvent):
             d_tx["amount"],
             tx_hash))
 
-        # update user balances
-        #self.parent.update_balance_address(self.m_client, d_tx["address"], self.block_height)
+        # Insert as pending to update user balances
+        insert_update_balance_address(m_client, d_tx["address"])
 
         return d_tx
 
@@ -388,8 +389,8 @@ class IndexRiskProxRedeem(BaseIndexEvent):
             d_tx["amount"],
             tx_hash))
 
-        # update user balances
-        #self.parent.update_balance_address(self.m_client, d_tx["address"], self.block_height)
+        # Insert as pending to update user balances
+        insert_update_balance_address(m_client, d_tx["address"])
 
         return d_tx
 
@@ -479,8 +480,8 @@ class IndexStableTokenMint(BaseIndexEvent):
             d_tx["amount"],
             tx_hash))
 
-        # update user balances
-        #self.parent.update_balance_address(self.m_client, d_tx["address"], self.block_height)
+        # Insert as pending to update user balances
+        insert_update_balance_address(m_client, d_tx["address"])
 
         return d_tx
 
@@ -567,11 +568,11 @@ class IndexStableTokenRedeem(BaseIndexEvent):
             d_tx["amount"],
             tx_hash))
 
-        # update user balances
-        #self.parent.update_balance_address(self.m_client, d_tx["address"], self.block_height)
+        # Insert as pending to update user balances
+        insert_update_balance_address(m_client, d_tx["address"])
 
         # Update the queue operation to delete
-        collection_tx.remove({'address': d_tx["address"], 'event': 'QueueDOC'})
+        collection_tx.delete_many({'address': d_tx["address"], 'event': 'QueueDOC'})
 
         return d_tx
 
@@ -666,8 +667,8 @@ class IndexFreeStableTokenRedeem(BaseIndexEvent):
             d_tx["amount"],
             tx_hash))
 
-        # update user balances
-        #self.parent.update_balance_address(self.m_client, d_tx["address"], self.block_height)
+        # Insert as pending to update user balances
+        insert_update_balance_address(m_client, d_tx["address"])
 
         return d_tx
 

@@ -34,7 +34,7 @@ class ScanUser(Balances):
             # udpate balance of address of the account on the last block height
             self.update_balance_address(m_client, user_update['account'], block_height)
 
-            collection_user_state_update.remove({'account': user_update['account']})
+            collection_user_state_update.delete_many({'account': user_update['account']})
 
             if self.debug_mode:
                 log.info("[6. Scan User State Update] UPDATING ACCOUNT BALANCE: {0} BLOCKHEIGHT: {1}".format(

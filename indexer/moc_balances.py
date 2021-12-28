@@ -117,6 +117,23 @@ def update_balance_address(m_client, contract_loaded, contract_addresses, accoun
     return d_user_balance
 
 
+def insert_update_balance_address(m_client, account_address):
+
+    # get collection user state update from mongo
+    collection_user_state_update = mongo_manager.collection_user_state_update(m_client)
+
+    user_update = dict()
+    user_update['account'] = account_address
+
+    # update or insert
+    post_id = collection_user_state_update.find_one_and_update(
+        {"account": account_address},
+        {"$set": user_update},
+        upsert=True)
+
+    return post_id
+
+
 class Balances:
 
 

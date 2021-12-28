@@ -6,6 +6,7 @@ from moneyonchain.moc import ERC20Transfer
 
 from indexer.mongo_manager import mongo_manager
 from indexer.logger import log
+from indexer.moc_balances import insert_update_balance_address
 from .events import BaseIndexEvent
 
 
@@ -67,7 +68,8 @@ class IndexSTABLETransfer(BaseIndexEvent):
                 {"$set": d_tx},
                 upsert=True)
 
-            self.parent.update_balance_address(m_client, d_tx["address"], parse_receipt['chain']['last_block'])
+            # Insert as pending to update user balances
+            insert_update_balance_address(m_client, d_tx["address"])
 
             log.info("Tx Transfer {0} From: [{1}] To: [{2}] Amount: {3}".format(
                 token_involved,
@@ -103,7 +105,8 @@ class IndexSTABLETransfer(BaseIndexEvent):
                 {"$set": d_tx},
                 upsert=True)
 
-            self.parent.update_balance_address(m_client, d_tx["address"], parse_receipt['chain']['last_block'])
+            # Insert as pending to update user balances
+            insert_update_balance_address(m_client, d_tx["address"])
 
             log.info("Tx Transfer {0} From: [{1}] To: [{2}] Amount: {3}".format(
                 token_involved,
