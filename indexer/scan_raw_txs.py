@@ -15,7 +15,7 @@ def index_raw_tx(block_number, last_block_number, m_client, filter_tx=None, debu
     """ Receipts from blockchain to Database"""
 
     if debug_mode:
-        log.info("[1. Scan Blocks] Starting to Scan RAW TX block number: [{0}] / [{1}]".format(
+        log.info("[1. Scan Raw Txs] Starting to Scan RAW TX block number: [{0}] / [{1}]".format(
             block_number, last_block_number))
 
     collection_raw_transactions = mongo_manager.collection_raw_transactions(m_client)
@@ -26,6 +26,7 @@ def index_raw_tx(block_number, last_block_number, m_client, filter_tx=None, debu
     log.info(receipts)
     log.info(filter_tx)
 
+    count = 0
     if receipts:
         for tx_rcp in receipts:
 
@@ -49,9 +50,12 @@ def index_raw_tx(block_number, last_block_number, m_client, filter_tx=None, debu
             d_tx["lastUpdatedAt"] = datetime.datetime.now()
 
             post_id = collection_raw_transactions.find_one_and_update(
-                {"hash": str(tx_rcp.txid)},
+                {"hash": str(tx_rcp.txid), "blockNumber": tx_rcp.block_number},
                 {"$set": d_tx},
                 upsert=True)
+            count += 1
+
+    return count
 
 
 def scan_raw_txs(options, filter_contracts, task=None):
@@ -100,12 +104,20 @@ def scan_raw_txs(options, filter_contracts, task=None):
     if debug_mode:
         log.info("[1. Scan Raw Txs] Starting to Scan Transactions [{0} / {1}]".format(from_block, to_block))
 
+    processed = 0
     while current_block <= to_block:
 
         # index our contracts only
-        index_raw_tx(current_block, last_block, m_client, filter_tx=filter_contracts, debug_mode=debug_mode)
+        processed = index_raw_tx(
+            current_block,
+            last_block,
+            m_client,
+            filter_tx=filter_contracts,
+            debug_mode=debug_mode)
 
-        log.info("[1. Scan Raw Txs] OK [{0}] / [{1}]".format(current_block, to_block))
+        if debug_mode:
+            log.info("[1. Scan Raw Txs] OK [{0}] / [{1}]".format(current_block, to_block))
+
         collection_moc_indexer.update_one({},
                                           {'$set': {'last_raw_tx_block': current_block,
                                                     'updatedAt': datetime.datetime.now()}},
@@ -114,7 +126,7 @@ def scan_raw_txs(options, filter_contracts, task=None):
         current_block += 1
 
     duration = time.time() - start_time
-    log.info("[1. Scan Raw Txs] Done! [{1} seconds]".format(current_block, duration))
+    log.info("[1. Scan Raw Txs] Done! Processed: [{0}] in [{1} seconds]".format(processed, duration))
 
 
 class ScanRawTxs:
