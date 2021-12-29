@@ -147,9 +147,6 @@ class ScanEventsTxs:
         # connect to mongo db
         m_client = mongo_manager.connect()
 
-        # debug mode
-        debug_mode = self.options['debug']
-
         collection_raw_transactions = mongo_manager.collection_raw_transactions(m_client)
 
         raw_txs = collection_raw_transactions.find({"processed": False}, sort=[("blockNumber", 1)])
@@ -160,8 +157,13 @@ class ScanEventsTxs:
                 count += 1
                 self.process_logs(m_client, raw_tx)
 
+                collection_raw_transactions.find_one_and_update(
+                    {"hash": raw_tx["hash"], "blockNumber": raw_tx["blockNumber"]},
+                    {"$set": {"processed": True}},
+                    upsert=False)
+
         duration = time.time() - start_time
-        log.info("[1. Scan Events Txs] Processed: [{0}] Done! [{1} seconds]".format(count, duration))
+        log.info("[2. Scan Events Txs] Processed: [{0}] Done! [{1} seconds]".format(count, duration))
 
     def scan_events_not_processed_txs(self, task=None):
 

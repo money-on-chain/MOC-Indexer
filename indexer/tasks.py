@@ -88,33 +88,6 @@ class MoCIndexerTasks(TasksManager):
         network_manager.connect(connection_network=self.connection_network,
                                 config_network=self.config_network)
 
-        # # add default account
-        # accounts.add('0xca751356c37a98109fd969d8e79b42d768587efc6ba35e878bc8c093ed95d8a9')
-        # self.vendor_account = self.options['vendor_account']
-        #
-        # if self.app_mode == "RRC20":
-        #     self.contract_MoC = RDOCMoC(
-        #         network_manager,
-        #         load_sub_contract=False).from_abi().contracts_discovery()
-        # else:
-        #     self.contract_MoC = MoC(
-        #         network_manager,
-        #         load_sub_contract=False).from_abi().contracts_discovery()
-        #
-        # if self.app_mode == "RRC20":
-        #     self.contract_MoCMedianizer = RDOCMoCMedianizer(
-        #         network_manager,
-        #         contract_address=self.contract_MoC.sc_moc_state.price_provider()).from_abi()
-        #     self.contract_ReserveToken = self.contract_MoC.sc_reserve_token
-        # else:
-        #     self.contract_MoCMedianizer = MoCMedianizer(
-        #         network_manager,
-        #         contract_address=self.contract_MoC.sc_moc_state.price_provider()).from_abi()
-        #
-        # if self.app_mode == "RRC20":
-        #     address_bpro_token = self.options['networks'][self.config_network]['addresses']['BProToken']
-        #     self.contract_MoC_BProToken = BProToken(network_manager, contract_address=address_bpro_token).from_abi()
-
     def connector_addresses(self):
         """ Get contract address to use later """
 
@@ -249,9 +222,9 @@ class MoCIndexerTasks(TasksManager):
         #                   task_name='1. Scan Raw Txs')
 
         # 1. Scan Events Txs
-        if 'scan_moc_blocks' in self.options['tasks']:
-            log.info("Jobs add: 1. Scan Events Txs")
-            interval = self.options['tasks']['scan_moc_blocks']['interval']
+        if 'scan_moc_events' in self.options['tasks']:
+            log.info("Jobs add: 2. Scan Events Txs")
+            interval = self.options['tasks']['scan_moc_events']['interval']
             scan_events_txs = ScanEventsTxs(
                 self.options,
                 self.app_mode,
@@ -260,11 +233,11 @@ class MoCIndexerTasks(TasksManager):
                           args=[],
                           wait=interval,
                           timeout=180,
-                          task_name='1. Scan Events Txs')
+                          task_name='2. Scan Events Txs')
 
         # # 2. Scan Prices
         # if 'scan_moc_prices' in self.options['tasks']:
-        #     log.info("Jobs add: 2. Scan MoC Prices")
+        #     log.info("Jobs add: 3. Scan MoC Prices")
         #     interval = self.options['tasks']['scan_moc_prices']['interval']
         #     task_scan_moc_prices = ScanMoCPrices(self.options,
         #                                          self.app_mode,
@@ -274,11 +247,11 @@ class MoCIndexerTasks(TasksManager):
         #                   args=[],
         #                   wait=interval,
         #                   timeout=180,
-        #                   task_name='2. Scan MoC Prices')
+        #                   task_name='3. Scan MoC Prices')
         #
         # # 3. Scan Moc State
         # if 'scan_moc_state' in self.options['tasks']:
-        #     log.info("Jobs add: 3. Scan Moc State")
+        #     log.info("Jobs add: 4. Scan Moc State")
         #     interval = self.options['tasks']['scan_moc_state']['interval']
         #     task_scan_moc_state = ScanMoCState(self.options,
         #                                        self.app_mode,
@@ -288,11 +261,11 @@ class MoCIndexerTasks(TasksManager):
         #                   args=[],
         #                   wait=interval,
         #                   timeout=180,
-        #                   task_name='3. Scan Moc State')
+        #                   task_name='4. Scan Moc State')
 
         # # 4. Scan Moc Status
         # if 'scan_moc_status' in self.options['tasks']:
-        #     log.info("Jobs add: 4. Scan Transactions Status")
+        #     log.info("Jobs add: 5. Scan Transactions Status")
         #     interval = self.options['tasks']['scan_moc_status']['interval']
         #     task_scan_transaction_status = ScanTransactionStatus(
         #         self.options,
@@ -303,11 +276,11 @@ class MoCIndexerTasks(TasksManager):
         #                   args=[],
         #                   wait=interval,
         #                   timeout=180,
-        #                   task_name='4. Scan Transactions Status')
+        #                   task_name='5. Scan Transactions Status')
         #
         # # 5. Scan MocState Status
         # if 'scan_moc_state_status' in self.options['tasks']:
-        #     log.info("Jobs add: 5. Scan MocState Status")
+        #     log.info("Jobs add: 6. Scan MocState Status")
         #     interval = self.options['tasks']['scan_moc_state_status']['interval']
         #     task_scan_moc_state_status = ScanMoCStateStatus(
         #         self.options,
@@ -318,11 +291,11 @@ class MoCIndexerTasks(TasksManager):
         #                   args=[],
         #                   wait=interval,
         #                   timeout=180,
-        #                   task_name='5. Scan MocState Status')
+        #                   task_name='6. Scan MocState Status')
         #
         # # 6. Scan User State Update
         # if 'scan_user_state_update' in self.options['tasks']:
-        #     log.info("Jobs add: 6. Scan User State Update")
+        #     log.info("Jobs add: 7. Scan User State Update")
         #     interval = self.options['tasks']['scan_user_state_update']['interval']
         #     task_scan_user_state_update = ScanUser(
         #         self.options,
@@ -333,18 +306,18 @@ class MoCIndexerTasks(TasksManager):
         #                   args=[],
         #                   wait=interval,
         #                   timeout=180,
-        #                   task_name='6. Scan User State Update')
+        #                   task_name='7. Scan User State Update')
         #
         # # 7. Scan Blocks not processed
         # if 'scan_moc_blocks_not_processed' in self.options['tasks']:
-        #     log.info("Jobs add: 7. Scan Blocks not processed")
+        #     log.info("Jobs add: 8. Scan Blocks not processed")
         #     interval = self.options['tasks']['scan_moc_blocks_not_processed']['interval']
         #     task_scan_moc_blocks_not_processed = ScanEventsTxs(self.options, self.app_mode, self.contracts_addresses)
         #     self.add_task(task_scan_moc_blocks_not_processed.on_task_not_processed,
         #                   args=[],
         #                   wait=interval,
         #                   timeout=180,
-        #                   task_name='7. Scan Blocks not processed')
+        #                   task_name='8. Scan Blocks not processed')
 
         # Set max workers
         self.max_tasks = len(self.tasks)

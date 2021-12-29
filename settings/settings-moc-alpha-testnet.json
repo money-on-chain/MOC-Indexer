@@ -7,9 +7,9 @@
   "timeout_wait": 300,
   "gas_price": 60000000,
   "debug": false,
-  "index_mode": "vendors",
   "tasks": {
     "scan_moc_blocks": {"interval":  10},
+    "scan_moc_events": {"interval":  10},
     "scan_moc_prices": {"interval":  15},
     "scan_moc_state": {"interval":  10},
     "scan_moc_status": {"interval":  10},
@@ -21,12 +21,6 @@
     "scan_moc_state_history": {"interval":  60},
     "scan_moc_status_history": {"interval":  60},
     "scan_moc_state_status_history": {"interval":  60}
-  },
-  "scan_moc_history": {
-    "from_block": 1105776,
-    "to_block": 1106533,
-    "force_start": true,
-    "blocks_recession": 1
   },
   "scan_moc_blocks": {
     "confirm_blocks": 10,
