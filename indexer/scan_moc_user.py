@@ -45,7 +45,8 @@ class ScanUser:
                                    self.contract_loaded,
                                    self.contract_addresses,
                                    user_update['account'],
-                                   block_height)
+                                   block_height,
+                                   app_mode=self.app_mode)
 
             collection_user_state_update.delete_many({'account': user_update['account']})
 

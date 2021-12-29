@@ -316,7 +316,8 @@ class IndexSettlementDeleveraging(BaseIndexEvent):
             try:
                 d_user_balances = riskprox_balances_from_address(
                     user_riskprox["address"],
-                    prior_block_to_deleveraging)
+                    prior_block_to_deleveraging,
+                    app_mode=self.app_mode)
             except:
                 continue
 

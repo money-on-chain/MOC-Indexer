@@ -5,7 +5,7 @@ from moneyonchain.networks import network_manager, accounts
 from moneyonchain.moc import MoC, MoCConnector, MoCState, MoCInrate, MoCSettlement
 from moneyonchain.rdoc import RDOCMoC, RDOCMoCConnector, RDOCMoCState, RDOCMoCInrate, RDOCMoCSettlement
 from moneyonchain.medianizer import MoCMedianizer, RDOCMoCMedianizer
-from moneyonchain.tokens import BProToken, DoCToken, StableToken, RiskProToken, MoCToken
+from moneyonchain.tokens import BProToken, DoCToken, StableToken, RiskProToken, MoCToken, ReserveToken
 from moneyonchain.multicall import Multicall2
 
 from indexer.mongo_manager import mongo_manager
@@ -164,6 +164,9 @@ class MoCIndexerTasks(TasksManager):
             contract_doc_token = StableToken(
                 network_manager,
                 contract_address=contracts_addresses['DoCToken']).from_abi()
+            self.contracts_loaded["ReserveToken"] = ReserveToken(
+                network_manager,
+                contract_address=contracts_addresses['ReserveToken']).from_abi()
         elif self.app_mode == 'MoC':
             contract_moc_state = MoCState(
                 network_manager,
@@ -191,10 +194,13 @@ class MoCIndexerTasks(TasksManager):
         contracts_addresses['MoCMedianizer'] = contract_moc_state.price_provider()
         contracts_addresses['MoCToken'] = contract_moc_state.moc_token()
         contracts_addresses['MoCVendors'] = contract_moc_state.moc_vendors()
-        contracts_addresses['Multicall2'] = '0xaf7be1ef9537018feda5397d9e3bb9a1e4e27ac8'
+        contracts_addresses['Multicall2'] = self.options['networks'][self.config_network]['addresses']['Multicall2']
 
         if 'BProToken' in self.options['networks'][self.config_network]['addresses']:
             contracts_addresses['MoC_BProToken'] = self.options['networks'][self.config_network]['addresses']['BProToken']
+            self.contracts_loaded["MoC_BProToken"] = BProToken(
+                network_manager,
+                contract_address=contracts_addresses['MoC_BProToken']).from_abi()
 
         # lower case contract addresses
         contracts_addresses = {k: v.lower() for k, v in contracts_addresses.items()}
