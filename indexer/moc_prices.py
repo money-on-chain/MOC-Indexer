@@ -8,7 +8,7 @@ BUCKET_X2 = '0x5832000000000000000000000000000000000000000000000000000000000000'
 BUCKET_C0 = '0x4330000000000000000000000000000000000000000000000000000000000000'
 
 
-def prices_from_sc(contract_loaded, contract_addresses, block_identifier: BlockIdentifier = 'latest'):
+def prices_from_sc(contract_loaded, contract_addresses, block_identifier: BlockIdentifier = 'latest', block_ts=None):
 
     d_price = OrderedDict()
 
@@ -31,9 +31,6 @@ def prices_from_sc(contract_loaded, contract_addresses, block_identifier: BlockI
     results = multicall.aggregate_multiple(list_aggregate, block_identifier=block_identifier)
 
     block_number = results[0]
-
-    # get block time from node
-    block_ts = network_manager.block_timestamp(block_number)
 
     d_price["blockHeight"] = block_number
     d_price["createdAt"] = block_ts

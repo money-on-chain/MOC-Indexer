@@ -28,10 +28,21 @@ class ScanEventsTxs:
         self.options = options
         self.app_mode = app_mode
         self.map_contract_addresses = map_contract_addresses
-        self.last_block = network_manager.block_number
-        self.block_ts = network_manager.block_timestamp(self.last_block)
         self.confirm_blocks = self.options['scan_moc_blocks']['confirm_blocks']
         self.map_events_contracts = self.map_events()
+
+        # update block info
+        self.last_block = network_manager.block_number
+        self.block_ts = network_manager.block_timestamp(self.last_block)
+
+    def update_info_last_block(self, m_client):
+
+        collection_moc_indexer = mongo_manager.collection_moc_indexer(m_client)
+        moc_index = collection_moc_indexer.find_one(sort=[("updatedAt", -1)])
+        if moc_index:
+            if 'last_block_number' in moc_index:
+                self.last_block = moc_index['last_block_number']
+                self.block_ts = moc_index['last_block_ts']
 
     def map_events(self):
 
@@ -99,6 +110,7 @@ class ScanEventsTxs:
         tx_receipt['gas_used'] = raw_tx['gas_used']
         tx_receipt['gas_price'] = int(raw_tx['gasPrice'])
         tx_receipt['timestamp'] = raw_tx['timestamp']
+        tx_receipt['createdAt'] = raw_tx['createdAt']
         tx_receipt['log_index'] = log_index
         tx_receipt['event'] = dict()
         tx_receipt['event'][event_name] = tx_event
@@ -154,6 +166,10 @@ class ScanEventsTxs:
         count = 0
         if raw_txs:
             for raw_tx in raw_txs:
+
+                # update block information
+                self.update_info_last_block(m_client)
+
                 count += 1
                 self.process_logs(m_client, raw_tx)
 
@@ -185,6 +201,9 @@ class ScanEventsTxs:
         count = 0
         if raw_txs:
             for raw_tx in raw_txs:
+                # update block information
+                self.update_info_last_block(m_client)
+
                 count += 1
                 self.process_logs(m_client, raw_tx)
 

@@ -41,7 +41,7 @@ class IndexSettlementStarted(BaseIndexEvent):
         #d_tx["btcxPrice"] = str(int(adjust_price * self.precision))
         d_tx["btcxPrice"] = str(tx_event["riskProxPrice"])
         d_tx["btcPrice"] = str(tx_event["reservePrice"])
-        d_tx["createdAt"] = parse_receipt['chain']['block_ts']
+        d_tx["createdAt"] = parse_receipt['createdAt']
         d_tx["processLogs"] = True
 
         if not exist_tx:
@@ -102,7 +102,7 @@ class IndexRedeemRequestAlter(BaseIndexEvent):
                 is_addition = False
 
         d_tx["isPositive"] = is_addition
-        d_tx["createdAt"] = parse_receipt['chain']['block_ts']
+        d_tx["createdAt"] = parse_receipt['createdAt']
 
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash,
@@ -192,7 +192,7 @@ class IndexRedeemRequestProcessed(BaseIndexEvent):
         gas_fee = parse_receipt["gas_used"] * Web3.fromWei(parse_receipt["gas_price"], 'ether')
         # d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         d_tx["processLogs"] = True
-        d_tx["createdAt"] = parse_receipt['chain']['block_ts']
+        d_tx["createdAt"] = parse_receipt['createdAt']
 
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash,
@@ -303,7 +303,7 @@ class IndexSettlementDeleveraging(BaseIndexEvent):
         # if self.app_mode != "RRC20":
         #    d_tx["gasFeeUSD"] = str(int(gas_fee * Web3.fromWei(tx_event.reservePrice, 'ether') * self.precision))
         d_tx["processLogs"] = True
-        d_tx["createdAt"] = parse_receipt['chain']['block_ts']
+        d_tx["createdAt"] = parse_receipt['createdAt']
 
         riskprox_price = Web3.fromWei(tx_event["riskProxPrice"], 'ether')
         reserve_price = Web3.fromWei(tx_event["reservePrice"], 'ether')
@@ -374,7 +374,7 @@ class IndexSettlementDeleveraging(BaseIndexEvent):
         d_tx_insert["deleveragingCount"] = 0
         d_tx_insert["btcxPrice"] = str(tx_event["riskProxPrice"])
         d_tx_insert["btcPrice"] = str(tx_event["reservePrice"])
-        d_tx_insert["createdAt"] = parse_receipt['chain']['block_ts']
+        d_tx_insert["createdAt"] = parse_receipt['createdAt']
 
         post_id = collection_tx.find_one_and_update(
             {"startBlockNumber": parse_receipt["blockNumber"]},

@@ -7,7 +7,7 @@ BUCKET_X2 = '0x5832000000000000000000000000000000000000000000000000000000000000'
 BUCKET_C0 = '0x4330000000000000000000000000000000000000000000000000000000000000'
 
 
-def state_status_from_sc(contract_loaded, contract_addresses, block_identifier: BlockIdentifier = 'latest'):
+def state_status_from_sc(contract_loaded, contract_addresses, block_identifier: BlockIdentifier = 'latest', block_ts=None):
 
     d_status = OrderedDict()
 
@@ -27,9 +27,6 @@ def state_status_from_sc(contract_loaded, contract_addresses, block_identifier: 
     results = multicall.aggregate_multiple(list_aggregate, block_identifier=block_identifier)
 
     block_number = results[0]
-
-    # get block time from node
-    block_ts = network_manager.block_timestamp(block_number)
 
     d_status["blockHeight"] = block_number
     d_status["createdAt"] = block_ts

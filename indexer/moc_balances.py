@@ -18,7 +18,8 @@ def balances_from_address(
         contract_addresses,
         addresses,
         block_identifier: BlockIdentifier = 'latest',
-        app_mode='MoC'):
+        app_mode='MoC',
+        block_ts=None):
 
     moc_token = contract_loaded["MoCToken"]
     moc_token_address = contract_addresses["MoCToken"]
@@ -61,9 +62,6 @@ def balances_from_address(
     results = multicall.aggregate_multiple(list_aggregate, block_identifier=block_identifier)
 
     block_number = results[0]
-
-    # get block time from node
-    block_ts = network_manager.block_timestamp(block_number)
 
     d_user_balance["blockHeight"] = block_number
     d_user_balance["createdAt"] = block_ts
@@ -113,7 +111,8 @@ def update_balance_address(
         contract_addresses,
         account_address,
         block_height,
-        app_mode='MoC'):
+        app_mode='MoC',
+        block_ts=None):
 
     # get collection user state from mongo
     collection_user_state = mongo_manager.collection_user_state(m_client)
@@ -139,7 +138,8 @@ def update_balance_address(
         contract_addresses,
         account_address,
         block_height,
-        app_mode=app_mode)
+        app_mode=app_mode,
+        block_ts=block_ts)
     d_user_balance['block_height'] = block_height
 
     if not user_state:

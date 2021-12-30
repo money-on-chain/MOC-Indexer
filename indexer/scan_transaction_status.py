@@ -16,9 +16,20 @@ class ScanTransactionStatus:
         self.app_mode = app_mode
         self.contract_loaded = contract_loaded
         self.contract_addresses = contract_addresses
+        self.debug_mode = self.options['debug']
+
+        # update block info
         self.last_block = network_manager.block_number
         self.block_ts = network_manager.block_timestamp(self.last_block)
-        self.debug_mode = self.options['debug']
+
+    def update_info_last_block(self, m_client):
+
+        collection_moc_indexer = mongo_manager.collection_moc_indexer(m_client)
+        moc_index = collection_moc_indexer.find_one(sort=[("updatedAt", -1)])
+        if moc_index:
+            if 'last_block_number' in moc_index:
+                self.last_block = moc_index['last_block_number']
+                self.block_ts = moc_index['last_block_ts']
 
     def is_confirmed_block(self, block_height, block_height_last, block_height_last_ts):
 
@@ -132,11 +143,14 @@ class ScanTransactionStatus:
         # conect to mongo db
         m_client = mongo_manager.connect()
 
+        # update block information
+        self.update_info_last_block(m_client)
+
         # get last block from node
-        last_block = network_manager.block_number
+        last_block = self.last_block #network_manager.block_number
 
         # get block time from node
-        last_block_ts = network_manager.block_timestamp(last_block)
+        last_block_ts = self.block_ts #network_manager.block_timestamp(last_block)
 
         collection_moc_indexer = mongo_manager.collection_moc_indexer(m_client)
         moc_index = collection_moc_indexer.find_one(sort=[("updatedAt", -1)])

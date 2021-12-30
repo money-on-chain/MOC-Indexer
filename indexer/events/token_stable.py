@@ -67,7 +67,7 @@ class IndexSTABLETransfer(BaseIndexEvent):
             d_tx["status"] = status
             d_tx["tokenInvolved"] = token_involved
             d_tx["processLogs"] = True
-            d_tx["createdAt"] = parse_receipt['chain']['block_ts']
+            d_tx["createdAt"] = parse_receipt['createdAt']
 
             post_id = collection_tx.find_one_and_update(
                 {"transactionHash": tx_hash,
@@ -104,7 +104,7 @@ class IndexSTABLETransfer(BaseIndexEvent):
             d_tx["status"] = status
             d_tx["tokenInvolved"] = token_involved
             d_tx["processLogs"] = True
-            d_tx["createdAt"] = parse_receipt['chain']['block_ts']
+            d_tx["createdAt"] = parse_receipt['createdAt']
 
             post_id = collection_tx.find_one_and_update(
                 {"transactionHash": tx_hash,

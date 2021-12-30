@@ -88,7 +88,7 @@ class IndexRiskProMint(BaseIndexEvent):
             tx_event["reservePrice"], 'ether')
         d_tx["USDTotal"] = str(int(usd_total * self.precision))
         d_tx["processLogs"] = True
-        d_tx["createdAt"] = parse_receipt['chain']['block_ts']
+        d_tx["createdAt"] = parse_receipt['createdAt']
 
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash,
@@ -180,7 +180,7 @@ class IndexRiskProRedeem(BaseIndexEvent):
                                                     'ether')
         d_tx["USDTotal"] = str(int(usd_total * self.precision))
         d_tx["processLogs"] = True
-        d_tx["createdAt"] = parse_receipt['chain']['block_ts']
+        d_tx["createdAt"] = parse_receipt['createdAt']
 
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash,
@@ -275,7 +275,7 @@ class IndexRiskProxMint(BaseIndexEvent):
             tx_event["reservePrice"], 'ether')
         d_tx["USDTotal"] = str(int(usd_total * self.precision))
         d_tx["processLogs"] = True
-        d_tx["createdAt"] = parse_receipt['chain']['block_ts']
+        d_tx["createdAt"] = parse_receipt['createdAt']
 
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash,
@@ -373,7 +373,7 @@ class IndexRiskProxRedeem(BaseIndexEvent):
                                                     'ether')
         d_tx["USDTotal"] = str(int(usd_total * self.precision))
         d_tx["processLogs"] = True
-        d_tx["createdAt"] = parse_receipt['chain']['block_ts']
+        d_tx["createdAt"] = parse_receipt['createdAt']
 
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash,
@@ -464,7 +464,7 @@ class IndexStableTokenMint(BaseIndexEvent):
             tx_event["reservePrice"], 'ether')
         d_tx["USDTotal"] = str(int(usd_total * self.precision))
         d_tx["processLogs"] = True
-        d_tx["createdAt"] = parse_receipt['chain']['block_ts']
+        d_tx["createdAt"] = parse_receipt['createdAt']
 
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash,
@@ -552,7 +552,7 @@ class IndexStableTokenRedeem(BaseIndexEvent):
                                                     'ether')
         d_tx["USDTotal"] = str(int(usd_total * self.precision))
         d_tx["processLogs"] = True
-        d_tx["createdAt"] = parse_receipt['chain']['block_ts']
+        d_tx["createdAt"] = parse_receipt['createdAt']
 
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash,
@@ -651,7 +651,7 @@ class IndexFreeStableTokenRedeem(BaseIndexEvent):
                                                     'ether')
         d_tx["USDTotal"] = str(int(usd_total * self.precision))
         d_tx["processLogs"] = True
-        d_tx["createdAt"] = parse_receipt['chain']['block_ts']
+        d_tx["createdAt"] = parse_receipt['createdAt']
 
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash,

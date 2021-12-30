@@ -18,9 +18,20 @@ class ScanMoCStateStatus:
         self.app_mode = app_mode
         self.contract_loaded = contract_loaded
         self.contract_addresses = contract_addresses
+        self.debug_mode = self.options['debug']
+
+        # update block info
         self.last_block = network_manager.block_number
         self.block_ts = network_manager.block_timestamp(self.last_block)
-        self.debug_mode = self.options['debug']
+
+    def update_info_last_block(self, m_client):
+
+        collection_moc_indexer = mongo_manager.collection_moc_indexer(m_client)
+        moc_index = collection_moc_indexer.find_one(sort=[("updatedAt", -1)])
+        if moc_index:
+            if 'last_block_number' in moc_index:
+                self.last_block = moc_index['last_block_number']
+                self.block_ts = moc_index['last_block_ts']
 
     def is_confirmed_block(self, block_height, block_height_last, block_height_last_ts):
 
@@ -135,10 +146,10 @@ class ScanMoCStateStatus:
         m_client = mongo_manager.connect()
 
         # get last block from node
-        last_block = network_manager.block_number
+        last_block = self.last_block  #network_manager.block_number
 
         # get block time from node
-        last_block_ts = network_manager.block_timestamp(last_block)
+        last_block_ts = self.block_ts  #network_manager.block_timestamp(last_block)
 
         collection_moc_indexer = mongo_manager.collection_moc_indexer(m_client)
         moc_index = collection_moc_indexer.find_one(sort=[("updatedAt", -1)])
@@ -170,10 +181,14 @@ class ScanMoCStateStatus:
     def scan_moc_state_status_block(self, collection_moc_state_status, current_block):
 
         # get block time from node
-        block_ts = network_manager.block_timestamp(current_block)
+        block_ts = self.block_ts #network_manager.block_timestamp(current_block)
 
         # get all functions from smart contract
-        d_status = state_status_from_sc(self.contract_loaded, self.contract_addresses, block_identifier=current_block)
+        d_status = state_status_from_sc(
+            self.contract_loaded,
+            self.contract_addresses,
+            block_identifier=current_block,
+            block_ts=self.block_ts)
         d_status["blockHeight"] = current_block
         d_status["createdAt"] = block_ts
 
@@ -192,8 +207,11 @@ class ScanMoCStateStatus:
 
         config_blocks_look_behind = self.options['scan_moc_state_status']['blocks_look_behind']
 
+        # update block information
+        self.update_info_last_block(m_client)
+
         # get last block from node
-        last_block = network_manager.block_number
+        last_block = self.last_block #network_manager.block_number
 
         collection_moc_indexer = mongo_manager.collection_moc_indexer(m_client)
         moc_index = collection_moc_indexer.find_one(sort=[("updatedAt", -1)])

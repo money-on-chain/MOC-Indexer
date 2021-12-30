@@ -94,7 +94,7 @@ class IndexRiskProHoldersInterestPay(BaseIndexEvent):
         d_tx["nBtcBucketC0BeforePay"] = str(tx_event["nReserveBucketC0BeforePay"])
         d_tx["timestamp"] = parse_receipt["timestamp"]
         d_tx["processLogs"] = True
-        d_tx["createdAt"] = parse_receipt['chain']['block_ts']
+        d_tx["createdAt"] = parse_receipt['createdAt']
 
         post_id = collection_inrate.find_one_and_update(
             {"blockHeight": parse_receipt["blockNumber"]},

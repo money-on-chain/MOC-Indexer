@@ -11,6 +11,9 @@ from indexer.logger import log
 from indexer.chain import block_filtered_transactions, ChainBlock
 
 
+LOCAL_TIMEZONE = datetime.datetime.now().astimezone().tzinfo
+
+
 def index_raw_tx(block_number, last_block_number, m_client, filter_tx=None, debug_mode=True):
     """ Receipts from blockchain to Database"""
 
@@ -43,10 +46,10 @@ def index_raw_tx(block_number, last_block_number, m_client, filter_tx=None, debu
             d_tx["processed"] = False
             d_tx["gas_used"] = tx_rcp.gas_used
             d_tx["confirmations"] = tx_rcp.confirmations
-            d_tx["timestamp"] = datetime.datetime.fromtimestamp(tx_rcp.timestamp)
+            d_tx["timestamp"] = datetime.datetime.fromtimestamp(tx_rcp.timestamp, LOCAL_TIMEZONE)
             d_tx["logs"] = tx_rcp.logs
             d_tx["status"] = tx_rcp.status
-            d_tx["createdAt"] = datetime.datetime.now()
+            d_tx["createdAt"] = datetime.datetime.fromtimestamp(tx_rcp.timestamp, LOCAL_TIMEZONE)
             d_tx["lastUpdatedAt"] = datetime.datetime.now()
 
             post_id = collection_raw_transactions.find_one_and_update(
@@ -55,7 +58,12 @@ def index_raw_tx(block_number, last_block_number, m_client, filter_tx=None, debu
                 upsert=True)
             count += 1
 
-    return count
+    d_info = dict()
+    d_info["processed"] = count
+    d_info["block_number"] = fil_txs["block_number"]
+    d_info["block_ts"] = fil_txs["block_ts"]
+
+    return d_info
 
 
 def scan_raw_txs(options, filter_contracts, task=None):
@@ -108,7 +116,7 @@ def scan_raw_txs(options, filter_contracts, task=None):
     while current_block <= to_block:
 
         # index our contracts only
-        processed = index_raw_tx(
+        block_processed = index_raw_tx(
             current_block,
             last_block,
             m_client,
@@ -120,8 +128,12 @@ def scan_raw_txs(options, filter_contracts, task=None):
 
         collection_moc_indexer.update_one({},
                                           {'$set': {'last_raw_tx_block': current_block,
-                                                    'updatedAt': datetime.datetime.now()}},
+                                                    'updatedAt': datetime.datetime.now(),
+                                                    'last_block_number': block_processed['block_number'],
+                                                    'last_block_ts': block_processed['block_ts']}},
                                           upsert=True)
+        processed = block_processed["processed"]
+
         # Go to next block
         current_block += 1
 

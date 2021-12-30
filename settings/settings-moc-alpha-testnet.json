@@ -8,19 +8,14 @@
   "gas_price": 60000000,
   "debug": false,
   "tasks": {
-    "scan_moc_blocks": {"interval":  10},
+    "scan_moc_blocks": {"interval":  3},
     "scan_moc_events": {"interval":  10},
     "scan_moc_prices": {"interval":  15},
     "scan_moc_state": {"interval":  10},
     "scan_moc_status": {"interval":  10},
     "scan_moc_state_status": {"interval":  10},
     "scan_user_state_update": {"interval":  10},
-    "scan_moc_blocks_not_processed": {"interval":  60},
-    "scan_moc_blocks_history": {"interval":  60},
-    "scan_moc_prices_history": {"interval":  60},
-    "scan_moc_state_history": {"interval":  60},
-    "scan_moc_status_history": {"interval":  60},
-    "scan_moc_state_status_history": {"interval":  60}
+    "scan_moc_blocks_not_processed": {"interval":  60}
   },
   "scan_moc_blocks": {
     "confirm_blocks": 10,

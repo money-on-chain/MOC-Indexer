@@ -15,9 +15,20 @@ class ScanUser:
         self.app_mode = app_mode
         self.contract_loaded = contract_loaded
         self.contract_addresses = contract_addresses
+        self.debug_mode = self.options['debug']
+
+        # update block info
         self.last_block = network_manager.block_number
         self.block_ts = network_manager.block_timestamp(self.last_block)
-        self.debug_mode = self.options['debug']
+
+    def update_info_last_block(self, m_client):
+
+        collection_moc_indexer = mongo_manager.collection_moc_indexer(m_client)
+        moc_index = collection_moc_indexer.find_one(sort=[("updatedAt", -1)])
+        if moc_index:
+            if 'last_block_number' in moc_index:
+                self.last_block = moc_index['last_block_number']
+                self.block_ts = moc_index['last_block_ts']
 
     def scan_user_state_update(self, task=None):
 
@@ -25,7 +36,7 @@ class ScanUser:
         m_client = mongo_manager.connect()
 
         # get last block from node
-        last_block = network_manager.block_number
+        last_block = self.last_block#network_manager.block_number
 
         collection_user_state_update = mongo_manager.collection_user_state_update(m_client)
         users_pending_update = collection_user_state_update.find({})
@@ -38,7 +49,10 @@ class ScanUser:
         # get list of users to update balance
         for user_update in users_pending_update:
 
-            block_height = network_manager.block_number
+            # update block information
+            self.update_info_last_block(m_client)
+
+            block_height = self.last_block #network_manager.block_number
 
             # udpate balance of address of the account on the last block height
             update_balance_address(m_client,
@@ -46,7 +60,8 @@ class ScanUser:
                                    self.contract_addresses,
                                    user_update['account'],
                                    block_height,
-                                   app_mode=self.app_mode)
+                                   app_mode=self.app_mode,
+                                   block_ts=self.block_ts)
 
             collection_user_state_update.delete_many({'account': user_update['account']})
 

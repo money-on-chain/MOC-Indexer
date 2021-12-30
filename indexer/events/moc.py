@@ -47,7 +47,7 @@ class IndexBucketLiquidation(BaseIndexEvent):
         gas_fee = parse_receipt["gas_used"] * Web3.fromWei(parse_receipt["gas_price"], 'ether')
         # d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         d_tx["processLogs"] = True
-        d_tx["createdAt"] = parse_receipt['chain']['block_ts']
+        d_tx["createdAt"] = parse_receipt['createdAt']
 
         prior_block_to_liquidation = parse_receipt["blockNumber"] - 1
         l_transactions = list()
@@ -146,7 +146,7 @@ class IndexContractLiquidated(BaseIndexEvent):
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
         gas_fee = parse_receipt["gas_used"] * Web3.fromWei(parse_receipt["gas_price"], 'ether')
         d_tx["processLogs"] = True
-        d_tx["createdAt"] = parse_receipt['chain']['block_ts']
+        d_tx["createdAt"] = parse_receipt['createdAt']
 
         prior_block_to_liquidation = tx_event.blockNumber - 1
         l_transactions = list()

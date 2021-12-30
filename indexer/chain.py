@@ -1,3 +1,4 @@
+import datetime
 from web3 import Web3
 from web3.exceptions import TransactionNotFound
 
@@ -9,6 +10,9 @@ from moneyonchain.networks import web3
 from moneyonchain.transaction import TransactionReceipt
 
 from indexer.logger import log
+
+
+LOCAL_TIMEZONE = datetime.datetime.now().astimezone().tzinfo
 
 
 def filter_transactions(transactions, filter_addresses):
@@ -76,6 +80,8 @@ def block_filtered_transactions(block_number: int, full_transactions=True, filte
     txs['txs'] = fil_transactions
     txs['d_txs'] = d_fil_transactions
     txs['receipts'] = fil_transactions_receipts
+    txs['block_number'] = f_block['number']
+    txs['block_ts'] = datetime.datetime.fromtimestamp(f_block['timestamp'], LOCAL_TIMEZONE)
 
     return txs
 

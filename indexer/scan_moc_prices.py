@@ -15,14 +15,29 @@ class ScanMoCPrices:
         self.app_mode = app_mode
         self.contract_loaded = contract_loaded
         self.contract_addresses = contract_addresses
+        self.debug_mode = self.options['debug']
+
+        # update block info
         self.last_block = network_manager.block_number
         self.block_ts = network_manager.block_timestamp(self.last_block)
-        self.debug_mode = self.options['debug']
+
+    def update_info_last_block(self, m_client):
+
+        collection_moc_indexer = mongo_manager.collection_moc_indexer(m_client)
+        moc_index = collection_moc_indexer.find_one(sort=[("updatedAt", -1)])
+        if moc_index:
+            if 'last_block_number' in moc_index:
+                self.last_block = moc_index['last_block_number']
+                self.block_ts = moc_index['last_block_ts']
 
     def scan_moc_prices_block(self, collection_price, current_block):
 
         # get all functions from smart contract
-        d_prices = prices_from_sc(self.contract_loaded, self.contract_addresses, block_identifier=current_block)
+        d_prices = prices_from_sc(
+            self.contract_loaded,
+            self.contract_addresses,
+            block_identifier=current_block,
+            block_ts=self.block_ts)
         if d_prices:
             # only write if there are prices
             collection_price.find_one_and_update(
@@ -75,6 +90,9 @@ class ScanMoCPrices:
 
         start_time = time.time()
         while current_block <= to_block:
+
+            # update block information
+            self.update_info_last_block(m_client)
 
             log.info("[2. Scan Prices] Starting to scan MOC prices [{0} / {1}]".format(
                 current_block, to_block))
