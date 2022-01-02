@@ -8,7 +8,12 @@ BUCKET_X2 = '0x5832000000000000000000000000000000000000000000000000000000000000'
 BUCKET_C0 = '0x4330000000000000000000000000000000000000000000000000000000000000'
 
 
-def prices_from_sc(contract_loaded, contract_addresses, block_identifier: BlockIdentifier = 'latest', block_ts=None):
+def prices_from_sc(
+        contract_loaded,
+        contract_addresses,
+        block_identifier: BlockIdentifier = 'latest',
+        block_ts=None,
+        app_mode=None):
 
     d_price = OrderedDict()
 
@@ -19,14 +24,27 @@ def prices_from_sc(contract_loaded, contract_addresses, block_identifier: BlockI
     multicall = contract_loaded["Multicall2"]
 
     list_aggregate = list()
-    list_aggregate.append((moc_state_address, moc_state.sc.getBitcoinPrice, [], lambda x: str(x)))
-    list_aggregate.append((moc_state_address, moc_state.sc.bproTecPrice, [], lambda x: str(x)))
-    list_aggregate.append((moc_state_address, moc_state.sc.bproUsdPrice, [], lambda x: str(x)))
-    list_aggregate.append((moc_state_address, moc_state.sc.bproDiscountPrice, [], lambda x: str(x)))
-    list_aggregate.append((moc_state_address, moc_state.sc.bucketBProTecPrice, [BUCKET_X2], lambda x: str(x)))
-    list_aggregate.append((moc_state_address, moc_state.sc.bproxBProPrice, [BUCKET_X2], lambda x: str(x)))
-    list_aggregate.append((moc_address, moc.sc.getReservePrecision, [], lambda x: str(x)))
-    list_aggregate.append((moc_state_address, moc_state.sc.getMoCPrice, [], lambda x: str(x)))
+
+    if app_mode == 'MoC':
+        list_aggregate.append((moc_state_address, moc_state.sc.getBitcoinPrice, [], lambda x: str(x)))
+        list_aggregate.append((moc_state_address, moc_state.sc.bproTecPrice, [], lambda x: str(x)))
+        list_aggregate.append((moc_state_address, moc_state.sc.bproUsdPrice, [], lambda x: str(x)))
+        list_aggregate.append((moc_state_address, moc_state.sc.bproDiscountPrice, [], lambda x: str(x)))
+        list_aggregate.append((moc_state_address, moc_state.sc.bucketBProTecPrice, [BUCKET_X2], lambda x: str(x)))
+        list_aggregate.append((moc_state_address, moc_state.sc.bproxBProPrice, [BUCKET_X2], lambda x: str(x)))
+        list_aggregate.append((moc_address, moc.sc.getReservePrecision, [], lambda x: str(x)))
+        list_aggregate.append((moc_state_address, moc_state.sc.getMoCPrice, [], lambda x: str(x)))
+    elif app_mode == 'RRC20':
+        list_aggregate.append((moc_state_address, moc_state.sc.getReserveTokenPrice, [], lambda x: str(x)))
+        list_aggregate.append((moc_state_address, moc_state.sc.riskProTecPrice, [], lambda x: str(x)))
+        list_aggregate.append((moc_state_address, moc_state.sc.riskProUsdPrice, [], lambda x: str(x)))
+        list_aggregate.append((moc_state_address, moc_state.sc.riskProDiscountPrice, [], lambda x: str(x)))
+        list_aggregate.append((moc_state_address, moc_state.sc.bucketRiskProTecPrice, [BUCKET_X2], lambda x: str(x)))
+        list_aggregate.append((moc_state_address, moc_state.sc.riskProxRiskProPrice, [BUCKET_X2], lambda x: str(x)))
+        list_aggregate.append((moc_address, moc.sc.getReservePrecision, [], lambda x: str(x)))
+        list_aggregate.append((moc_state_address, moc_state.sc.getMoCPrice, [], lambda x: str(x)))
+    else:
+        raise Exception("Not valid APP Mode")
 
     results = multicall.aggregate_multiple(list_aggregate, block_identifier=block_identifier)
 

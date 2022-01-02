@@ -37,7 +37,8 @@ class ScanMoCPrices:
             self.contract_loaded,
             self.contract_addresses,
             block_identifier=current_block,
-            block_ts=self.block_ts)
+            block_ts=self.block_ts,
+            app_mode=self.app_mode)
         if d_prices:
             # only write if there are prices
             collection_price.find_one_and_update(
@@ -46,7 +47,7 @@ class ScanMoCPrices:
                 upsert=True)
 
             if self.debug_mode:
-                log.info("[2. Scan Prices] Done scan prices block height: [{0}]".format(current_block))
+                log.info("[3. Scan Prices] Done scan prices block height: [{0}]".format(current_block))
 
     def scan_moc_prices(self, task=None):
 
@@ -71,12 +72,12 @@ class ScanMoCPrices:
 
         if from_block >= last_block:
             if self.debug_mode:
-                log.info("[2. Scan Prices] Its not the time to run indexer no new blocks avalaible!")
+                log.info("[3. Scan Prices] Its not the time to run indexer no new blocks avalaible!")
             return
 
         to_block = last_block
         if from_block > to_block:
-            log.error("[2. Scan Prices] To block > from block!!??")
+            log.error("[3. Scan Prices] To block > from block!!??")
             return
 
         current_block = from_block
@@ -85,7 +86,7 @@ class ScanMoCPrices:
         collection_price = mongo_manager.collection_price(m_client)
 
         if self.debug_mode:
-            log.info("[2. Scan Prices] Starting to Scan prices: [{0} / {1}]".format(
+            log.info("[3. Scan Prices] Starting to Scan prices: [{0} / {1}]".format(
                 from_block, to_block))
 
         start_time = time.time()
@@ -94,7 +95,7 @@ class ScanMoCPrices:
             # update block information
             self.update_info_last_block(m_client)
 
-            log.info("[2. Scan Prices] Starting to scan MOC prices [{0} / {1}]".format(
+            log.info("[3. Scan Prices] Starting to scan MOC prices [{0} / {1}]".format(
                 current_block, to_block))
 
             self.scan_moc_prices_block(collection_price, current_block)
@@ -107,7 +108,7 @@ class ScanMoCPrices:
             current_block += 1
 
         duration = time.time() - start_time
-        log.info("[2. Scan Prices] Done! [{0}] [{1} seconds.]".format(current_block, duration))
+        log.info("[3. Scan Prices] Done! [{0}] [{1} seconds.]".format(current_block, duration))
 
     def on_task(self, task=None):
         self.scan_moc_prices(task=task)

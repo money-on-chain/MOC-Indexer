@@ -7,7 +7,12 @@ BUCKET_X2 = '0x5832000000000000000000000000000000000000000000000000000000000000'
 BUCKET_C0 = '0x4330000000000000000000000000000000000000000000000000000000000000'
 
 
-def state_status_from_sc(contract_loaded, contract_addresses, block_identifier: BlockIdentifier = 'latest', block_ts=None):
+def state_status_from_sc(
+        contract_loaded,
+        contract_addresses,
+        block_identifier: BlockIdentifier = 'latest',
+        block_ts=None,
+        app_mode=None):
 
     d_status = OrderedDict()
 
@@ -19,10 +24,18 @@ def state_status_from_sc(contract_loaded, contract_addresses, block_identifier: 
     multicall = contract_loaded["Multicall2"]
 
     list_aggregate = list()
-    list_aggregate.append((moc_state_address, moc_state.sc.getBitcoinPrice, [], lambda x: str(x)))  # 0
-    list_aggregate.append((moc_state_address, moc_state.sc.getMoCPrice, [], lambda x: str(x)))  # 1
-    list_aggregate.append((moc_address, moc.sc.paused, [], lambda x: x))  # 2
-    list_aggregate.append((moc_state_address, moc_state.sc.state, [], lambda x: x))  # 3
+    if app_mode == 'MoC':
+        list_aggregate.append((moc_state_address, moc_state.sc.getBitcoinPrice, [], lambda x: str(x)))  # 0
+        list_aggregate.append((moc_state_address, moc_state.sc.getMoCPrice, [], lambda x: str(x)))  # 1
+        list_aggregate.append((moc_address, moc.sc.paused, [], lambda x: x))  # 2
+        list_aggregate.append((moc_state_address, moc_state.sc.state, [], lambda x: x))  # 3
+    elif app_mode == 'RRC20':
+        list_aggregate.append((moc_state_address, moc_state.sc.getReserveTokenPrice, [], lambda x: str(x)))  # 0
+        list_aggregate.append((moc_state_address, moc_state.sc.getMoCPrice, [], lambda x: str(x)))  # 1
+        list_aggregate.append((moc_address, moc.sc.paused, [], lambda x: x))  # 2
+        list_aggregate.append((moc_state_address, moc_state.sc.state, [], lambda x: x))  # 3
+    else:
+        raise Exception("Not valid APP Mode")
 
     results = multicall.aggregate_multiple(list_aggregate, block_identifier=block_identifier)
 

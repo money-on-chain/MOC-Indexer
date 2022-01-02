@@ -42,7 +42,7 @@ class ScanUser:
         users_pending_update = collection_user_state_update.find({})
 
         if self.debug_mode:
-            log.info("[6. Scan User State Update] Starting to update user balance on block: {0} ".format(last_block))
+            log.info("[7. Scan User State Update] Starting to update user balance on block: {0} ".format(last_block))
 
         start_time = time.time()
 
@@ -66,12 +66,12 @@ class ScanUser:
             collection_user_state_update.delete_many({'account': user_update['account']})
 
             if self.debug_mode:
-                log.info("[6. Scan User State Update] UPDATING ACCOUNT BALANCE: {0} BLOCKHEIGHT: {1}".format(
+                log.info("[7. Scan User State Update] UPDATING ACCOUNT BALANCE: {0} BLOCKHEIGHT: {1}".format(
                     user_update['account'],
                     block_height))
 
         duration = time.time() - start_time
-        log.info("[6. Scan User State Update] Done! [{0}] [{1} seconds.]".format(last_block, duration))
+        log.info("[7. Scan User State Update] Done! [{0}] [{1} seconds.]".format(last_block, duration))
 
     def on_task(self, task=None):
         self.scan_user_state_update(task=task)

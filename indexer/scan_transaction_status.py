@@ -79,7 +79,7 @@ class ScanTransactionStatus:
                     {"_id": tx_pending["_id"]},
                     {"$set": d_tx_up})
 
-                log.info("[4. Scan Moc Status] Setting TX STATUS: {0} hash: {1}".format(
+                log.info("[5. Scan Moc Status] Setting TX STATUS: {0} hash: {1}".format(
                     d_tx_up['status'],
                     tx_pending['transactionHash']))
 
@@ -115,7 +115,7 @@ class ScanTransactionStatus:
                     {"_id": tx_pending["_id"]},
                     {"$set": d_tx_up})
 
-                log.info("[4. Scan Moc Status] Setting TX STATUS: {0} hash: {1}".format(
+                log.info("[5. Scan Moc Status] Setting TX STATUS: {0} hash: {1}".format(
                     d_tx_up['status'],
                     tx_pending['transactionHash']))
             else:
@@ -134,7 +134,7 @@ class ScanTransactionStatus:
                             {"_id": tx_pending["_id"]},
                             {"$set": d_tx_up})
 
-                        log.info("[4. Scan Moc Status] Setting TX STATUS: {0} hash: {1}".format(
+                        log.info("[5. Scan Moc Status] Setting TX STATUS: {0} hash: {1}".format(
                             d_tx_up['status'],
                             tx_pending['transactionHash']))
 
@@ -161,11 +161,11 @@ class ScanTransactionStatus:
 
         if last_block <= last_moc_status_block:
             if self.debug_mode:
-                log.info("[4. Scan Moc Status] Its not time to run Scan Transactions status")
+                log.info("[5. Scan Moc Status] Its not time to run Scan Transactions status")
             return
 
         if self.debug_mode:
-            log.info("[4. Scan Moc Status] Starting to Scan Transactions status last block: {0} ".format(last_block))
+            log.info("[5. Scan Moc Status] Starting to Scan Transactions status last block: {0} ".format(last_block))
 
         start_time = time.time()
 
@@ -177,7 +177,7 @@ class ScanTransactionStatus:
         self.scan_transaction_status_block(m_client, last_block, last_block_ts)
 
         duration = time.time() - start_time
-        log.info("[4. Scan Moc Status] Done!  [{0}] [{1} seconds.]".format(last_block, duration))
+        log.info("[5. Scan Moc Status] Done!  [{0}] [{1} seconds.]".format(last_block, duration))
 
     def on_task(self, task=None):
         self.scan_transaction_status(task=task)

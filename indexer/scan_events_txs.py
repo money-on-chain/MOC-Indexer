@@ -208,7 +208,7 @@ class ScanEventsTxs:
                 self.process_logs(m_client, raw_tx)
 
         duration = time.time() - start_time
-        log.info("[7. Scan Blocks not processed] Done! Processed: [{0}] [{1} seconds]".format(count, duration))
+        log.info("[8. Scan Blocks not processed] Done! Processed: [{0}] [{1} seconds]".format(count, duration))
 
     def on_task(self, task=None):
         self.scan_events_txs(task=task)

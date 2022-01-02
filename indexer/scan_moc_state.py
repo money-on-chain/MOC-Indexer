@@ -44,7 +44,7 @@ class ScanMoCState:
             block_height = last_block
 
         if self.debug_mode:
-            log.info("[3. Scan Moc State]  Starting to index MoC State on block height: {0}".format(block_height))
+            log.info("[4. Scan Moc State]  Starting to index MoC State on block height: {0}".format(block_height))
 
         # get collection moc_state from mongo
         collection_moc_state = mongo_manager.collection_moc_state(m_client)
@@ -52,7 +52,7 @@ class ScanMoCState:
         exist_moc_state = collection_moc_state.find_one({"lastUpdateHeight": block_height})
         if exist_moc_state:
             if self.debug_mode:
-                log.info("[3. Scan Moc State]  Not time to run moc state, already exist")
+                log.info("[4. Scan Moc State]  Not time to run moc state, already exist")
             return
 
         start_time = time.time()
@@ -65,7 +65,8 @@ class ScanMoCState:
             self.contract_loaded,
             self.contract_addresses,
             block_identifier=block_height,
-            block_ts=self.block_ts)
+            block_ts=self.block_ts,
+            app_mode=self.app_mode)
 
         if not d_moc_state:
             return
@@ -114,7 +115,7 @@ class ScanMoCState:
             upsert=True)
 
         duration = time.time() - start_time
-        log.info("[3. Scan Moc State] Done! [{0}] [{1} seconds.]".format(block_height, duration))
+        log.info("[4. Scan Moc State] Done! [{0}] [{1} seconds.]".format(block_height, duration))
 
     def on_task(self, task=None):
         self.scan_moc_state(task=task)
