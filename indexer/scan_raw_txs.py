@@ -26,9 +26,6 @@ def index_raw_tx(block_number, last_block_number, m_client, filter_tx=None, debu
     fil_txs = block_filtered_transactions(block_number, filter_tx=filter_tx)
     receipts = fil_txs["receipts"]
 
-    log.info(receipts)
-    log.info(filter_tx)
-
     count = 0
     if receipts:
         for tx_rcp in receipts:

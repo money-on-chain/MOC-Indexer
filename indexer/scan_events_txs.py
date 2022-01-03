@@ -126,25 +126,17 @@ class ScanEventsTxs:
         l_contract_addresses = self.map_contract_addresses.values()
         inverted_map_contract_addresses = dict((v, k) for k, v in self.map_contract_addresses.items())
 
-        log.info(raw_tx["logs"])
         if raw_tx["logs"]:
             for tx_log in raw_tx["logs"]:
-                log.info(tx_log)
-                log.info("REEEEE>>")
-                log.info(self.map_contract_addresses)
                 log_address = str.lower(tx_log['address'])
                 log_index = tx_log['logIndex']
                 if log_address in l_contract_addresses:
                     tx_event = _decode_logs([tx_log])
                     map_events_contract = inverted_map_contract_addresses[log_address]
-                    log.info(">>>")
-                    log.info(tx_event)
-                    log.info(map_events_contract)
                     for tx_event_name, tx_event_info in tx_event.items():
                         log.info(tx_event_name)
                         if tx_event_name in self.map_events_contracts[log_address]:
                             # go map the event
-                            #event_class = map_events_contract[tx_event_name]
                             event_class = self.map_events_contracts[log_address][tx_event_name]
                             log.info(tx_event_name)
                             if event_class:

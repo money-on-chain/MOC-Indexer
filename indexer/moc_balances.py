@@ -152,10 +152,6 @@ def update_balance_address(
         d_user_balance["showTutorialNoMore"] = False
         d_user_balance["createdBlockHeight"] = block_height
 
-    log.info("debug>>>>")
-    log.info(d_user_balance)
-    log.info(account_address)
-
     # update or insert
     post_id = collection_user_state.find_one_and_update(
         {"address": account_address},
