@@ -134,11 +134,9 @@ class ScanEventsTxs:
                     tx_event = _decode_logs([tx_log])
                     map_events_contract = inverted_map_contract_addresses[log_address]
                     for tx_event_name, tx_event_info in tx_event.items():
-                        log.info(tx_event_name)
                         if tx_event_name in self.map_events_contracts[log_address]:
                             # go map the event
                             event_class = self.map_events_contracts[log_address][tx_event_name]
-                            log.info(tx_event_name)
                             if event_class:
                                 parse_receipt = self.parse_tx_receipt(raw_tx, tx_event, tx_event_name,
                                                                       log_index=log_index)

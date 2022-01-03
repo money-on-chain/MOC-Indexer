@@ -3,14 +3,11 @@
     "uri": "mongodb://192.168.56.2:27017/",
     "db": "local_alpha_testnet2"
   },
-  "timeout": 60,
-  "timeout_wait": 300,
-  "gas_price": 60000000,
   "debug": false,
   "tasks": {
     "scan_moc_blocks": {"interval":  3},
-    "scan_moc_events": {"interval":  10},
-    "scan_moc_prices": {"interval":  15},
+    "scan_moc_events": {"interval":  4},
+    "scan_moc_prices": {"interval":  10},
     "scan_moc_state": {"interval":  10},
     "scan_moc_status": {"interval":  10},
     "scan_moc_state_status": {"interval":  10},
@@ -43,6 +40,5 @@
         "Multicall2": "0xaf7be1ef9537018feda5397d9e3bb9a1e4e27ac8"
       }
     }
-  },
-  "vendor_account": "0xDda74880D638451e6D2c8D3fC19987526A7Af730"
+  }
 }
