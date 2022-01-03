@@ -202,7 +202,7 @@ class MoCIndexerTasks(TasksManager):
         aws_put_metric_heart_beat(0)
 
         # set max workers
-        self.max_workers = 1
+        self.max_workers = 5
 
         # Reconnect on lost chain
         log.info("Jobs add: 99. Reconnect on lost chain")
