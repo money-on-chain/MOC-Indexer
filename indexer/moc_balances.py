@@ -41,11 +41,12 @@ def balances_from_address(
     list_aggregate.append((doc_token_address, doc_token.sc.balanceOf, [addresses], lambda x: str(x)))  # 2
     list_aggregate.append((bpro_token_address, bpro_token.sc.balanceOf, [addresses], lambda x: str(x)))  # 3
     list_aggregate.append((multicall_address, multicall.sc.getEthBalance, [addresses], lambda x: str(x)))  # 4
-    list_aggregate.append((moc_address, moc.sc.docAmountToRedeem, [addresses], lambda x: str(x)))  # 5
 
     if app_mode == 'MoC':
+        list_aggregate.append((moc_address, moc.sc.docAmountToRedeem, [addresses], lambda x: str(x)))  # 5
         list_aggregate.append((moc_address, moc.sc.bproxBalanceOf, [BUCKET_X2, addresses], lambda x: str(x)))  # 6
     elif app_mode == 'RRC20':
+        list_aggregate.append((moc_address, moc.sc.stableTokenAmountToRedeem, [addresses], lambda x: str(x)))  # 5
         list_aggregate.append((moc_address, moc.sc.riskProxBalanceOf, [BUCKET_X2, addresses], lambda x: str(x)))  # 6
         reserve_token = contract_loaded["ReserveToken"]
         reserve_token_address = contract_addresses["ReserveToken"]
@@ -94,10 +95,10 @@ def balances_from_address(
 
     # Calc of interest cannot be in multicall because we need to know amount of reserves of the account
     try:
-        d_user_balance["potentialBprox2MaxInterest"] = moc_inrate.sc.calcMintInterestValues(
+        d_user_balance["potentialBprox2MaxInterest"] = str(moc_inrate.sc.calcMintInterestValues(
             BUCKET_X2,
             int(total_reserve_amount),
-            block_identifier=block_identifier)
+            block_identifier=block_identifier))
     except (HTTPError, ValueError):
         log.error("[WARNING] potentialBprox2MaxInterest Exception!")
         d_user_balance["potentialBprox2MaxInterest"] = '0'
@@ -150,6 +151,10 @@ def update_balance_address(
         d_user_balance["showTermsAndConditions"] = True
         d_user_balance["showTutorialNoMore"] = False
         d_user_balance["createdBlockHeight"] = block_height
+
+    log.info("debug>>>>")
+    log.info(d_user_balance)
+    log.info(account_address)
 
     # update or insert
     post_id = collection_user_state.find_one_and_update(
