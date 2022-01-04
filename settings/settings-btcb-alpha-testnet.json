@@ -1,0 +1,46 @@
+{
+  "mongo": {
+    "uri": "mongodb://192.168.56.2:27017/",
+    "db": "local_btcb_alpha_testnet"
+  },
+  "timeout": 60,
+  "timeout_wait": 300,
+  "gas_price": 60000000,
+  "debug": false,
+  "index_mode": "vendors",
+  "tasks": {
+    "scan_moc_blocks": {"interval":  10},
+    "scan_moc_prices": {"interval":  15},
+    "scan_moc_state": {"interval":  10},
+    "scan_moc_status": {"interval":  10},
+    "scan_moc_state_status": {"interval":  10},
+    "scan_user_state_update": {"interval":  10},
+    "scan_moc_blocks_not_processed": {"interval":  60}
+  },
+  "scan_moc_blocks": {
+    "confirm_blocks": 10,
+    "blocks_look_behind": 1,
+    "seconds_not_in_chain_error": 600,
+    "blocks_recession": 1
+  },
+  "scan_moc_state": {
+    "block_height": 0
+  },
+  "scan_moc_prices": {
+    "blocks_look_behind": 1
+  },
+  "scan_moc_state_status": {
+    "blocks_look_behind": 1
+  },
+  "networks": {
+    "btcbAlphaTestnet": {
+      "app_mode": "RRC20",
+      "project": "RDoC",
+      "addresses": {
+        "MoC": "0x88DF76BEe402a1Bc152d5C53f04E631ac50242a8",
+        "BProToken": "0xbC3D95d030E275E299e312c06Bd63425B00e0807"
+      }
+    }
+  },
+  "vendor_account": "0xCed191D8c04D1077F456638301d95400022E5A79"
+}
