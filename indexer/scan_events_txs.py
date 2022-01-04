@@ -172,25 +172,45 @@ class ScanEventsTxs:
         log.info("[2. Scan Events Txs] Processed: [{0}] Done! [{1} seconds]".format(count, duration))
 
     def scan_events_not_processed_txs(self, task=None):
+        """ Trying to reindex when there is a problem with events"""
 
         start_time = time.time()
 
         # connect to mongo db
         m_client = mongo_manager.connect()
 
+        collection_transactions = mongo_manager.collection_transaction(m_client)
+
         collection_raw_transactions = mongo_manager.collection_raw_transactions(m_client)
 
-        # we need to query tx with processLogs=None and in the last 60 minutes
-        only_new_ones = datetime.datetime.now() - datetime.timedelta(minutes=10)
-        raw_txs = collection_raw_transactions.find({
-            "processed": True,
+        collection_moc_indexer = mongo_manager.collection_moc_indexer(m_client)
+        moc_index = collection_moc_indexer.find_one(sort=[("updatedAt", -1)])
+
+        # we need to query tx with processLogs=None and in the last 24hs
+        only_last_tx = datetime.datetime.now() - datetime.timedelta(minutes=1440)
+        txs = collection_transactions.find({
             "processLogs": None,
-            "status": "confirmed",
-            "createdAt": {"$gte": only_new_ones}}, sort=[("blockNumber", 1)])
+            "createdAt": {"$gte": only_last_tx}}, sort=[("createdAt", 1)])
 
         count = 0
-        if raw_txs:
-            for raw_tx in raw_txs:
+        if txs:
+            for tx in txs:
+                # only status confirmed and confirming
+                if tx["status"] not in ["confirmed", "confirming"]:
+                    continue
+
+                raw_tx = collection_raw_transactions.find_one({"hash": tx["transactionHash"]})
+
+                if not raw_tx:
+                    log.info("[8. Scan Blocks not processed] Not exist RAW Tx for hash: {0}".format(tx["transactionHash"]))
+                    continue
+
+                dt_older_than = moc_index["last_block_ts"] - datetime.timedelta(minutes=5)
+                if tx["createdAt"] >= dt_older_than:
+                    continue
+
+                log.info("[8. Scan Blocks not processed] Reindexing with hash: {0}".format(tx["transactionHash"]))
+
                 # update block information
                 self.update_info_last_block(m_client)
 

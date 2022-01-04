@@ -14,7 +14,7 @@ from indexer.chain import block_filtered_transactions, ChainBlock
 LOCAL_TIMEZONE = datetime.datetime.now().astimezone().tzinfo
 
 
-def index_raw_tx(block_number, last_block_number, m_client, filter_tx=None, debug_mode=True):
+def index_raw_tx(block_number, last_block_number, m_client, filter_tx=None, debug_mode=True, processed=0):
     """ Receipts from blockchain to Database"""
 
     if debug_mode:
@@ -26,7 +26,6 @@ def index_raw_tx(block_number, last_block_number, m_client, filter_tx=None, debu
     fil_txs = block_filtered_transactions(block_number, filter_tx=filter_tx)
     receipts = fil_txs["receipts"]
 
-    count = 0
     if receipts:
         for tx_rcp in receipts:
 
@@ -53,10 +52,10 @@ def index_raw_tx(block_number, last_block_number, m_client, filter_tx=None, debu
                 {"hash": str(tx_rcp.txid), "blockNumber": tx_rcp.block_number},
                 {"$set": d_tx},
                 upsert=True)
-            count += 1
+            processed += 1
 
     d_info = dict()
-    d_info["processed"] = count
+    d_info["processed"] = processed
     d_info["block_number"] = fil_txs["block_number"]
     d_info["block_ts"] = fil_txs["block_ts"]
 
@@ -92,6 +91,12 @@ def scan_raw_txs(options, filter_contracts, task=None):
     if last_block_indexed > 0:
         from_block = last_block_indexed + 1
 
+    # Force from block to block for testing only
+    if options['scan_moc_blocks']['from_block'] > 0 and options['scan_moc_blocks']['to_block'] > 0:
+        # so force only to test pourpose
+        from_block = options['scan_moc_blocks']['from_block']
+        last_block = options['scan_moc_blocks']['to_block']
+
     if from_block >= last_block:
         if debug_mode:
             log.info("[1. Scan Raw Txs] Its not the time to run indexer no new blocks avalaible!")
@@ -118,7 +123,8 @@ def scan_raw_txs(options, filter_contracts, task=None):
             last_block,
             m_client,
             filter_tx=filter_contracts,
-            debug_mode=debug_mode)
+            debug_mode=debug_mode,
+            processed=processed)
 
         if debug_mode:
             log.info("[1. Scan Raw Txs] OK [{0}] / [{1}]".format(current_block, to_block))

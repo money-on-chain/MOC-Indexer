@@ -12,13 +12,13 @@
     "scan_moc_status": {"interval":  10},
     "scan_moc_state_status": {"interval":  10},
     "scan_user_state_update": {"interval":  10},
-    "scan_moc_blocks_not_processed": {"interval":  60}
+    "scan_moc_blocks_not_processed": {"interval":  30}
   },
   "scan_moc_blocks": {
     "confirm_blocks": 10,
     "blocks_look_behind": 100,
     "seconds_not_in_chain_error": 600,
-    "blocks_recession": 0,
+    "blocks_recession": 1,
     "from_block": 0,
     "to_block": 0
   },
