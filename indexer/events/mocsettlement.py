@@ -415,7 +415,7 @@ class IndexSettlementCompleted(BaseIndexEvent):
                               "blockHeight": {"$lte": parse_receipt["blockNumber"]}})
 
         # also delete with created at < 31 days
-        old_records = parse_receipt["blockNumber"] - datetime.timedelta(days=31)
+        old_records = parse_receipt['chain']['block_ts'] - datetime.timedelta(days=31)
         collection_tx.delete_many({"event": "RedeemRequestAlter",
                               "createdAt": {"$lte": old_records}})
 
