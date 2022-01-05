@@ -2,8 +2,8 @@ import boto3
 import os
 
 from moneyonchain.networks import network_manager
-from moneyonchain.moc import MoC, MoCConnector, MoCState, MoCInrate, MoCSettlement
-from moneyonchain.rdoc import RDOCMoC, RDOCMoCConnector, RDOCMoCState, RDOCMoCInrate, RDOCMoCSettlement
+from moneyonchain.moc import MoC, MoCConnector, MoCState, MoCInrate, MoCSettlement, MoCExchange
+from moneyonchain.rdoc import RDOCMoC, RDOCMoCConnector, RDOCMoCState, RDOCMoCInrate, RDOCMoCSettlement, RDOCMoCExchange
 from moneyonchain.tokens import BProToken, DoCToken, StableToken, RiskProToken, MoCToken, ReserveToken
 from moneyonchain.multicall import Multicall2
 
@@ -139,6 +139,9 @@ class MoCIndexerTasks(TasksManager):
             self.contracts_loaded["ReserveToken"] = ReserveToken(
                 network_manager,
                 contract_address=contracts_addresses['ReserveToken']).from_abi()
+            self.contracts_loaded["MoCExchange"] = RDOCMoCExchange(
+                network_manager,
+                contract_address=contracts_addresses['MoCExchange']).from_abi()
         elif self.app_mode == 'MoC':
             contract_moc_state = MoCState(
                 network_manager,
@@ -155,6 +158,9 @@ class MoCIndexerTasks(TasksManager):
             contract_doc_token = DoCToken(
                 network_manager,
                 contract_address=contracts_addresses['DoCToken']).from_abi()
+            self.contracts_loaded["MoCExchange"] = MoCExchange(
+                network_manager,
+                contract_address=contracts_addresses['MoCExchange']).from_abi()
         else:
             raise Exception("Not valid APP Mode")
 
