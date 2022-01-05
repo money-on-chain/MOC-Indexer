@@ -1,7 +1,6 @@
 from collections import OrderedDict
 from web3.types import BlockIdentifier
 
-from moneyonchain.networks import network_manager
 
 BUCKET_X2 = '0x5832000000000000000000000000000000000000000000000000000000000000'
 BUCKET_C0 = '0x4330000000000000000000000000000000000000000000000000000000000000'
