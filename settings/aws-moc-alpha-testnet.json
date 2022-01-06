@@ -12,7 +12,8 @@
     "scan_moc_status": {"interval":  10},
     "scan_moc_state_status": {"interval":  10},
     "scan_user_state_update": {"interval":  10},
-    "scan_moc_blocks_not_processed": {"interval":  30}
+    "scan_moc_blocks_not_processed": {"interval":  30},
+    "reconnect_on_lost_chain": {"interval":  180}
   },
   "scan_moc_blocks": {
     "confirm_blocks": 10,
