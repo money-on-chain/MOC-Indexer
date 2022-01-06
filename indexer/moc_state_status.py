@@ -44,15 +44,15 @@ def state_status_from_sc(
     d_status["createdAt"] = block_ts
 
     if results[1][0]:
-        price_active = False
-    else:
         price_active = True
+    else:
+        price_active = False
     d_status['price_active'] = price_active
 
     if results[1][1]:
-        moc_price_active = False
-    else:
         moc_price_active = True
+    else:
+        moc_price_active = False
     d_status['moc_price_active'] = moc_price_active
 
     d_status["paused"] = results[1][2]
