@@ -20,8 +20,8 @@
     "blocks_look_behind": 1,
     "seconds_not_in_chain_error": 600,
     "blocks_recession": 0,
-    "from_block": 2478599,
-    "to_block": 2478601
+    "from_block": 0,
+    "to_block": 0
   },
   "scan_moc_state": {
     "block_height": 0
