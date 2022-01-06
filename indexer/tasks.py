@@ -323,7 +323,11 @@ class MoCIndexerTasks(TasksManager):
         if 'scan_moc_blocks_not_processed' in self.options['tasks']:
             log.info("Jobs add: 8. Scan Blocks not processed")
             interval = self.options['tasks']['scan_moc_blocks_not_processed']['interval']
-            task_scan_moc_blocks_not_processed = ScanEventsTxs(self.options, self.app_mode, self.contracts_addresses)
+            task_scan_moc_blocks_not_processed = ScanEventsTxs(
+                self.options,
+                self.app_mode,
+                self.contracts_addresses,
+                self.contracts_loaded)
             self.add_task(task_scan_moc_blocks_not_processed.on_task_not_processed,
                           args=[],
                           wait=interval,
