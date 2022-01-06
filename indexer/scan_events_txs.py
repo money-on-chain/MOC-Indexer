@@ -24,10 +24,11 @@ from indexer.events import IndexRiskProMint, IndexRiskProRedeem, IndexRiskProxMi
 
 class ScanEventsTxs:
 
-    def __init__(self, options, app_mode, map_contract_addresses):
+    def __init__(self, options, app_mode, map_contract_addresses, contracts_loaded):
         self.options = options
         self.app_mode = app_mode
         self.map_contract_addresses = map_contract_addresses
+        self.contracts_loaded = contracts_loaded
         self.confirm_blocks = self.options['scan_moc_blocks']['confirm_blocks']
         self.map_events_contracts = self.map_events()
 
@@ -48,15 +49,15 @@ class ScanEventsTxs:
 
         d_event = dict()
         d_event[self.map_contract_addresses["MoC"]] = {
-            "BucketLiquidation": IndexBucketLiquidation(self.options, self.app_mode),
-            "ContractLiquidated": IndexContractLiquidated(self.options, self.app_mode)
+            "BucketLiquidation": IndexBucketLiquidation(self.options, self.app_mode, self.contracts_loaded),
+            "ContractLiquidated": IndexContractLiquidated(self.options, self.app_mode, self.contracts_loaded)
         }
         d_event[self.map_contract_addresses["MoCSettlement"]] = {
             "SettlementStarted": IndexSettlementStarted(self.options, self.app_mode),
             "RedeemRequestAlter": IndexRedeemRequestAlter(self.options, self.app_mode),
             "RedeemRequestProcessed": IndexRedeemRequestProcessed(self.options, self.app_mode),
             "SettlementRedeemStableToken": IndexSettlementRedeemStableToken(self.options, self.app_mode),
-            "SettlementDeleveraging": IndexSettlementDeleveraging(self.options, self.app_mode),
+            "SettlementDeleveraging": IndexSettlementDeleveraging(self.options, self.app_mode, self.contracts_loaded),
             "SettlementCompleted": IndexSettlementCompleted(self.options, self.app_mode)
         }
         d_event[self.map_contract_addresses["MoCExchange"]] = {

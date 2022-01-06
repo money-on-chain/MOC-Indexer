@@ -238,7 +238,8 @@ class MoCIndexerTasks(TasksManager):
             scan_events_txs = ScanEventsTxs(
                 self.options,
                 self.app_mode,
-                self.contracts_addresses)
+                self.contracts_addresses,
+                self.contracts_loaded)
             self.add_task(scan_events_txs.on_task,
                           args=[],
                           wait=interval,

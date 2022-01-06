@@ -269,6 +269,14 @@ class IndexSettlementRedeemStableToken(BaseIndexEvent):
 class IndexSettlementDeleveraging(BaseIndexEvent):
     name = 'SettlementDeleveraging'
 
+    def __init__(self, options, app_mode, contracts_loaded):
+
+        self.options = options
+        self.app_mode = app_mode
+        self.contracts_loaded = contracts_loaded
+
+        super().__init__(options, app_mode)
+
     def index_event(self, m_client, parse_receipt, tx_event):
 
         # status of tx
@@ -315,6 +323,7 @@ class IndexSettlementDeleveraging(BaseIndexEvent):
         for user_riskprox in l_users_riskprox:
             try:
                 d_user_balances = riskprox_balances_from_address(
+                    self.contracts_loaded,
                     user_riskprox["address"],
                     prior_block_to_deleveraging,
                     app_mode=self.app_mode)

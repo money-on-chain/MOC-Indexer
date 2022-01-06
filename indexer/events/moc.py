@@ -15,6 +15,14 @@ class IndexBucketLiquidation(BaseIndexEvent):
 
     name = 'BucketLiquidation'
 
+    def __init__(self, options, app_mode, contracts_loaded):
+
+        self.options = options
+        self.app_mode = app_mode
+        self.contracts_loaded = contracts_loaded
+
+        super().__init__(options, app_mode)
+
     def index_event(self, m_client, parse_receipt, tx_event):
 
         # status of tx
@@ -53,7 +61,8 @@ class IndexBucketLiquidation(BaseIndexEvent):
         l_transactions = list()
         for user_riskprox in l_users_riskprox:
             try:
-                d_user_balances = riskprox_balances_from_address(user_riskprox["address"],
+                d_user_balances = riskprox_balances_from_address(self.contracts_loaded,
+                                                                 user_riskprox["address"],
                                                                  prior_block_to_liquidation,
                                                                  app_mode=self.app_mode)
             except:
@@ -117,6 +126,14 @@ class IndexContractLiquidated(BaseIndexEvent):
 
     name = 'ContractLiquidated'
 
+    def __init__(self, options, app_mode, contracts_loaded):
+
+        self.options = options
+        self.app_mode = app_mode
+        self.contracts_loaded = contracts_loaded
+
+        super().__init__(options, app_mode)
+
     def index_event(self, m_client, parse_receipt, tx_event):
 
         # status of tx
@@ -152,7 +169,8 @@ class IndexContractLiquidated(BaseIndexEvent):
         l_transactions = list()
         for user_stable in l_users_stable:
             try:
-                d_user_balances = stable_balances_from_address(user_stable["address"],
+                d_user_balances = stable_balances_from_address(self.contracts_loaded,
+                                                               user_stable["address"],
                                                                prior_block_to_liquidation)
             except:
                 continue

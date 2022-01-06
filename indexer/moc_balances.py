@@ -183,7 +183,9 @@ def insert_update_balance_address(m_client, account_address):
     return post_id
 
 
-def stable_balances_from_address(contract_loaded, address, block_identifier: BlockIdentifier = 'latest'):
+def stable_balances_from_address(contract_loaded,
+                                 address,
+                                 block_identifier: BlockIdentifier = 'latest'):
 
     doc_token = contract_loaded["DoCToken"]
 
