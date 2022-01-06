@@ -96,6 +96,9 @@ class ScanEventsTxs:
                 "Transfer": IndexRESERVETransfer(self.options, self.app_mode, self.map_contract_addresses["MoC"]),
                 "Approval": IndexApproval(self.options, self.app_mode, self.map_contract_addresses["MoC"])
             }
+            d_event[self.map_contract_addresses["MoC_BProToken"]] = {
+                "Transfer": ""
+            }
 
         return d_event
 

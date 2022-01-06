@@ -210,10 +210,15 @@ class MoCIndexerTasks(TasksManager):
         # set max workers
         self.max_workers = 5
 
-        # Reconnect on lost chain
-        log.info("Jobs add: 99. Reconnect on lost chain")
-        task_reconnect_on_lost_chain = BlockchainUtils(self.options, self.config_network, self.connection_network)
-        self.add_task(task_reconnect_on_lost_chain.on_task, args=[], wait=180, timeout=180)
+        # 99. Reconnect on lost chain
+        if 'reconnect_on_lost_chain' in self.options['tasks']:
+            log.info("Jobs add: 99. Reconnect on lost chain")
+            interval = self.options['tasks']['reconnect_on_lost_chain']['interval']
+            task_reconnect_on_lost_chain = BlockchainUtils(self.options, self.config_network, self.connection_network)
+            self.add_task(task_reconnect_on_lost_chain.on_task,
+                          args=[],
+                          wait=interval,
+                          timeout=180)
 
         # 1. Scan Blocks
         if 'scan_moc_blocks' in self.options['tasks']:
@@ -324,5 +329,5 @@ class MoCIndexerTasks(TasksManager):
                           timeout=180,
                           task_name='8. Scan Blocks not processed')
 
-        # Set max workers
+        # Set max tasks
         self.max_tasks = len(self.tasks)
