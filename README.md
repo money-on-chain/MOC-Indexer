@@ -9,14 +9,15 @@ and write to mongo database, so the app query the mongo instead of blockchain (s
 
 ### Indexer jobs
 
- 1. **Scan Blocks**: Indexing events transactions
- 2. **Scan Prices**: Scan prices 
- 3. **Scan Moc State**: Scan current moc state
- 4. **Scan Moc Status**
- 5. **Scan MocState Status**
- 6. **Scan User State Update** 
- 7. **Scan Blocks not processed**
- 99. **Reconnect on lost chain**
+ 1. **Scan Raw TX**: Indexing blocks
+ 2. **Scan Events**: Indexing events transactions
+ 3. **Scan Prices**: Scan prices 
+ 4. **Scan Moc State**: Scan current moc state
+ 5. **Scan Moc Status**
+ 6. **Scan MocState Status**
+ 7. **Scan User State Update** 
+ 8. **Scan Blocks not processed**
+ 9. **Reconnect on lost chain**
  
 
 ### Usage
@@ -33,7 +34,7 @@ Install libraries
 [Brownie](https://github.com/eth-brownie/brownie) is a Python-based development and testing framework for smart contracts.
 Brownie is easy so we integrated it with Money on Chain.
 
-`pip install eth-brownie==1.14.6`
+`pip install eth-brownie==1.17.1`
 
 **Network Connections**
 
@@ -49,12 +50,14 @@ brownie networks add BSCNetwork bscTestnet host=https://data-seed-prebsc-1-s1.bi
 
 **Connection table**
 
-| Network Name      | Network node          | Host                               | Chain    |
-|-------------------|-----------------------|------------------------------------|----------|
-| rskTestnetPublic   | RSK Testnet Public    | https://public-node.testnet.rsk.co | 31       |    
-| rskTestnetLocal    | RSK Testnet Local     | http://localhost:4444              | 31       |
-| rskMainnetPublic  | RSK Mainnet Public    | https://public-node.rsk.co         | 30       |
-| rskMainnetLocal   | RSK Mainnet Local     | http://localhost:4444              | 30       |
+| Network Name      | Network node        | Host                                            | Chain |
+|-------------------|---------------------|-------------------------------------------------|-------|
+| rskTestnetPublic  | RSK Testnet Public  | https://public-node.testnet.rsk.co              | 31    |    
+| rskTestnetLocal   | RSK Testnet Local   | http://localhost:4444                           | 31    |
+| rskMainnetPublic  | RSK Mainnet Public  | https://public-node.rsk.co                      | 30    |
+| rskMainnetLocal   | RSK Mainnet Local   | http://localhost:4444                           | 30    |
+| bscTestnet        | BSC Testnet Public  | https://data-seed-prebsc-1-s1.binance.org:8545/ | 97    |
+| bscTestnetPrivate | BSC Testnet Private | http://localhost:8545/                          | 97    |
 
 
 **Usage**

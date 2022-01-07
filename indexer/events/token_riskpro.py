@@ -1,28 +1,36 @@
 import datetime
 from collections import OrderedDict
-from web3 import Web3
 
 from moneyonchain.moc import ERC20Transfer
 
 from indexer.mongo_manager import mongo_manager
 from indexer.logger import log
+from indexer.moc_balances import insert_update_balance_address
 from .events import BaseIndexEvent
 
 
-class IndexSTABLETransfer(BaseIndexEvent):
+class IndexRISKPROTransfer(BaseIndexEvent):
 
     name = 'Transfer'
 
-    def index_event(self, tx_event, log_index=None):
+    def __init__(self, options, app_mode, moc_contract):
 
-        token_involved = 'STABLE'
+        self.options = options
+        self.app_mode = app_mode
+        self.moc_contract = moc_contract
+
+        super().__init__(options, app_mode)
+
+    def index_event(self, m_client, parse_receipt, tx_event):
+
+        token_involved = 'RISKPRO'
 
         # status of tx
-        status, confirmation_time = self.status_tx()
+        status, confirmation_time = self.status_tx(parse_receipt)
 
         address_from_contract = '0x0000000000000000000000000000000000000000'
 
-        address_not_allowed = [str.lower(address_from_contract), str.lower(self.moc_address)]
+        address_not_allowed = [str.lower(address_from_contract), str.lower(self.moc_contract)]
         if str.lower(tx_event["from"]) in address_not_allowed or \
                 str.lower(tx_event["to"]) in address_not_allowed:
             # Transfer from our Contract we dont add because already done
@@ -33,11 +41,11 @@ class IndexSTABLETransfer(BaseIndexEvent):
             return
 
         # get collection transaction
-        collection_tx = mongo_manager.collection_transaction(self.m_client)
+        collection_tx = mongo_manager.collection_transaction(m_client)
 
-        tx_hash = self.tx_receipt.txid
+        tx_hash = parse_receipt["transactionHash"]
 
-        collection_users = mongo_manager.collection_users(self.m_client)
+        collection_users = mongo_manager.collection_users(m_client)
 
         exist_user = collection_users.find_one(
             {"username": tx_event["from"]}
@@ -47,7 +55,7 @@ class IndexSTABLETransfer(BaseIndexEvent):
             # FROM
             d_tx = OrderedDict()
             d_tx["address"] = tx_event["from"]
-            d_tx["blockNumber"] = self.tx_receipt.block_number
+            d_tx["blockNumber"] = parse_receipt["blockNumber"]
             d_tx["event"] = 'Transfer'
             d_tx["transactionHash"] = tx_hash
             d_tx["amount"] = str(tx_event["value"])
@@ -58,7 +66,7 @@ class IndexSTABLETransfer(BaseIndexEvent):
             d_tx["status"] = status
             d_tx["tokenInvolved"] = token_involved
             d_tx["processLogs"] = True
-            d_tx["createdAt"] = self.block_ts
+            d_tx["createdAt"] = parse_receipt['createdAt']
 
             post_id = collection_tx.find_one_and_update(
                 {"transactionHash": tx_hash,
@@ -67,7 +75,8 @@ class IndexSTABLETransfer(BaseIndexEvent):
                 {"$set": d_tx},
                 upsert=True)
 
-            self.parent.update_balance_address(self.m_client, d_tx["address"], self.block_height)
+            # Insert as pending to update user balances
+            insert_update_balance_address(m_client, d_tx["address"])
 
             log.info("Tx Transfer {0} From: [{1}] To: [{2}] Amount: {3}".format(
                 token_involved,
@@ -83,7 +92,7 @@ class IndexSTABLETransfer(BaseIndexEvent):
             # TO
             d_tx = OrderedDict()
             d_tx["address"] = tx_event["to"]
-            d_tx["blockNumber"] = self.tx_receipt.block_number
+            d_tx["blockNumber"] = parse_receipt["blockNumber"]
             d_tx["event"] = 'Transfer'
             d_tx["transactionHash"] = tx_hash
             d_tx["amount"] = str(tx_event["value"])
@@ -94,7 +103,7 @@ class IndexSTABLETransfer(BaseIndexEvent):
             d_tx["status"] = status
             d_tx["tokenInvolved"] = token_involved
             d_tx["processLogs"] = True
-            d_tx["createdAt"] = self.block_ts
+            d_tx["createdAt"] = parse_receipt['createdAt']
 
             post_id = collection_tx.find_one_and_update(
                 {"transactionHash": tx_hash,
@@ -103,7 +112,8 @@ class IndexSTABLETransfer(BaseIndexEvent):
                 {"$set": d_tx},
                 upsert=True)
 
-            self.parent.update_balance_address(self.m_client, d_tx["address"], self.block_height)
+            # Insert as pending to update user balances
+            insert_update_balance_address(m_client, d_tx["address"])
 
             log.info("Tx Transfer {0} From: [{1}] To: [{2}] Amount: {3}".format(
                 token_involved,
@@ -111,9 +121,7 @@ class IndexSTABLETransfer(BaseIndexEvent):
                 tx_event["to"],
                 tx_event["value"]))
 
-    def on_event(self, tx_event, log_index=None):
+    def on_event(self, m_client, parse_receipt):
         """ Event """
-
-        d_event = ERC20Transfer(tx_event, tx_receipt=self.tx_receipt)
-        self.index_event(d_event.event, log_index=log_index)
-
+        cl_tx_event = ERC20Transfer(parse_receipt)
+        self.index_event(m_client, parse_receipt, cl_tx_event.event[self.name])
