@@ -3,36 +3,25 @@
     "uri": "mongodb://192.168.56.2:27017/",
     "db": "local_rdoc_alpha_testnet"
   },
-  "timeout": 60,
-  "timeout_wait": 300,
-  "gas_price": 60000000,
   "debug": false,
-  "index_mode": "vendors",
   "tasks": {
-    "scan_moc_blocks": {"interval":  10},
-    "scan_moc_prices": {"interval":  15},
+    "scan_moc_blocks": {"interval":  3},
+    "scan_moc_events": {"interval":  4},
+    "scan_moc_prices": {"interval":  10},
     "scan_moc_state": {"interval":  10},
     "scan_moc_status": {"interval":  10},
     "scan_moc_state_status": {"interval":  10},
     "scan_user_state_update": {"interval":  10},
     "scan_moc_blocks_not_processed": {"interval":  60},
-    "scan_moc_blocks_history": {"interval":  60},
-    "scan_moc_prices_history": {"interval":  60},
-    "scan_moc_state_history": {"interval":  60},
-    "scan_moc_status_history": {"interval":  60},
-    "scan_moc_state_status_history": {"interval":  60}
-  },
-  "scan_moc_history": {
-    "from_block": 943660,
-    "to_block": 943680,
-    "force_start": true,
-    "blocks_recession": 1
+    "reconnect_on_lost_chain": {"interval":  180}
   },
   "scan_moc_blocks": {
     "confirm_blocks": 10,
     "blocks_look_behind": 1,
     "seconds_not_in_chain_error": 600,
-    "blocks_recession": 1
+    "blocks_recession": 0,
+    "from_block": 0,
+    "to_block": 0
   },
   "scan_moc_state": {
     "block_height": 0
@@ -49,9 +38,9 @@
       "project": "RDoC",
       "addresses": {
         "MoC": "0x4512f4C1d984bbf8B7f7404EddFb1881cFA79EfD",
+        "Multicall2": "0xaf7be1ef9537018feda5397d9e3bb9a1e4e27ac8",
         "BProToken": "0x5639809FAFfF9082fa5B9a8843D12695871f68bd"
       }
     }
-  },
-  "vendor_account": "0xDda74880D638451e6D2c8D3fC19987526A7Af730"
+  }
 }

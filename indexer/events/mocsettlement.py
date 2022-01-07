@@ -11,6 +11,7 @@ from moneyonchain.moc import MoCSettlementRedeemRequestAlter, \
 
 from indexer.mongo_manager import mongo_manager
 from indexer.logger import log
+from indexer.moc_balances import insert_update_balance_address, riskprox_balances_from_address
 from .events import BaseIndexEvent
 
 
@@ -18,30 +19,29 @@ class IndexSettlementStarted(BaseIndexEvent):
 
     name = 'SettlementStarted'
 
-    def index_event(self, tx_event, log_index=None):
-
+    def index_event(self, m_client, parse_receipt, tx_event):
         return
 
-    def update_settlement_state(self, tx_event):
+    def update_settlement_state(self, m_client, parse_receipt, tx_event):
         """Event: SettlementStarted"""
 
         # SettlementState
-        collection_tx = mongo_manager.collection_settlement_state(self.m_client)
+        collection_tx = mongo_manager.collection_settlement_state(m_client)
 
         exist_tx = collection_tx.find_one(
-            {"startBlockNumber": self.tx_receipt.block_number}
+            {"startBlockNumber": parse_receipt["blockNumber"]}
         )
 
         d_tx = dict()
         d_tx["inProcess"] = True
-        d_tx["startBlockNumber"] = self.tx_receipt.block_number
+        d_tx["startBlockNumber"] = parse_receipt["blockNumber"]
         d_tx["docRedeemCount"] = tx_event["stableTokenRedeemCount"]
         d_tx["deleveragingCount"] = tx_event["deleveragingCount"]
         #adjust_price = Web3.fromWei(tx_event.riskProxPrice, 'ether') * Web3.fromWei(tx_event.reservePrice, 'ether')
         #d_tx["btcxPrice"] = str(int(adjust_price * self.precision))
         d_tx["btcxPrice"] = str(tx_event["riskProxPrice"])
         d_tx["btcPrice"] = str(tx_event["reservePrice"])
-        d_tx["createdAt"] = self.block_ts
+        d_tx["createdAt"] = parse_receipt['createdAt']
         d_tx["processLogs"] = True
 
         if not exist_tx:
@@ -59,31 +59,30 @@ class IndexSettlementStarted(BaseIndexEvent):
 
         return d_tx
 
-    def on_event(self, tx_event, log_index=None):
+    def on_event(self, m_client, parse_receipt):
         """ Event """
 
-        d_event = MoCSettlementSettlementStarted(tx_event, tx_receipt=self.tx_receipt)
-        self.index_event(d_event.event, log_index=log_index)
-        self.update_settlement_state(d_event.event)
+        cl_tx_event = MoCSettlementSettlementStarted(parse_receipt)
+        self.index_event(m_client, parse_receipt, cl_tx_event.event[self.name])
+        self.update_settlement_state(m_client, parse_receipt, cl_tx_event.event[self.name])
 
 
 class IndexRedeemRequestAlter(BaseIndexEvent):
     name = 'RedeemRequestAlter'
 
-    def index_event(self, tx_event, log_index=None):
+    def index_event(self, m_client, parse_receipt, tx_event):
 
         # status of tx
-        status, confirmation_time = self.status_tx()
+        status, confirmation_time = self.status_tx(parse_receipt)
 
         # get collection transaction
-        collection_tx = mongo_manager.collection_transaction(self.m_client)
+        collection_tx = mongo_manager.collection_transaction(m_client)
 
-        tx_hash = self.tx_receipt.txid
-        moc_tx = self.transactions[tx_hash]
+        tx_hash = parse_receipt["transactionHash"]
 
         d_tx = OrderedDict()
         d_tx["transactionHash"] = tx_hash
-        d_tx["blockNumber"] = self.tx_receipt.block_number
+        d_tx["blockNumber"] = parse_receipt["blockNumber"]
         d_tx["address"] = tx_event["redeemer"]
         d_tx["status"] = status
         d_tx["event"] = 'RedeemRequestAlter'
@@ -91,7 +90,7 @@ class IndexRedeemRequestAlter(BaseIndexEvent):
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
         d_tx["amount"] = str(tx_event["delta"])
         d_tx["confirmationTime"] = confirmation_time
-        gas_fee = self.tx_receipt.gas_used * Web3.fromWei(self.tx_receipt.gas_price, 'ether')
+        gas_fee = parse_receipt["gas_used"] * Web3.fromWei(parse_receipt["gas_price"], 'ether')
         d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         d_tx["processLogs"] = True
 
@@ -103,7 +102,7 @@ class IndexRedeemRequestAlter(BaseIndexEvent):
                 is_addition = False
 
         d_tx["isPositive"] = is_addition
-        d_tx["createdAt"] = self.block_ts
+        d_tx["createdAt"] = parse_receipt['createdAt']
 
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash,
@@ -119,15 +118,14 @@ class IndexRedeemRequestAlter(BaseIndexEvent):
             d_tx["amount"],
             tx_hash))
 
-        # update user balances
-        info_balance = self.parent.update_balance_address(self.m_client, d_tx["address"],
-                                                          self.block_height)
+        # Insert as pending to update user balances
+        insert_update_balance_address(m_client, d_tx["address"])
 
         # QUEUE DOC
         # Is the operation of sending or cancel doc to queue is
         # always the absolute value
         # first we need to delete previous queue doc
-        # collection_tx.remove({'address': tx_event.redeemer, 'event': 'QueueDOC'})
+        # collection_tx.delete_many({'address': tx_event.redeemer, 'event': 'QueueDOC'})
         #
         # d_tx = OrderedDict()
         # d_tx["transactionHash"] = tx_hash
@@ -161,29 +159,28 @@ class IndexRedeemRequestAlter(BaseIndexEvent):
 
         return d_tx
 
-    def on_event(self, tx_event, log_index=None):
+    def on_event(self, m_client, parse_receipt):
         """ Event """
 
-        d_event = MoCSettlementRedeemRequestAlter(tx_event, tx_receipt=self.tx_receipt)
-        self.index_event(d_event.event, log_index=log_index)
+        cl_tx_event = MoCSettlementRedeemRequestAlter(parse_receipt)
+        self.index_event(m_client, parse_receipt, cl_tx_event.event[self.name])
 
 
 class IndexRedeemRequestProcessed(BaseIndexEvent):
     name = 'RedeemRequestProcessed'
 
-    def index_event(self, tx_event, log_index=None):
+    def index_event(self, m_client, parse_receipt, tx_event):
         # status of tx
-        status, confirmation_time = self.status_tx()
+        status, confirmation_time = self.status_tx(parse_receipt)
 
         # get collection transaction
-        collection_tx = mongo_manager.collection_transaction(self.m_client)
+        collection_tx = mongo_manager.collection_transaction(m_client)
 
-        tx_hash = self.tx_receipt.txid
-        moc_tx = self.transactions[tx_hash]
+        tx_hash = parse_receipt["transactionHash"]
 
         d_tx = OrderedDict()
         d_tx["transactionHash"] = tx_hash
-        d_tx["blockNumber"] = self.tx_receipt.block_number
+        d_tx["blockNumber"] = parse_receipt["blockNumber"]
         d_tx["address"] = tx_event["redeemer"]
         d_tx["status"] = status
         d_tx["event"] = 'RedeemRequestProcessed'
@@ -192,10 +189,10 @@ class IndexRedeemRequestProcessed(BaseIndexEvent):
         d_tx["amount"] = str(tx_event["amount"])
         d_tx["confirmationTime"] = confirmation_time
         d_tx["isPositive"] = False
-        gas_fee = self.tx_receipt.gas_used * Web3.fromWei(self.tx_receipt.gas_price, 'ether')
+        gas_fee = parse_receipt["gas_used"] * Web3.fromWei(parse_receipt["gas_price"], 'ether')
         # d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         d_tx["processLogs"] = True
-        d_tx["createdAt"] = self.block_ts
+        d_tx["createdAt"] = parse_receipt['createdAt']
 
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash,
@@ -211,44 +208,43 @@ class IndexRedeemRequestProcessed(BaseIndexEvent):
             d_tx["amount"],
             tx_hash))
 
-        # update user balances
-        self.parent.update_balance_address(self.m_client, d_tx["address"], self.block_height)
+        # Insert as pending to update user balances
+        insert_update_balance_address(m_client, d_tx["address"])
 
         return d_tx
 
-    def on_event(self, tx_event, log_index=None):
+    def on_event(self, m_client, parse_receipt):
         """ Event """
 
-        d_event = MoCSettlementRedeemRequestProcessed(tx_event, tx_receipt=self.tx_receipt)
-        self.index_event(d_event.event, log_index=log_index)
+        cl_tx_event = MoCSettlementRedeemRequestProcessed(parse_receipt)
+        self.index_event(m_client, parse_receipt, cl_tx_event.event[self.name])
 
 
 class IndexSettlementRedeemStableToken(BaseIndexEvent):
     name = 'SettlementRedeemStableToken'
 
-    def index_event(self, tx_event, log_index=None):
-
+    def index_event(self, m_client, parse_receipt, tx_event):
         return
 
-    def notifications(self, tx_event, log_index=None):
+    def notifications(self, m_client, parse_receipt, tx_event):
 
         # Notifications
-        collection_tx = mongo_manager.collection_notification(self.m_client)
-        tx_hash = self.tx_receipt.txid
+        collection_tx = mongo_manager.collection_notification(m_client)
+        tx_hash = parse_receipt["transactionHash"]
         event_name = 'SettlementRedeemStableToken'
 
         d_tx = dict()
         d_tx["event"] = event_name
         d_tx["transactionHash"] = tx_hash
-        d_tx["logIndex"] = log_index
+        d_tx["logIndex"] = parse_receipt["log_index"]
         d_tx["queueSize"] = str(tx_event["queueSize"])
         d_tx["accumCommissions"] = str(tx_event["accumCommissions"])
         d_tx["reservePrice"] = str(tx_event["reservePrice"])
-        d_tx["timestamp"] = datetime.datetime.fromtimestamp(self.tx_receipt.timestamp)
+        d_tx["timestamp"] = parse_receipt["timestamp"]
         d_tx["processLogs"] = True
 
         post_id = collection_tx.find_one_and_update(
-            {"transactionHash": tx_hash, "event": event_name, "logIndex": log_index},
+            {"transactionHash": tx_hash, "event": event_name, "logIndex": parse_receipt["log_index"]},
             {"$set": d_tx},
             upsert=True)
         d_tx['post_id'] = post_id
@@ -262,31 +258,38 @@ class IndexSettlementRedeemStableToken(BaseIndexEvent):
 
         return d_tx
 
-    def on_event(self, tx_event, log_index=None):
+    def on_event(self, m_client, parse_receipt):
         """ Event """
 
-        d_event = MoCSettlementSettlementRedeemStableToken(tx_event, tx_receipt=self.tx_receipt)
-        self.index_event(d_event.event, log_index=log_index)
-        self.notifications(d_event.event, log_index=log_index)
+        cl_tx_event = MoCSettlementSettlementRedeemStableToken(parse_receipt)
+        self.index_event(m_client, parse_receipt, cl_tx_event.event[self.name])
+        self.notifications(m_client, parse_receipt, cl_tx_event.event[self.name])
 
 
 class IndexSettlementDeleveraging(BaseIndexEvent):
     name = 'SettlementDeleveraging'
 
-    def index_event(self, tx_event, log_index=None):
+    def __init__(self, options, app_mode, contracts_loaded):
+
+        self.options = options
+        self.app_mode = app_mode
+        self.contracts_loaded = contracts_loaded
+
+        super().__init__(options, app_mode)
+
+    def index_event(self, m_client, parse_receipt, tx_event):
 
         # status of tx
-        status, confirmation_time = self.status_tx()
+        status, confirmation_time = self.status_tx(parse_receipt)
 
         # get collection transaction
-        collection_tx = mongo_manager.collection_transaction(self.m_client)
+        collection_tx = mongo_manager.collection_transaction(m_client)
 
-        tx_hash = self.tx_receipt.txid
-        moc_tx = self.transactions[tx_hash]
+        tx_hash = parse_receipt["transactionHash"]
 
         # get all address who has bprox , at the time all users because
         # we dont know who hast bprox in certain block
-        collection_users = mongo_manager.collection_user_state(self.m_client)
+        collection_users = mongo_manager.collection_user_state(m_client)
         users = collection_users.find()
         l_users_riskprox = list()
         for user in users:
@@ -296,19 +299,19 @@ class IndexSettlementDeleveraging(BaseIndexEvent):
 
         d_tx = OrderedDict()
         d_tx["transactionHash"] = tx_hash
-        d_tx["blockNumber"] = self.tx_receipt.block_number
+        d_tx["blockNumber"] = parse_receipt["blockNumber"]
         d_tx["event"] = 'SettlementDeleveraging'
         d_tx["tokenInvolved"] = 'RISKPROX'
         d_tx["status"] = status
         d_tx["settlement_status"] = 0
         d_tx["confirmationTime"] = confirmation_time
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
-        gas_fee = self.tx_receipt.gas_used * Web3.fromWei(self.tx_receipt.gas_price, 'ether')
+        gas_fee = parse_receipt["gas_used"] * Web3.fromWei(parse_receipt["gas_price"], 'ether')
         # d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         # if self.app_mode != "RRC20":
         #    d_tx["gasFeeUSD"] = str(int(gas_fee * Web3.fromWei(tx_event.reservePrice, 'ether') * self.precision))
         d_tx["processLogs"] = True
-        d_tx["createdAt"] = self.block_ts
+        d_tx["createdAt"] = parse_receipt['createdAt']
 
         riskprox_price = Web3.fromWei(tx_event["riskProxPrice"], 'ether')
         reserve_price = Web3.fromWei(tx_event["reservePrice"], 'ether')
@@ -319,9 +322,11 @@ class IndexSettlementDeleveraging(BaseIndexEvent):
 
         for user_riskprox in l_users_riskprox:
             try:
-                d_user_balances = self.parent.riskprox_balances_from_address(
+                d_user_balances = riskprox_balances_from_address(
+                    self.contracts_loaded,
                     user_riskprox["address"],
-                    prior_block_to_deleveraging)
+                    prior_block_to_deleveraging,
+                    app_mode=self.app_mode)
             except:
                 continue
 
@@ -355,23 +360,22 @@ class IndexSettlementDeleveraging(BaseIndexEvent):
                     d_tx["amount"],
                     tx_hash))
 
-                # update user balances
-                self.parent.update_balance_address(self.m_client, d_tx["address"],
-                                                   self.block_height)
+                # Insert as pending to update user balances
+                insert_update_balance_address(m_client, d_tx["address"])
 
                 l_transactions.append(d_tx)
 
         return l_transactions
 
-    def set_settlement_state(self, tx_event):
+    def set_settlement_state(self, m_client, parse_receipt, tx_event):
         """Event: SettlementDeleveraging"""
 
         # SettlementState
-        collection_tx = mongo_manager.collection_settlement_state(self.m_client)
+        collection_tx = mongo_manager.collection_settlement_state(m_client)
 
         d_tx = dict()
         d_tx["inProcess"] = False
-        d_tx["startBlockNumber"] = self.tx_receipt.block_number
+        d_tx["startBlockNumber"] = parse_receipt["blockNumber"]
         d_tx["processLogs"] = True
 
         d_tx_insert = OrderedDict()
@@ -379,10 +383,10 @@ class IndexSettlementDeleveraging(BaseIndexEvent):
         d_tx_insert["deleveragingCount"] = 0
         d_tx_insert["btcxPrice"] = str(tx_event["riskProxPrice"])
         d_tx_insert["btcPrice"] = str(tx_event["reservePrice"])
-        d_tx_insert["createdAt"] = self.block_ts
+        d_tx_insert["createdAt"] = parse_receipt['createdAt']
 
         post_id = collection_tx.find_one_and_update(
-            {"startBlockNumber": self.tx_receipt.block_number},
+            {"startBlockNumber": parse_receipt["blockNumber"]},
             {"$set": d_tx,
              "$setOnInsert": d_tx_insert},
             upsert=True)
@@ -395,39 +399,38 @@ class IndexSettlementDeleveraging(BaseIndexEvent):
 
         return d_tx
 
-    def on_event(self, tx_event, log_index=None):
+    def on_event(self, m_client, parse_receipt):
         """ Event """
 
-        d_event = MoCSettlementSettlementDeleveraging(tx_event, tx_receipt=self.tx_receipt)
-        self.index_event(d_event.event, log_index=log_index)
-        self.set_settlement_state(d_event.event)
+        cl_tx_event = MoCSettlementSettlementDeleveraging(parse_receipt)
+        self.index_event(m_client, parse_receipt, cl_tx_event.event[self.name])
+        self.set_settlement_state(m_client, parse_receipt, cl_tx_event.event[self.name])
 
 
 class IndexSettlementCompleted(BaseIndexEvent):
     name = 'SettlementCompleted'
 
-    def index_event(self, tx_event, log_index=None):
-
+    def index_event(self, m_client, parse_receipt, tx_event):
         return
 
-    def moc_settlement_completed(self, tx_event):
+    def moc_settlement_completed(self, m_client, parse_receipt, tx_event):
         """Event: SettlementDeleveraging"""
 
         # get collection transaction
-        collection_tx = mongo_manager.collection_transaction(self.m_client)
+        collection_tx = mongo_manager.collection_transaction(m_client)
 
         # remove all RedeemRequestAlter
-        collection_tx.remove({"event": "RedeemRequestAlter",
-                              "blockHeight": {"$lte": self.block_height}})
+        collection_tx.delete_many({"event": "RedeemRequestAlter",
+                              "blockHeight": {"$lte": parse_receipt["blockNumber"]}})
 
         # also delete with created at < 31 days
-        old_records = self.block_ts - datetime.timedelta(days=31)
-        collection_tx.remove({"event": "RedeemRequestAlter",
+        old_records = parse_receipt['chain']['block_ts'] - datetime.timedelta(days=31)
+        collection_tx.delete_many({"event": "RedeemRequestAlter",
                               "createdAt": {"$lte": old_records}})
 
-    def on_event(self, tx_event, log_index=None):
+    def on_event(self, m_client, parse_receipt):
         """ Event """
 
-        d_event = MoCSettlementSettlementCompleted(tx_event, tx_receipt=self.tx_receipt)
-        self.index_event(d_event.event, log_index=log_index)
-        self.moc_settlement_completed(d_event.event)
+        cl_tx_event = MoCSettlementSettlementCompleted(parse_receipt)
+        self.index_event(m_client, parse_receipt, cl_tx_event.event[self.name])
+        self.moc_settlement_completed(m_client, parse_receipt, cl_tx_event.event[self.name])

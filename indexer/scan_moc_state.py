@@ -1,14 +1,33 @@
-import datetime
 import time
 
 from moneyonchain.networks import network_manager
 
 from indexer.mongo_manager import mongo_manager
 from indexer.logger import log
-from .status import State
+from .moc_state import moc_state_from_sc
 
 
-class ScanState(State):
+class ScanMoCState:
+
+    def __init__(self, options, app_mode, contract_loaded, contract_addresses):
+        self.options = options
+        self.app_mode = app_mode
+        self.contract_loaded = contract_loaded
+        self.contract_addresses = contract_addresses
+        self.debug_mode = self.options['debug']
+
+        # update block info
+        self.last_block = network_manager.block_number
+        self.block_ts = network_manager.block_timestamp(self.last_block)
+
+    def update_info_last_block(self, m_client):
+
+        collection_moc_indexer = mongo_manager.collection_moc_indexer(m_client)
+        moc_index = collection_moc_indexer.find_one(sort=[("updatedAt", -1)])
+        if moc_index:
+            if 'last_block_number' in moc_index:
+                self.last_block = moc_index['last_block_number']
+                self.block_ts = moc_index['last_block_ts']
 
     def scan_moc_state(self, task=None):
 
@@ -25,7 +44,7 @@ class ScanState(State):
             block_height = last_block
 
         if self.debug_mode:
-            log.info("[3. Scan Moc State]  Starting to index MoC State on block height: {0}".format(block_height))
+            log.info("[4. Scan Moc State]  Starting to index MoC State on block height: {0}".format(block_height))
 
         # get collection moc_state from mongo
         collection_moc_state = mongo_manager.collection_moc_state(m_client)
@@ -33,13 +52,22 @@ class ScanState(State):
         exist_moc_state = collection_moc_state.find_one({"lastUpdateHeight": block_height})
         if exist_moc_state:
             if self.debug_mode:
-                log.info("[3. Scan Moc State]  Not time to run moc state, already exist")
+                log.info("[4. Scan Moc State]  Not time to run moc state, already exist")
             return
 
         start_time = time.time()
 
+        # update block information
+        self.update_info_last_block(m_client)
+
         # get all functions from smart contract
-        d_moc_state = self.moc_state_from_sc(block_identifier=block_height)
+        d_moc_state = moc_state_from_sc(
+            self.contract_loaded,
+            self.contract_addresses,
+            block_identifier=block_height,
+            block_ts=self.block_ts,
+            app_mode=self.app_mode)
+
         if not d_moc_state:
             return
 
@@ -87,68 +115,7 @@ class ScanState(State):
             upsert=True)
 
         duration = time.time() - start_time
-        log.info("[3. Scan Moc State] Done! [{0}] [{1} seconds.]".format(block_height, duration))
+        log.info("[4. Scan Moc State] Done! [{0}] [{1} seconds.]".format(block_height, duration))
 
-    def scan_moc_state_history(self, task=None):
-
-        # conect to mongo db
-        m_client = mongo_manager.connect()
-
-        from_block = self.options['scan_moc_history']['from_block']
-        to_block = self.options['scan_moc_history']['to_block']
-
-        collection_moc_indexer_history = mongo_manager.collection_moc_indexer_history(m_client)
-        moc_index = collection_moc_indexer_history.find_one(sort=[("updatedAt", -1)])
-        last_block_indexed = 0
-        if moc_index:
-            if 'last_moc_state_block' in moc_index:
-                last_block_indexed = moc_index['last_moc_state_block']
-
-        if last_block_indexed > 0:
-            from_block = last_block_indexed + 1
-
-        if from_block >= to_block:
-            if self.debug_mode:
-                log.info("[SCAN MOC STATE HISTORY] Its not the time to run indexer no new blocks avalaible!")
-            return
-
-        # start with from block
-        current_block = from_block
-
-        if self.debug_mode:
-            log.info("[SCAN MOC STATE HISTORY] Starting to index MoC State: {0} To Block: {1} ...".format(
-                from_block, to_block))
-
-        start_time = time.time()
-
-        while current_block <= to_block:
-
-            # get all functions from smart contract
-            d_moc_state = self.moc_state_from_sc(block_identifier=current_block)
-            if not d_moc_state:
-                current_block += 1
-                continue
-
-            d_moc_state["lastUpdateHeight"] = current_block
-            d_moc_state["priceVariation"] = None
-
-            # history
-            collection_moc_state_history = mongo_manager.collection_moc_state_history(m_client)
-            collection_moc_state_history.find_one_and_update(
-                {"blockHeight": current_block},
-                {"$set": d_moc_state},
-                upsert=True)
-
-            collection_moc_indexer_history.update_one({},
-                                                      {'$set': {'last_moc_state_block': current_block,
-                                                                'updatedAt': datetime.datetime.now()}},
-                                                      upsert=True)
-
-            if self.debug_mode:
-                log.info("[SCAN MOC STATE HISTORY] [{0}]".format(current_block))
-
-            # Go to next block
-            current_block += 1
-
-        duration = time.time() - start_time
-        log.info("[SCAN MOC STATE HISTORY] Done in {0} seconds".format(duration))
+    def on_task(self, task=None):
+        self.scan_moc_state(task=task)
