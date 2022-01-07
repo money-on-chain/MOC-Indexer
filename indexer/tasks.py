@@ -214,7 +214,12 @@ class MoCIndexerTasks(TasksManager):
         if 'reconnect_on_lost_chain' in self.options['tasks']:
             log.info("Jobs add: 99. Reconnect on lost chain")
             interval = self.options['tasks']['reconnect_on_lost_chain']['interval']
-            task_reconnect_on_lost_chain = BlockchainUtils(self.options, self.config_network, self.connection_network)
+            task_reconnect_on_lost_chain = BlockchainUtils(
+                self.options,
+                self.config_network,
+                self.connection_network,
+                self
+            )
             self.add_task(task_reconnect_on_lost_chain.on_task,
                           args=[],
                           wait=interval,

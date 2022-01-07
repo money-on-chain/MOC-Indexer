@@ -199,7 +199,7 @@ class ScanMoCStateStatus:
             upsert=True)
 
         if self.debug_mode:
-            log.info("Done scan state status block height: [{0}]".format(current_block))
+            log.info("[6. Scan MocState Status] Done scan state status block height: [{0}]".format(current_block))
 
     def scan_moc_state_status(self, task=None):
 
