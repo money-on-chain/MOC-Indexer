@@ -36,8 +36,11 @@ class ScanMoCState:
         # conect to mongo db
         m_client = mongo_manager.connect()
 
+        # update block information
+        self.update_info_last_block(m_client)
+
         # get last block from node
-        last_block = network_manager.block_number
+        last_block = self.last_block #network_manager.block_number
 
         block_height = config_block_height
         if block_height <= 0:
@@ -56,9 +59,6 @@ class ScanMoCState:
             return
 
         start_time = time.time()
-
-        # update block information
-        self.update_info_last_block(m_client)
 
         # get all functions from smart contract
         d_moc_state = moc_state_from_sc(

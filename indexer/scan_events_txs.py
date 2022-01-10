@@ -138,6 +138,10 @@ class ScanEventsTxs:
                     tx_event = _decode_logs([tx_log])
                     map_events_contract = inverted_map_contract_addresses[log_address]
                     for tx_event_name, tx_event_info in tx_event.items():
+                        if log_address not in self.map_events_contracts:
+                            log.warn("Address not found in our filtered contract: [{0}]. skipping!".format(log_address))
+                            continue
+
                         if tx_event_name in self.map_events_contracts[log_address]:
                             # go map the event
                             event_class = self.map_events_contracts[log_address][tx_event_name]
@@ -152,6 +156,9 @@ class ScanEventsTxs:
 
         # connect to mongo db
         m_client = mongo_manager.connect()
+
+        # update block information
+        self.update_info_last_block(m_client)
 
         collection_raw_transactions = mongo_manager.collection_raw_transactions(m_client)
 

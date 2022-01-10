@@ -35,8 +35,11 @@ class ScanUser:
         # conect to mongo db
         m_client = mongo_manager.connect()
 
+        # update block information
+        self.update_info_last_block(m_client)
+
         # get last block from node
-        last_block = self.last_block#network_manager.block_number
+        last_block = self.last_block
 
         collection_user_state_update = mongo_manager.collection_user_state_update(m_client)
         users_pending_update = collection_user_state_update.find({})

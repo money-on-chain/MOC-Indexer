@@ -56,8 +56,11 @@ class ScanMoCPrices:
 
         config_blocks_look_behind = self.options['scan_moc_prices']['blocks_look_behind']
 
+        # update block information
+        self.update_info_last_block(m_client)
+
         # get last block from node
-        last_block = network_manager.block_number
+        last_block = self.last_block #network_manager.block_number
 
         collection_moc_indexer = mongo_manager.collection_moc_indexer(m_client)
         moc_index = collection_moc_indexer.find_one(sort=[("updatedAt", -1)])
