@@ -64,7 +64,8 @@ class ScanUser:
                                    user_update['account'],
                                    block_height,
                                    app_mode=self.app_mode,
-                                   block_ts=self.block_ts)
+                                   block_ts=self.block_ts,
+                                   debug=self.debug_mode)
 
             collection_user_state_update.delete_many({'account': user_update['account']})
 

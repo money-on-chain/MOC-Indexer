@@ -90,6 +90,7 @@ def balances_from_address(
         d_user_balance["reserveAllowance"] = results[1][8]
         d_user_balance["bproMoCBalance"] = results[1][9]
         total_reserve_amount = d_user_balance["spendableBalance"]
+        d_user_balance["rbtcBalance"] = d_user_balance["spendableBalance"]
     else:
         raise Exception("Not valid APP Mode")
 
@@ -113,7 +114,8 @@ def update_balance_address(
         account_address,
         block_height,
         app_mode='MoC',
-        block_ts=None):
+        block_ts=None,
+        debug=False):
 
     # get collection user state from mongo
     collection_user_state = mongo_manager.collection_user_state(m_client)
@@ -151,6 +153,9 @@ def update_balance_address(
         d_user_balance["showTermsAndConditions"] = True
         d_user_balance["showTutorialNoMore"] = False
         d_user_balance["createdBlockHeight"] = block_height
+
+    if debug:
+        log.info(d_user_balance)
 
     # update or insert
     post_id = collection_user_state.find_one_and_update(

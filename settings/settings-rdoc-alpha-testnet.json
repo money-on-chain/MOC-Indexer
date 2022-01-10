@@ -3,7 +3,7 @@
     "uri": "mongodb://192.168.56.2:27017/",
     "db": "local_rdoc_alpha_testnet"
   },
-  "debug": false,
+  "debug": true,
   "tasks": {
     "scan_moc_blocks": {"interval":  3},
     "scan_moc_events": {"interval":  4},
