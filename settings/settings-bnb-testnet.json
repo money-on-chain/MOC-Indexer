@@ -1,0 +1,48 @@
+{
+  "mongo": {
+    "uri": "mongodb://192.168.56.2:27017/",
+    "db": "local_bnb_testnet"
+  },
+  "timeout": 60,
+  "timeout_wait": 300,
+  "gas_price": 60000000,
+  "debug": true,
+  "tasks": {
+    "scan_moc_blocks": {"interval":  3},
+    "scan_moc_events": {"interval":  10},
+    "scan_moc_prices": {"interval":  2},
+    "scan_moc_state": {"interval":  10},
+    "scan_moc_status": {"interval":  10},
+    "scan_moc_state_status": {"interval":  10},
+    "scan_user_state_update": {"interval":  10},
+    "scan_moc_blocks_not_processed": {"interval":  60}
+  },
+  "scan_moc_blocks": {
+    "confirm_blocks": 10,
+    "blocks_look_behind": 1,
+    "seconds_not_in_chain_error": 600,
+    "blocks_recession": 0,
+    "from_block": 0,
+    "to_block": 0
+  },
+  "scan_moc_state": {
+    "block_height": 0
+  },
+  "scan_moc_prices": {
+    "blocks_look_behind": 1
+  },
+  "scan_moc_state_status": {
+    "blocks_look_behind": 1
+  },
+  "networks": {
+    "bnbTestnet": {
+      "app_mode": "MoC",
+      "project": "MoC",
+      "addresses": {
+        "MoC": "0x80cBD706D1Db7840736C34F5177ADEf847f338Cc",
+        "Multicall2": "0x8F3273Fb89B075b1645095ABaC6ed17B2d4Bc576"
+      }
+    }
+  },
+  "vendor_account": "0xCed191D8c04D1077F456638301d95400022E5A79"
+}
