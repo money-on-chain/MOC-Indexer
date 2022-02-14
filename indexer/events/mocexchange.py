@@ -18,11 +18,9 @@ from moneyonchain.rdoc import MoCExchangeRiskProMint as RDOCMoCExchangeRiskProMi
     MoCExchangeRiskProxRedeem as RDOCMoCExchangeRiskProxRedeem, \
     MoCExchangeStableTokenRedeem as RDOCMoCExchangeStableTokenRedeem
 
-
 from indexer.mongo_manager import mongo_manager
 from indexer.logger import log
-
-
+from indexer.moc_balances import insert_update_balance_address
 from .events import BaseIndexEvent
 
 
@@ -30,19 +28,19 @@ class IndexRiskProMint(BaseIndexEvent):
 
     name = 'RiskProMint'
 
-    def index_event(self, tx_event, log_index=None):
+    def index_event(self, m_client, parse_receipt, tx_event):
 
         # status of tx
-        status, confirmation_time = self.status_tx()
+        status, confirmation_time = self.status_tx(parse_receipt)
 
         # get collection transaction
-        collection_tx = mongo_manager.collection_transaction(self.m_client)
+        collection_tx = mongo_manager.collection_transaction(m_client)
 
-        tx_hash = self.tx_receipt.txid
+        tx_hash = parse_receipt["transactionHash"]
 
         d_tx = OrderedDict()
         d_tx["address"] = tx_event["account"]
-        d_tx["blockNumber"] = self.tx_receipt.block_number
+        d_tx["blockNumber"] = parse_receipt["blockNumber"]
         d_tx["event"] = 'RiskProMint'
         d_tx["transactionHash"] = tx_hash
         d_tx["RBTCAmount"] = str(tx_event["reserveTotal"])
@@ -55,10 +53,10 @@ class IndexRiskProMint(BaseIndexEvent):
         d_tx["isPositive"] = True
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
 
-        if self.app_mode != "RRC20":
-            rbtc_commission = tx_event["commission"] + tx_event["btcMarkup"]
-        else:
+        if "reserveTokenMarkup" in tx_event:
             rbtc_commission = tx_event["commission"] + tx_event["reserveTokenMarkup"]
+        else:
+            rbtc_commission = tx_event["commission"] + tx_event["btcMarkup"]
 
         moc_commission = tx_event["mocCommissionValue"] + tx_event["mocMarkup"]
         if rbtc_commission > 0:
@@ -75,7 +73,7 @@ class IndexRiskProMint(BaseIndexEvent):
         d_tx["mocCommissionValue"] = str(moc_commission)
         d_tx["mocPrice"] = str(tx_event["mocPrice"])
 
-        gas_fee = self.tx_receipt.gas_used * Web3.fromWei(self.tx_receipt.gas_price, 'ether')
+        gas_fee = parse_receipt['gas_used'] * Web3.fromWei(parse_receipt["gas_price"], 'ether')
         #gas_fee = self.tx_receipt.gas_used * Web3.fromWei(moc_tx['gasPrice'],
         #                                               'ether')
         d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
@@ -90,7 +88,7 @@ class IndexRiskProMint(BaseIndexEvent):
             tx_event["reservePrice"], 'ether')
         d_tx["USDTotal"] = str(int(usd_total * self.precision))
         d_tx["processLogs"] = True
-        d_tx["createdAt"] = self.block_ts
+        d_tx["createdAt"] = parse_receipt['createdAt']
 
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash,
@@ -106,39 +104,39 @@ class IndexRiskProMint(BaseIndexEvent):
             d_tx["amount"],
             tx_hash))
 
-        # update user balances
-        self.parent.update_balance_address(self.m_client, d_tx["address"], self.block_height)
+        # Insert as pending to update user balances
+        insert_update_balance_address(m_client, d_tx["address"])
 
         return d_tx
 
-    def on_event(self, tx_event, log_index=None):
+    def on_event(self, m_client, parse_receipt):
         """ Event """
 
         if self.app_mode != "RRC20":
-            d_event = MoCExchangeRiskProMint(tx_event, tx_receipt=self.tx_receipt)
+            cl_tx_event = MoCExchangeRiskProMint(parse_receipt)
         else:
-            d_event = RDOCMoCExchangeRiskProMint(tx_event, tx_receipt=self.tx_receipt)
+            cl_tx_event = RDOCMoCExchangeRiskProMint(parse_receipt)
 
-        self.index_event(d_event.event, log_index=log_index)
+        self.index_event(m_client, parse_receipt, cl_tx_event.event[self.name])
 
 
 class IndexRiskProRedeem(BaseIndexEvent):
 
     name = 'RiskProRedeem'
 
-    def index_event(self, tx_event, log_index=None):
+    def index_event(self, m_client, parse_receipt, tx_event):
 
         # status of tx
-        status, confirmation_time = self.status_tx()
+        status, confirmation_time = self.status_tx(parse_receipt)
 
         # get collection transaction
-        collection_tx = mongo_manager.collection_transaction(self.m_client)
+        collection_tx = mongo_manager.collection_transaction(m_client)
 
-        tx_hash = self.tx_receipt.txid
+        tx_hash = parse_receipt["transactionHash"]
 
         d_tx = OrderedDict()
         d_tx["event"] = 'RiskProRedeem'
-        d_tx["blockNumber"] = self.tx_receipt.block_number
+        d_tx["blockNumber"] = parse_receipt["blockNumber"]
         d_tx["transactionHash"] = tx_hash
         d_tx["address"] = tx_event["account"]
         d_tx["tokenInvolved"] = 'RISKPRO'
@@ -152,10 +150,10 @@ class IndexRiskProRedeem(BaseIndexEvent):
         d_tx["USDAmount"] = str(int(usd_amount * self.precision))
         d_tx["amount"] = str(tx_event["amount"])
         d_tx["confirmationTime"] = confirmation_time
-        if self.app_mode != "RRC20":
-            rbtc_commission = tx_event["commission"] + tx_event["btcMarkup"]
-        else:
+        if "reserveTokenMarkup" in tx_event:
             rbtc_commission = tx_event["commission"] + tx_event["reserveTokenMarkup"]
+        else:
+            rbtc_commission = tx_event["commission"] + tx_event["btcMarkup"]
         moc_commission = tx_event["mocCommissionValue"] + tx_event["mocMarkup"]
         if rbtc_commission > 0:
             usd_commission = Web3.fromWei(rbtc_commission, 'ether') * Web3.fromWei(tx_event["reservePrice"], 'ether')
@@ -167,7 +165,7 @@ class IndexRiskProRedeem(BaseIndexEvent):
         d_tx["reservePrice"] = str(tx_event["reservePrice"])
         d_tx["mocCommissionValue"] = str(moc_commission)
         d_tx["mocPrice"] = str(tx_event["mocPrice"])
-        gas_fee = self.tx_receipt.gas_used * Web3.fromWei(self.tx_receipt.gas_price, 'ether')
+        gas_fee = parse_receipt["gas_used"] * Web3.fromWei(parse_receipt["gas_price"], 'ether')
         d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         if self.app_mode != "RRC20":
             d_tx["gasFeeUSD"] = str(int(
@@ -182,7 +180,7 @@ class IndexRiskProRedeem(BaseIndexEvent):
                                                     'ether')
         d_tx["USDTotal"] = str(int(usd_total * self.precision))
         d_tx["processLogs"] = True
-        d_tx["createdAt"] = self.block_ts
+        d_tx["createdAt"] = parse_receipt['createdAt']
 
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash,
@@ -198,39 +196,39 @@ class IndexRiskProRedeem(BaseIndexEvent):
             d_tx["amount"],
             tx_hash))
 
-        # update user balances
-        self.parent.update_balance_address(self.m_client, d_tx["address"], self.block_height)
+        # Insert as pending to update user balances
+        insert_update_balance_address(m_client, d_tx["address"])
 
         return d_tx
 
-    def on_event(self, tx_event, log_index=None):
+    def on_event(self, m_client, parse_receipt):
         """ Event """
 
         if self.app_mode != "RRC20":
-            d_event = MoCExchangeRiskProRedeem(tx_event, tx_receipt=self.tx_receipt)
+            cl_tx_event = MoCExchangeRiskProRedeem(parse_receipt)
         else:
-            d_event = RDOCMoCExchangeRiskProRedeem(tx_event, tx_receipt=self.tx_receipt)
+            cl_tx_event = RDOCMoCExchangeRiskProRedeem(parse_receipt)
 
-        self.index_event(d_event.event, log_index=log_index)
+        self.index_event(m_client, parse_receipt, cl_tx_event.event[self.name])
 
 
 class IndexRiskProxMint(BaseIndexEvent):
 
     name = 'RiskProxMint'
 
-    def index_event(self, tx_event, log_index=None):
+    def index_event(self, m_client, parse_receipt, tx_event):
 
         # status of tx
-        status, confirmation_time = self.status_tx()
+        status, confirmation_time = self.status_tx(parse_receipt)
 
         # get collection transaction
-        collection_tx = mongo_manager.collection_transaction(self.m_client)
+        collection_tx = mongo_manager.collection_transaction(m_client)
 
-        tx_hash = self.tx_receipt.txid
+        tx_hash = parse_receipt["transactionHash"]
 
         d_tx = OrderedDict()
         d_tx["transactionHash"] = tx_hash
-        d_tx["blockNumber"] = self.tx_receipt.block_number
+        d_tx["blockNumber"] = parse_receipt["blockNumber"]
         d_tx["address"] = tx_event["account"]
         d_tx["status"] = status
         d_tx["event"] = 'RiskProxMint'
@@ -246,10 +244,10 @@ class IndexRiskProxMint(BaseIndexEvent):
         d_tx["confirmationTime"] = confirmation_time
         d_tx["isPositive"] = True
         d_tx["leverage"] = str(tx_event["leverage"])
-        if self.app_mode != "RRC20":
-            rbtc_commission = tx_event["commission"] + tx_event["btcMarkup"]
-        else:
+        if "reserveTokenMarkup" in tx_event:
             rbtc_commission = tx_event["commission"] + tx_event["reserveTokenMarkup"]
+        else:
+            rbtc_commission = tx_event["commission"] + tx_event["btcMarkup"]
         moc_commission = tx_event["mocCommissionValue"] + tx_event["mocMarkup"]
         if rbtc_commission > 0:
             usd_commission = Web3.fromWei(rbtc_commission, 'ether') * Web3.fromWei(tx_event["reservePrice"], 'ether')
@@ -264,7 +262,7 @@ class IndexRiskProxMint(BaseIndexEvent):
         d_tx["reservePrice"] = str(tx_event["reservePrice"])
         d_tx["mocCommissionValue"] = str(moc_commission)
         d_tx["mocPrice"] = str(tx_event["mocPrice"])
-        gas_fee = self.tx_receipt.gas_used * Web3.fromWei(self.tx_receipt.gas_price, 'ether')
+        gas_fee = parse_receipt["gas_used"] * Web3.fromWei(parse_receipt["gas_price"], 'ether')
         d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         if self.app_mode != "RRC20":
             d_tx["gasFeeUSD"] = str(int(
@@ -277,7 +275,7 @@ class IndexRiskProxMint(BaseIndexEvent):
             tx_event["reservePrice"], 'ether')
         d_tx["USDTotal"] = str(int(usd_total * self.precision))
         d_tx["processLogs"] = True
-        d_tx["createdAt"] = self.block_ts
+        d_tx["createdAt"] = parse_receipt['createdAt']
 
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash,
@@ -293,39 +291,39 @@ class IndexRiskProxMint(BaseIndexEvent):
             d_tx["amount"],
             tx_hash))
 
-        # update user balances
-        self.parent.update_balance_address(self.m_client, d_tx["address"], self.block_height)
+        # Insert as pending to update user balances
+        insert_update_balance_address(m_client, d_tx["address"])
 
         return d_tx
 
-    def on_event(self, tx_event, log_index=None):
+    def on_event(self, m_client, parse_receipt):
         """ Event """
 
         if self.app_mode != "RRC20":
-            d_event = MoCExchangeRiskProxMint(tx_event, tx_receipt=self.tx_receipt)
+            cl_tx_event = MoCExchangeRiskProxMint(parse_receipt)
         else:
-            d_event = RDOCMoCExchangeRiskProxMint(tx_event, tx_receipt=self.tx_receipt)
+            cl_tx_event = RDOCMoCExchangeRiskProxMint(parse_receipt)
 
-        self.index_event(d_event.event, log_index=log_index)
+        self.index_event(m_client, parse_receipt, cl_tx_event.event[self.name])
 
 
 class IndexRiskProxRedeem(BaseIndexEvent):
 
     name = 'RiskProxRedeem'
 
-    def index_event(self, tx_event, log_index=None):
+    def index_event(self, m_client, parse_receipt, tx_event):
 
         # status of tx
-        status, confirmation_time = self.status_tx()
+        status, confirmation_time = self.status_tx(parse_receipt)
 
         # get collection transaction
-        collection_tx = mongo_manager.collection_transaction(self.m_client)
+        collection_tx = mongo_manager.collection_transaction(m_client)
 
-        tx_hash = self.tx_receipt.txid
+        tx_hash = parse_receipt["transactionHash"]
 
         d_tx = OrderedDict()
         d_tx["transactionHash"] = tx_hash
-        d_tx["blockNumber"] = self.tx_receipt.block_number
+        d_tx["blockNumber"] = parse_receipt["blockNumber"]
         d_tx["address"] = tx_event["account"]
         d_tx["status"] = status
         d_tx["event"] = 'RiskProxRedeem'
@@ -340,10 +338,10 @@ class IndexRiskProxRedeem(BaseIndexEvent):
         d_tx["amount"] = str(tx_event["amount"])
         d_tx["confirmationTime"] = confirmation_time
         d_tx["leverage"] = str(tx_event["leverage"])
-        if self.app_mode != "RRC20":
-            rbtc_commission = tx_event["commission"] + tx_event["btcMarkup"]
-        else:
+        if "reserveTokenMarkup" in tx_event:
             rbtc_commission = tx_event["commission"] + tx_event["reserveTokenMarkup"]
+        else:
+            rbtc_commission = tx_event["commission"] + tx_event["btcMarkup"]
         moc_commission = tx_event["mocCommissionValue"] + tx_event["mocMarkup"]
         if rbtc_commission > 0:
             usd_commission = Web3.fromWei(rbtc_commission, 'ether') * Web3.fromWei(tx_event["reservePrice"], 'ether')
@@ -359,7 +357,7 @@ class IndexRiskProxRedeem(BaseIndexEvent):
         d_tx["reservePrice"] = str(tx_event["reservePrice"])
         d_tx["mocCommissionValue"] = str(moc_commission)
         d_tx["mocPrice"] = str(tx_event["mocPrice"])
-        gas_fee = self.tx_receipt.gas_used * Web3.fromWei(self.tx_receipt.gas_price, 'ether')
+        gas_fee = parse_receipt["gas_used"] * Web3.fromWei(parse_receipt["gas_price"], 'ether')
         d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         if self.app_mode != "RRC20":
             d_tx["gasFeeUSD"] = str(int(
@@ -375,7 +373,7 @@ class IndexRiskProxRedeem(BaseIndexEvent):
                                                     'ether')
         d_tx["USDTotal"] = str(int(usd_total * self.precision))
         d_tx["processLogs"] = True
-        d_tx["createdAt"] = self.block_ts
+        d_tx["createdAt"] = parse_receipt['createdAt']
 
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash,
@@ -391,38 +389,38 @@ class IndexRiskProxRedeem(BaseIndexEvent):
             d_tx["amount"],
             tx_hash))
 
-        # update user balances
-        self.parent.update_balance_address(self.m_client, d_tx["address"], self.block_height)
+        # Insert as pending to update user balances
+        insert_update_balance_address(m_client, d_tx["address"])
 
         return d_tx
 
-    def on_event(self, tx_event, log_index=None):
+    def on_event(self, m_client, parse_receipt):
         """ Event """
 
         if self.app_mode != "RRC20":
-            d_event = MoCExchangeRiskProxRedeem(tx_event, tx_receipt=self.tx_receipt)
+            cl_tx_event = MoCExchangeRiskProxRedeem(parse_receipt)
         else:
-            d_event = RDOCMoCExchangeRiskProxRedeem(tx_event, tx_receipt=self.tx_receipt)
+            cl_tx_event = RDOCMoCExchangeRiskProxRedeem(parse_receipt)
 
-        self.index_event(d_event.event, log_index=log_index)
+        self.index_event(m_client, parse_receipt, cl_tx_event.event[self.name])
 
 
 class IndexStableTokenMint(BaseIndexEvent):
     name = 'StableTokenMint'
 
-    def index_event(self, tx_event, log_index=None):
+    def index_event(self, m_client, parse_receipt, tx_event):
 
         # status of tx
-        status, confirmation_time = self.status_tx()
+        status, confirmation_time = self.status_tx(parse_receipt)
 
         # get collection transaction
-        collection_tx = mongo_manager.collection_transaction(self.m_client)
+        collection_tx = mongo_manager.collection_transaction(m_client)
 
-        tx_hash = self.tx_receipt.txid
+        tx_hash = parse_receipt["transactionHash"]
 
         d_tx = OrderedDict()
         d_tx["transactionHash"] = tx_hash
-        d_tx["blockNumber"] = self.tx_receipt.block_number
+        d_tx["blockNumber"] = parse_receipt["blockNumber"]
         d_tx["address"] = tx_event["account"]
         d_tx["status"] = status
         d_tx["event"] = 'StableTokenMint'
@@ -436,10 +434,10 @@ class IndexStableTokenMint(BaseIndexEvent):
                                   'ether') * Web3.fromWei(tx_event["reservePrice"],
                                                           'ether')
         d_tx["USDAmount"] = str(int(usd_amount * self.precision))
-        if self.app_mode != "RRC20":
-            rbtc_commission = tx_event["commission"] + tx_event["btcMarkup"]
-        else:
+        if "reserveTokenMarkup" in tx_event:
             rbtc_commission = tx_event["commission"] + tx_event["reserveTokenMarkup"]
+        else:
+            rbtc_commission = tx_event["commission"] + tx_event["btcMarkup"]
         moc_commission = tx_event["mocCommissionValue"] + tx_event["mocMarkup"]
         if rbtc_commission > 0:
             usd_commission = Web3.fromWei(rbtc_commission, 'ether') * Web3.fromWei(tx_event["reservePrice"], 'ether')
@@ -453,7 +451,7 @@ class IndexStableTokenMint(BaseIndexEvent):
         d_tx["reservePrice"] = str(tx_event["reservePrice"])
         d_tx["mocCommissionValue"] = str(moc_commission)
         d_tx["mocPrice"] = str(tx_event["mocPrice"])
-        gas_fee = self.tx_receipt.gas_used * Web3.fromWei(self.tx_receipt.gas_price, 'ether')
+        gas_fee = parse_receipt["gas_used"] * Web3.fromWei(parse_receipt["gas_price"], 'ether')
         d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         if self.app_mode != "RRC20":
             d_tx["gasFeeUSD"] = str(int(
@@ -466,7 +464,7 @@ class IndexStableTokenMint(BaseIndexEvent):
             tx_event["reservePrice"], 'ether')
         d_tx["USDTotal"] = str(int(usd_total * self.precision))
         d_tx["processLogs"] = True
-        d_tx["createdAt"] = self.block_ts
+        d_tx["createdAt"] = parse_receipt['createdAt']
 
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash,
@@ -482,38 +480,38 @@ class IndexStableTokenMint(BaseIndexEvent):
             d_tx["amount"],
             tx_hash))
 
-        # update user balances
-        self.parent.update_balance_address(self.m_client, d_tx["address"], self.block_height)
+        # Insert as pending to update user balances
+        insert_update_balance_address(m_client, d_tx["address"])
 
         return d_tx
 
-    def on_event(self, tx_event, log_index=None):
+    def on_event(self, m_client, parse_receipt):
         """ Event """
 
         if self.app_mode != "RRC20":
-            d_event = MoCExchangeStableTokenMint(tx_event, tx_receipt=self.tx_receipt)
+            cl_tx_event = MoCExchangeStableTokenMint(parse_receipt)
         else:
-            d_event = RDOCMoCExchangeStableTokenMint(tx_event, tx_receipt=self.tx_receipt)
+            cl_tx_event = RDOCMoCExchangeStableTokenMint(parse_receipt)
 
-        self.index_event(d_event.event, log_index=log_index)
+        self.index_event(m_client, parse_receipt, cl_tx_event.event[self.name])
 
 
 class IndexStableTokenRedeem(BaseIndexEvent):
     name = 'StableTokenRedeem'
 
-    def index_event(self, tx_event, log_index=None):
+    def index_event(self, m_client, parse_receipt, tx_event):
 
         # status of tx
-        status, confirmation_time = self.status_tx()
+        status, confirmation_time = self.status_tx(parse_receipt)
 
         # get collection transaction
-        collection_tx = mongo_manager.collection_transaction(self.m_client)
+        collection_tx = mongo_manager.collection_transaction(m_client)
 
-        tx_hash = self.tx_receipt.txid
+        tx_hash = parse_receipt["transactionHash"]
 
         d_tx = OrderedDict()
         d_tx["address"] = tx_event["account"]
-        d_tx["blockNumber"] = self.tx_receipt.block_number
+        d_tx["blockNumber"] = parse_receipt["blockNumber"]
         d_tx["event"] = 'StableTokenRedeem'
         d_tx["transactionHash"] = tx_hash
         d_tx["RBTCAmount"] = str(tx_event["reserveTotal"])
@@ -526,10 +524,10 @@ class IndexStableTokenRedeem(BaseIndexEvent):
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
         d_tx["status"] = status
         d_tx["tokenInvolved"] = 'STABLE'
-        if self.app_mode != "RRC20":
-            rbtc_commission = tx_event["commission"] + tx_event["btcMarkup"]
-        else:
+        if "reserveTokenMarkup" in tx_event:
             rbtc_commission = tx_event["commission"] + tx_event["reserveTokenMarkup"]
+        else:
+            rbtc_commission = tx_event["commission"] + tx_event["btcMarkup"]
         moc_commission = tx_event["mocCommissionValue"] + tx_event["mocMarkup"]
         if rbtc_commission > 0:
             usd_commission = Web3.fromWei(rbtc_commission, 'ether') * Web3.fromWei(tx_event["reservePrice"], 'ether')
@@ -541,7 +539,7 @@ class IndexStableTokenRedeem(BaseIndexEvent):
         d_tx["reservePrice"] = str(tx_event["reservePrice"])
         d_tx["mocCommissionValue"] = str(moc_commission)
         d_tx["mocPrice"] = str(tx_event["mocPrice"])
-        gas_fee = self.tx_receipt.gas_used * Web3.fromWei(self.tx_receipt.gas_price, 'ether')
+        gas_fee = parse_receipt["gas_used"] * Web3.fromWei(parse_receipt["gas_price"], 'ether')
         # d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         # if self.app_mode != "RRC20":
         #    d_tx["gasFeeUSD"] = str(int(gas_fee * Web3.fromWei(tx_event.reservePrice, 'ether') * self.precision))
@@ -554,7 +552,7 @@ class IndexStableTokenRedeem(BaseIndexEvent):
                                                     'ether')
         d_tx["USDTotal"] = str(int(usd_total * self.precision))
         d_tx["processLogs"] = True
-        d_tx["createdAt"] = self.block_ts
+        d_tx["createdAt"] = parse_receipt['createdAt']
 
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash,
@@ -570,41 +568,41 @@ class IndexStableTokenRedeem(BaseIndexEvent):
             d_tx["amount"],
             tx_hash))
 
-        # update user balances
-        self.parent.update_balance_address(self.m_client, d_tx["address"], self.block_height)
+        # Insert as pending to update user balances
+        insert_update_balance_address(m_client, d_tx["address"])
 
         # Update the queue operation to delete
         collection_tx.delete_many({'address': d_tx["address"], 'event': 'QueueDOC'})
 
         return d_tx
 
-    def on_event(self, tx_event, log_index=None):
+    def on_event(self, m_client, parse_receipt):
         """ Event """
 
         if self.app_mode != "RRC20":
-            d_event = MoCExchangeStableTokenRedeem(tx_event, tx_receipt=self.tx_receipt)
+            cl_tx_event = MoCExchangeStableTokenRedeem(parse_receipt)
         else:
-            d_event = RDOCMoCExchangeStableTokenRedeem(tx_event, tx_receipt=self.tx_receipt)
+            cl_tx_event = RDOCMoCExchangeStableTokenRedeem(parse_receipt)
 
-        self.index_event(d_event.event, log_index=log_index)
+        self.index_event(m_client, parse_receipt, cl_tx_event.event[self.name])
 
 
 class IndexFreeStableTokenRedeem(BaseIndexEvent):
     name = 'FreeStableTokenRedeem'
 
-    def index_event(self, tx_event, log_index=None):
+    def index_event(self, m_client, parse_receipt, tx_event):
 
         # status of tx
-        status, confirmation_time = self.status_tx()
+        status, confirmation_time = self.status_tx(parse_receipt)
 
         # get collection transaction
-        collection_tx = mongo_manager.collection_transaction(self.m_client)
+        collection_tx = mongo_manager.collection_transaction(m_client)
 
-        tx_hash = self.tx_receipt.txid
+        tx_hash = parse_receipt["transactionHash"]
 
         d_tx = OrderedDict()
         d_tx["transactionHash"] = tx_hash
-        d_tx["blockNumber"] = self.tx_receipt.block_number
+        d_tx["blockNumber"] = parse_receipt["blockNumber"]
         d_tx["address"] = tx_event["account"]
         d_tx["status"] = status
         d_tx["event"] = 'FreeStableTokenRedeem'
@@ -618,10 +616,10 @@ class IndexFreeStableTokenRedeem(BaseIndexEvent):
         d_tx["USDAmount"] = str(int(usd_amount * self.precision))
         d_tx["amount"] = str(tx_event["amount"])
         d_tx["confirmationTime"] = confirmation_time
-        if self.app_mode != "RRC20":
-            rbtc_commission = tx_event["commission"] + tx_event["btcMarkup"]
-        else:
+        if "reserveTokenMarkup" in tx_event:
             rbtc_commission = tx_event["commission"] + tx_event["reserveTokenMarkup"]
+        else:
+            rbtc_commission = tx_event["commission"] + tx_event["btcMarkup"]
         moc_commission = tx_event["mocCommissionValue"] + tx_event["mocMarkup"]
         if rbtc_commission > 0:
             usd_commission = Web3.fromWei(rbtc_commission, 'ether') * Web3.fromWei(tx_event["reservePrice"], 'ether')
@@ -637,7 +635,7 @@ class IndexFreeStableTokenRedeem(BaseIndexEvent):
         d_tx["reservePrice"] = str(tx_event["reservePrice"])
         d_tx["mocCommissionValue"] = str(moc_commission)
         d_tx["mocPrice"] = str(tx_event["mocPrice"])
-        gas_fee = self.tx_receipt.gas_used * Web3.fromWei(self.tx_receipt.gas_price, 'ether')
+        gas_fee = parse_receipt["gas_used"] * Web3.fromWei(parse_receipt["gas_price"], 'ether')
         d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         if self.app_mode != "RRC20":
             d_tx["gasFeeUSD"] = str(int(
@@ -653,7 +651,7 @@ class IndexFreeStableTokenRedeem(BaseIndexEvent):
                                                     'ether')
         d_tx["USDTotal"] = str(int(usd_total * self.precision))
         d_tx["processLogs"] = True
-        d_tx["createdAt"] = self.block_ts
+        d_tx["createdAt"] = parse_receipt['createdAt']
 
         post_id = collection_tx.find_one_and_update(
             {"transactionHash": tx_hash,
@@ -669,17 +667,17 @@ class IndexFreeStableTokenRedeem(BaseIndexEvent):
             d_tx["amount"],
             tx_hash))
 
-        # update user balances
-        self.parent.update_balance_address(self.m_client, d_tx["address"], self.block_height)
+        # Insert as pending to update user balances
+        insert_update_balance_address(m_client, d_tx["address"])
 
         return d_tx
 
-    def on_event(self, tx_event, log_index=None):
+    def on_event(self, m_client, parse_receipt):
         """ Event """
 
         if self.app_mode != "RRC20":
-            d_event = MoCExchangeFreeStableTokenRedeem(tx_event, tx_receipt=self.tx_receipt)
+            cl_tx_event = MoCExchangeFreeStableTokenRedeem(parse_receipt)
         else:
-            d_event = RDOCMoCExchangeFreeStableTokenRedeem(tx_event, tx_receipt=self.tx_receipt)
+            cl_tx_event = RDOCMoCExchangeFreeStableTokenRedeem(parse_receipt)
 
-        self.index_event(d_event.event, log_index=log_index)
+        self.index_event(m_client, parse_receipt, cl_tx_event.event[self.name])

@@ -3,36 +3,25 @@
     "uri": "",
     "db": "moc_v118_2"
   },
-  "timeout": 60,
-  "timeout_wait": 300,
-  "gas_price": 60000000,
   "debug": false,
-  "index_mode": "vendors",
   "tasks": {
-    "scan_moc_blocks": {"interval":  10},
-    "scan_moc_prices": {"interval":  15},
+    "scan_moc_blocks": {"interval":  3},
+    "scan_moc_events": {"interval":  4},
+    "scan_moc_prices": {"interval":  10},
     "scan_moc_state": {"interval":  10},
     "scan_moc_status": {"interval":  10},
     "scan_moc_state_status": {"interval":  10},
     "scan_user_state_update": {"interval":  10},
     "scan_moc_blocks_not_processed": {"interval":  60},
-    "scan_moc_blocks_history": {"interval":  60},
-    "scan_moc_prices_history": {"interval":  60},
-    "scan_moc_state_history": {"interval":  60},
-    "scan_moc_status_history": {"interval":  60},
-    "scan_moc_state_status_history": {"interval":  60}
-  },
-  "scan_moc_history": {
-    "from_block": 1079251,
-    "to_block": 1104666,
-    "force_start": true,
-    "blocks_recession": 1
+    "reconnect_on_lost_chain": {"interval":  180}
   },
   "scan_moc_blocks": {
     "confirm_blocks": 10,
     "blocks_look_behind": 1000,
     "seconds_not_in_chain_error": 600,
-    "blocks_recession": 1
+    "blocks_recession": 0,
+    "from_block": 0,
+    "to_block": 0
   },
   "scan_moc_state": {
     "block_height": 0
@@ -48,9 +37,9 @@
       "app_mode": "MoC",
       "project": "MoC",
       "addresses": {
-        "MoC": "0x2820f6d4D199B8D8838A4B26F9917754B86a0c1F"
+        "MoC": "0x2820f6d4D199B8D8838A4B26F9917754B86a0c1F",
+        "Multicall2": "0xaf7be1ef9537018feda5397d9e3bb9a1e4e27ac8"
       }
     }
-  },
-  "vendor_account": "0xbB3552267f52B0F06BefBD1bd587E3dBFc7d06BD"
+  }
 }

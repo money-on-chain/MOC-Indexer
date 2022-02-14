@@ -20,27 +20,26 @@ class IndexStateTransition(BaseIndexEvent):
 
     name = 'StateTransition'
 
-    def index_event(self, tx_event, log_index=None):
-
+    def index_event(self, m_client, parse_receipt, tx_event):
         return
 
-    def notifications(self, tx_event, log_index=None):
+    def notifications(self, m_client, parse_receipt, tx_event):
         """Event: """
 
-        collection_tx = mongo_manager.collection_notification(self.m_client)
-        tx_hash = self.tx_receipt.txid
+        collection_tx = mongo_manager.collection_notification(m_client)
+        tx_hash = parse_receipt["transactionHash"]
         event_name = 'StateTransition'
 
         d_tx = OrderedDict()
         d_tx["event"] = event_name
         d_tx["transactionHash"] = tx_hash
-        d_tx["logIndex"] = log_index
+        d_tx["logIndex"] = parse_receipt["log_index"]
         d_tx["newState"] = d_states[tx_event["newState"]]
-        d_tx["timestamp"] = datetime.datetime.fromtimestamp(self.tx_receipt.timestamp)
+        d_tx["timestamp"] = parse_receipt["timestamp"]
         d_tx["processLogs"] = True
 
         post_id = collection_tx.find_one_and_update(
-            {"transactionHash": tx_hash, "event": event_name, "logIndex": log_index},
+            {"transactionHash": tx_hash, "event": event_name, "logIndex": parse_receipt["log_index"]},
             {"$set": d_tx},
             upsert=True)
 
@@ -48,10 +47,10 @@ class IndexStateTransition(BaseIndexEvent):
 
         return d_tx
 
-    def on_event(self, tx_event, log_index=None):
+    def on_event(self, m_client, parse_receipt):
         """ Event """
 
-        d_event = MoCStateStateTransition(tx_event, tx_receipt=self.tx_receipt)
-        self.index_event(d_event.event)
-        self.notifications(d_event.event, log_index=log_index)
+        cl_tx_event = MoCStateStateTransition(parse_receipt)
+        self.index_event(m_client, parse_receipt, cl_tx_event.event[self.name])
+        self.notifications(m_client, parse_receipt, cl_tx_event.event[self.name])
 

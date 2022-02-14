@@ -1,7 +1,7 @@
 {
   "mongo": {
     "uri": "mongodb://192.168.56.2:27017/",
-    "db": "local_bnb_alpha_testnet"
+    "db": "local_bnb_testnet"
   },
   "timeout": 60,
   "timeout_wait": 300,
@@ -21,7 +21,7 @@
     "confirm_blocks": 10,
     "blocks_look_behind": 1,
     "seconds_not_in_chain_error": 600,
-    "blocks_recession": 0,
+    "blocks_recession": 1,
     "from_block": 0,
     "to_block": 0
   },
@@ -35,11 +35,11 @@
     "blocks_look_behind": 1
   },
   "networks": {
-    "bnbAlphaTestnet": {
+    "bnbTestnet": {
       "app_mode": "MoC",
       "project": "MoC",
       "addresses": {
-        "MoC": "0xC0321b74Ce197FFCBA1c88bdFA36B046De6F7ADF",
+        "MoC": "0x80cBD706D1Db7840736C34F5177ADEf847f338Cc",
         "Multicall2": "0x8F3273Fb89B075b1645095ABaC6ed17B2d4Bc576"
       }
     }
