@@ -6,6 +6,8 @@ from moneyonchain.moc import MoCBucketLiquidation, MoCContractLiquidated
 
 from indexer.mongo_manager import mongo_manager
 from indexer.logger import log
+from indexer.moc_balances import insert_update_balance_address, stable_balances_from_address, \
+    riskprox_balances_from_address
 from .events import BaseIndexEvent
 
 
@@ -13,20 +15,27 @@ class IndexBucketLiquidation(BaseIndexEvent):
 
     name = 'BucketLiquidation'
 
-    def index_event(self, tx_event, log_index=None):
+    def __init__(self, options, app_mode, contracts_loaded):
+
+        self.options = options
+        self.app_mode = app_mode
+        self.contracts_loaded = contracts_loaded
+
+        super().__init__(options, app_mode)
+
+    def index_event(self, m_client, parse_receipt, tx_event):
 
         # status of tx
-        status, confirmation_time = self.status_tx()
+        status, confirmation_time = self.status_tx(parse_receipt)
 
         # get collection transaction
-        collection_tx = mongo_manager.collection_transaction(self.m_client)
+        collection_tx = mongo_manager.collection_transaction(m_client)
 
-        tx_hash = self.tx_receipt.txid
-        moc_tx = self.transactions[tx_hash]
+        tx_hash = parse_receipt["transactionHash"]
 
         # get all address who has bprox , at the time all users because
         # we dont know who hast bprox in certain block
-        collection_users = mongo_manager.collection_user_state(self.m_client)
+        collection_users = mongo_manager.collection_user_state(m_client)
         users = collection_users.find()
         l_users_riskprox = list()
         for user in users:
@@ -36,24 +45,26 @@ class IndexBucketLiquidation(BaseIndexEvent):
 
         d_tx = OrderedDict()
         d_tx["transactionHash"] = tx_hash
-        d_tx["blockNumber"] = self.tx_receipt.block_number
+        d_tx["blockNumber"] = parse_receipt["blockNumber"]
         d_tx["event"] = 'BucketLiquidation'
         d_tx["tokenInvolved"] = 'RISKPROX'
         d_tx["bucket"] = 'X2'
         d_tx["status"] = status
         d_tx["confirmationTime"] = confirmation_time
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
-        gas_fee = self.tx_receipt.gas_used * Web3.fromWei(self.tx_receipt.gas_price, 'ether')
+        gas_fee = parse_receipt["gas_used"] * Web3.fromWei(parse_receipt["gas_price"], 'ether')
         # d_tx["gasFeeRBTC"] = str(int(gas_fee * self.precision))
         d_tx["processLogs"] = True
-        d_tx["createdAt"] = self.block_ts
+        d_tx["createdAt"] = parse_receipt['createdAt']
 
-        prior_block_to_liquidation = self.tx_receipt.block_number - 1
+        prior_block_to_liquidation = parse_receipt["blockNumber"] - 1
         l_transactions = list()
         for user_riskprox in l_users_riskprox:
             try:
-                d_user_balances = self.parent.riskprox_balances_from_address(user_riskprox["address"],
-                                                                      prior_block_to_liquidation)
+                d_user_balances = riskprox_balances_from_address(self.contracts_loaded,
+                                                                 user_riskprox["address"],
+                                                                 prior_block_to_liquidation,
+                                                                 app_mode=self.app_mode)
             except:
                 continue
 
@@ -74,28 +85,28 @@ class IndexBucketLiquidation(BaseIndexEvent):
                     d_tx["amount"],
                     tx_hash))
 
-                # update user balances
-                self.parent.update_balance_address(self.m_client, d_tx["address"], self.block_height)
+                # Insert as pending to update user balances
+                insert_update_balance_address(m_client, d_tx["address"])
 
                 l_transactions.append(d_tx)
 
-    def notifications(self, tx_event, log_index=None):
+    def notifications(self, m_client, parse_receipt, tx_event):
         """Event: """
 
-        collection_tx = mongo_manager.collection_notification(self.m_client)
-        tx_hash = self.tx_receipt.txid
+        collection_tx = mongo_manager.collection_notification(m_client)
+        tx_hash = parse_receipt["transactionHash"]
         event_name = 'BucketLiquidation'
 
         d_tx = OrderedDict()
         d_tx["event"] = event_name
         d_tx["transactionHash"] = tx_hash
-        d_tx["logIndex"] = log_index
+        d_tx["logIndex"] = parse_receipt["log_index"]
         d_tx["bucket"] = 'X2'
-        d_tx["timestamp"] = datetime.datetime.fromtimestamp(self.tx_receipt.timestamp)
+        d_tx["timestamp"] = parse_receipt["timestamp"]
         d_tx["processLogs"] = True
 
         post_id = collection_tx.find_one_and_update(
-            {"transactionHash": tx_hash, "event": event_name, "logIndex": log_index},
+            {"transactionHash": tx_hash, "event": event_name, "logIndex": parse_receipt["log_index"]},
             {"$set": d_tx},
             upsert=True)
 
@@ -103,32 +114,39 @@ class IndexBucketLiquidation(BaseIndexEvent):
 
         return d_tx
 
-    def on_event(self, tx_event, log_index=None):
+    def on_event(self, m_client, parse_receipt):
         """ Event """
 
-        d_event = MoCBucketLiquidation(tx_event, tx_receipt=self.tx_receipt)
-        self.index_event(d_event.event, log_index=log_index)
-        self.notifications(d_event.event, log_index=log_index)
+        cl_tx_event = MoCBucketLiquidation(parse_receipt)
+        self.index_event(m_client, parse_receipt, cl_tx_event.event[self.name])
+        self.notifications(m_client, parse_receipt, cl_tx_event.event[self.name])
 
 
 class IndexContractLiquidated(BaseIndexEvent):
 
     name = 'ContractLiquidated'
 
-    def index_event(self, tx_event, log_index=None):
+    def __init__(self, options, app_mode, contracts_loaded):
+
+        self.options = options
+        self.app_mode = app_mode
+        self.contracts_loaded = contracts_loaded
+
+        super().__init__(options, app_mode)
+
+    def index_event(self, m_client, parse_receipt, tx_event):
 
         # status of tx
-        status, confirmation_time = self.status_tx()
+        status, confirmation_time = self.status_tx(parse_receipt)
 
         # get collection transaction
-        collection_tx = mongo_manager.collection_transaction(self.m_client)
+        collection_tx = mongo_manager.collection_transaction(m_client)
 
-        tx_hash = self.tx_receipt.txid
-        moc_tx = self.transactions[tx_hash]
+        tx_hash = parse_receipt["transactionHash"]
 
         # get all address who has DoC, at the time all users because
         # we dont know who has DoC in certain block
-        collection_users = mongo_manager.collection_user_state(self.m_client)
+        collection_users = mongo_manager.collection_user_state(m_client)
         users = collection_users.find()
         l_users_stable = list()
         for user in users:
@@ -136,23 +154,24 @@ class IndexContractLiquidated(BaseIndexEvent):
 
         d_tx = OrderedDict()
         d_tx["transactionHash"] = tx_hash
-        d_tx["blockNumber"] = tx_event.blockNumber
+        d_tx["blockNumber"] = parse_receipt["blockNumber"]
         d_tx["event"] = 'ContractLiquidated'
         d_tx["tokenInvolved"] = 'STABLE'
         d_tx["bucket"] = 'C0'
         d_tx["status"] = status
         d_tx["confirmationTime"] = confirmation_time
         d_tx["lastUpdatedAt"] = datetime.datetime.now()
-        gas_fee = self.tx_receipt.gas_used * Web3.fromWei(self.tx_receipt.gas_price, 'ether')
+        gas_fee = parse_receipt["gas_used"] * Web3.fromWei(parse_receipt["gas_price"], 'ether')
         d_tx["processLogs"] = True
-        d_tx["createdAt"] = self.block_ts
+        d_tx["createdAt"] = parse_receipt['createdAt']
 
         prior_block_to_liquidation = tx_event.blockNumber - 1
         l_transactions = list()
         for user_stable in l_users_stable:
             try:
-                d_user_balances = self.parent.stable_balances_from_address(user_stable["address"],
-                                                                           prior_block_to_liquidation)
+                d_user_balances = stable_balances_from_address(self.contracts_loaded,
+                                                               user_stable["address"],
+                                                               prior_block_to_liquidation)
             except:
                 continue
 
@@ -173,28 +192,28 @@ class IndexContractLiquidated(BaseIndexEvent):
                     d_tx["amount"],
                     tx_hash))
 
-                # update user balances
-                self.parent.update_balance_address(self.m_client, d_tx["address"], self.block_height)
+                # Insert as pending to update user balances
+                insert_update_balance_address(m_client, d_tx["address"])
 
                 l_transactions.append(d_tx)
 
-    def notifications(self, tx_event, log_index=None):
+    def notifications(self, m_client, parse_receipt):
         """Event: """
 
-        collection_tx = mongo_manager.collection_notification(self.m_client)
-        tx_hash = self.tx_receipt.txid
+        collection_tx = mongo_manager.collection_notification(m_client)
+        tx_hash = parse_receipt["transactionHash"]
         event_name = 'ContractLiquidated'
 
         d_tx = OrderedDict()
         d_tx["event"] = event_name
         d_tx["transactionHash"] = tx_hash
-        d_tx["logIndex"] = log_index
+        d_tx["logIndex"] = parse_receipt["log_index"]
         d_tx["bucket"] = 'C0'
-        d_tx["timestamp"] = datetime.datetime.fromtimestamp(self.tx_receipt.timestamp)
+        d_tx["timestamp"] = parse_receipt["timestamp"]
         d_tx["processLogs"] = True
 
         post_id = collection_tx.find_one_and_update(
-            {"transactionHash": tx_hash, "event": event_name, "logIndex": log_index},
+            {"transactionHash": tx_hash, "event": event_name, "logIndex": parse_receipt["log_index"]},
             {"$set": d_tx},
             upsert=True)
 
@@ -202,9 +221,9 @@ class IndexContractLiquidated(BaseIndexEvent):
 
         return d_tx
 
-    def on_event(self, tx_event, log_index=None):
+    def on_event(self, m_client, parse_receipt):
         """ Event """
 
-        d_event = MoCContractLiquidated(tx_event, tx_receipt=self.tx_receipt)
-        self.index_event(d_event.event, log_index=log_index)
-        self.notifications(d_event.event, log_index=log_index)
+        cl_tx_event = MoCContractLiquidated(parse_receipt)
+        self.index_event(m_client, parse_receipt, cl_tx_event.event[self.name])
+        self.notifications(m_client, parse_receipt)
