@@ -48,6 +48,8 @@ class ScanMoCPrices:
 
             if self.debug_mode:
                 log.info("[3. Scan Prices] Done scan prices block height: [{0}]".format(current_block))
+        else:
+            log.error("[3. Scan Prices] NOT VALID PRICE! on block height: [{0}]".format(current_block))
 
     def scan_moc_prices(self, task=None):
 

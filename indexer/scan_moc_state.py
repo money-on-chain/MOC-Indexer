@@ -69,6 +69,7 @@ class ScanMoCState:
             app_mode=self.app_mode)
 
         if not d_moc_state:
+            log.error("[4. Scan Moc State] NOT VALID PRICE OR MOC STATE. blockheight: [0]".format(block_height))
             return
 
         # price variation

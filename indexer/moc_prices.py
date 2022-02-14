@@ -46,16 +46,14 @@ def prices_from_sc(
 
     results = multicall.aggregate_multiple(list_aggregate, block_identifier=block_identifier)
 
+    # only valid results
+    if not results[2]['valid']:
+        return
+
     block_number = results[0]
 
     d_price["blockHeight"] = block_number
     d_price["createdAt"] = block_ts
-
-    # Return if no result in items
-    for result in results[1]:
-        if not result:
-            return
-
     d_price["bitcoinPrice"] = results[1][0]
     d_price["bproPriceInRbtc"] = results[1][1]
     d_price["bproPriceInUsd"] = results[1][2]

@@ -131,6 +131,10 @@ def moc_state_from_sc(
 
     results = multicall.aggregate_multiple(list_aggregate, block_identifier=block_identifier)
 
+    # only valid results
+    if not results[2]['valid']:
+        return
+
     block_number = results[0]
 
     d_moc_state["blockHeight"] = block_number
