@@ -172,37 +172,37 @@ def moc_state_from_sc(
     d_moc_state["spotInrate"] = results[1][29]
 
     # Start: Commission rates by transaction types
-    commission_rates = dict()
+    commission_rates_types = dict()
     if app_mode == 'MoC':
-        commission_rates["MINT_BPRO_FEES_RBTC"] = results[1][30]
-        commission_rates["REDEEM_BPRO_FEES_RBTC"] = results[1][31]
-        commission_rates["MINT_DOC_FEES_RBTC"] = results[1][32]
-        commission_rates["REDEEM_DOC_FEES_RBTC"] = results[1][33]
-        commission_rates["MINT_BTCX_FEES_RBTC"] = results[1][34]
-        commission_rates["REDEEM_BTCX_FEES_RBTC"] = results[1][35]
-        commission_rates["MINT_BPRO_FEES_MOC"] = results[1][36]
-        commission_rates["REDEEM_BPRO_FEES_MOC"] = results[1][37]
-        commission_rates["MINT_DOC_FEES_MOC"] = results[1][38]
-        commission_rates["REDEEM_DOC_FEES_MOC"] = results[1][39]
-        commission_rates["MINT_BTCX_FEES_MOC"] = results[1][40]
-        commission_rates["REDEEM_BTCX_FEES_MOC"] = results[1][41]
+        commission_rates_types["MINT_BPRO_FEES_RBTC"] = results[1][30]
+        commission_rates_types["REDEEM_BPRO_FEES_RBTC"] = results[1][31]
+        commission_rates_types["MINT_DOC_FEES_RBTC"] = results[1][32]
+        commission_rates_types["REDEEM_DOC_FEES_RBTC"] = results[1][33]
+        commission_rates_types["MINT_BTCX_FEES_RBTC"] = results[1][34]
+        commission_rates_types["REDEEM_BTCX_FEES_RBTC"] = results[1][35]
+        commission_rates_types["MINT_BPRO_FEES_MOC"] = results[1][36]
+        commission_rates_types["REDEEM_BPRO_FEES_MOC"] = results[1][37]
+        commission_rates_types["MINT_DOC_FEES_MOC"] = results[1][38]
+        commission_rates_types["REDEEM_DOC_FEES_MOC"] = results[1][39]
+        commission_rates_types["MINT_BTCX_FEES_MOC"] = results[1][40]
+        commission_rates_types["REDEEM_BTCX_FEES_MOC"] = results[1][41]
     elif app_mode == 'RRC20':
-        commission_rates["MINT_RISKPRO_FEES_RESERVE"] = results[1][30]
-        commission_rates["REDEEM_RISKPRO_FEES_RESERVE"] = results[1][31]
-        commission_rates["MINT_STABLETOKEN_FEES_RESERVE"] = results[1][32]
-        commission_rates["REDEEM_STABLETOKEN_FEES_RESERVE"] = results[1][33]
-        commission_rates["MINT_RISKPROX_FEES_RESERVE"] = results[1][34]
-        commission_rates["REDEEM_RISKPROX_FEES_RESERVE"] = results[1][35]
-        commission_rates["MINT_RISKPRO_FEES_MOC"] = results[1][36]
-        commission_rates["REDEEM_RISKPRO_FEES_MOC"] = results[1][37]
-        commission_rates["MINT_STABLETOKEN_FEES_MOC"] = results[1][38]
-        commission_rates["REDEEM_STABLETOKEN_FEES_MOC"] = results[1][39]
-        commission_rates["MINT_RISKPROX_FEES_MOC"] = results[1][40]
-        commission_rates["REDEEM_RISKPROX_FEES_MOC"] = results[1][41]
+        commission_rates_types["MINT_RISKPRO_FEES_RESERVE"] = results[1][30]
+        commission_rates_types["REDEEM_RISKPRO_FEES_RESERVE"] = results[1][31]
+        commission_rates_types["MINT_STABLETOKEN_FEES_RESERVE"] = results[1][32]
+        commission_rates_types["REDEEM_STABLETOKEN_FEES_RESERVE"] = results[1][33]
+        commission_rates_types["MINT_RISKPROX_FEES_RESERVE"] = results[1][34]
+        commission_rates_types["REDEEM_RISKPROX_FEES_RESERVE"] = results[1][35]
+        commission_rates_types["MINT_RISKPRO_FEES_MOC"] = results[1][36]
+        commission_rates_types["REDEEM_RISKPRO_FEES_MOC"] = results[1][37]
+        commission_rates_types["MINT_STABLETOKEN_FEES_MOC"] = results[1][38]
+        commission_rates_types["REDEEM_STABLETOKEN_FEES_MOC"] = results[1][39]
+        commission_rates_types["MINT_RISKPROX_FEES_MOC"] = results[1][40]
+        commission_rates_types["REDEEM_RISKPROX_FEES_MOC"] = results[1][41]
     else:
         raise Exception("Not valid APP Mode")
 
-    d_moc_state["commissionRates"] = commission_rates
+    d_moc_state["commissionRatesTypes"] = commission_rates_types
     # End: Commission rates by transaction types
 
     d_moc_state["bprox2PriceInUsd"] = str(
@@ -224,6 +224,123 @@ def moc_state_from_sc(
     #
     # d_moc_state["bitcoinPrice"] = str(peek[0])
     # d_moc_state["isPriceValid"] = str(peek[1])
+
+    list_aggregate = list()
+
+    if app_mode == 'MoC':
+        list_aggregate.append((moc_inrate_address, moc_inrate.sc.commissionRatesByTxType,
+                               [d_moc_state["commissionRatesTypes"]["MINT_BPRO_FEES_RBTC"]],
+                               lambda x: str(x)))  # 0
+        list_aggregate.append((moc_inrate_address, moc_inrate.sc.commissionRatesByTxType,
+                               [d_moc_state["commissionRatesTypes"]["REDEEM_BPRO_FEES_RBTC"]],
+                               lambda x: str(x)))  # 1
+        list_aggregate.append((moc_inrate_address, moc_inrate.sc.commissionRatesByTxType,
+                               [d_moc_state["commissionRatesTypes"]["MINT_DOC_FEES_RBTC"]],
+                               lambda x: str(x)))  # 2
+        list_aggregate.append((moc_inrate_address, moc_inrate.sc.commissionRatesByTxType,
+                               [d_moc_state["commissionRatesTypes"]["REDEEM_DOC_FEES_RBTC"]],
+                               lambda x: str(x)))  # 3
+        list_aggregate.append((moc_inrate_address, moc_inrate.sc.commissionRatesByTxType,
+                               [d_moc_state["commissionRatesTypes"]["MINT_BTCX_FEES_RBTC"]],
+                               lambda x: str(x)))  # 4
+        list_aggregate.append((moc_inrate_address, moc_inrate.sc.commissionRatesByTxType,
+                               [d_moc_state["commissionRatesTypes"]["REDEEM_BTCX_FEES_RBTC"]],
+                               lambda x: str(x)))  # 5
+        list_aggregate.append((moc_inrate_address, moc_inrate.sc.commissionRatesByTxType,
+                               [d_moc_state["commissionRatesTypes"]["MINT_BPRO_FEES_MOC"]],
+                               lambda x: str(x)))  # 6
+        list_aggregate.append((moc_inrate_address, moc_inrate.sc.commissionRatesByTxType,
+                               [d_moc_state["commissionRatesTypes"]["REDEEM_BPRO_FEES_MOC"]],
+                               lambda x: str(x)))  # 7
+        list_aggregate.append((moc_inrate_address, moc_inrate.sc.commissionRatesByTxType,
+                               [d_moc_state["commissionRatesTypes"]["MINT_DOC_FEES_MOC"]],
+                               lambda x: str(x)))  # 8
+        list_aggregate.append((moc_inrate_address, moc_inrate.sc.commissionRatesByTxType,
+                               [d_moc_state["commissionRatesTypes"]["REDEEM_DOC_FEES_MOC"]],
+                               lambda x: str(x)))  # 9
+        list_aggregate.append((moc_inrate_address, moc_inrate.sc.commissionRatesByTxType,
+                               [d_moc_state["commissionRatesTypes"]["MINT_BTCX_FEES_MOC"]],
+                               lambda x: str(x)))  # 10
+        list_aggregate.append((moc_inrate_address, moc_inrate.sc.commissionRatesByTxType,
+                               [d_moc_state["commissionRatesTypes"]["REDEEM_BTCX_FEES_MOC"]],
+                               lambda x: str(x)))  # 11
+    else:
+        list_aggregate.append((moc_inrate_address, moc_inrate.sc.commissionRatesByTxType,
+                               [d_moc_state["commissionRatesTypes"]["MINT_RISKPRO_FEES_RESERVE"]],
+                               lambda x: str(x)))  # 0
+        list_aggregate.append((moc_inrate_address, moc_inrate.sc.commissionRatesByTxType,
+                               [d_moc_state["commissionRatesTypes"]["REDEEM_RISKPRO_FEES_RESERVE"]],
+                               lambda x: str(x)))  # 1
+        list_aggregate.append((moc_inrate_address, moc_inrate.sc.commissionRatesByTxType,
+                               [d_moc_state["commissionRatesTypes"]["MINT_STABLETOKEN_FEES_RESERVE"]],
+                               lambda x: str(x)))  # 2
+        list_aggregate.append((moc_inrate_address, moc_inrate.sc.commissionRatesByTxType,
+                               [d_moc_state["commissionRatesTypes"]["REDEEM_STABLETOKEN_FEES_RESERVE"]],
+                               lambda x: str(x)))  # 3
+        list_aggregate.append((moc_inrate_address, moc_inrate.sc.commissionRatesByTxType,
+                               [d_moc_state["commissionRatesTypes"]["MINT_RISKPROX_FEES_RESERVE"]],
+                               lambda x: str(x)))  # 4
+        list_aggregate.append((moc_inrate_address, moc_inrate.sc.commissionRatesByTxType,
+                               [d_moc_state["commissionRatesTypes"]["REDEEM_RISKPROX_FEES_RESERVE"]],
+                               lambda x: str(x)))  # 5
+        list_aggregate.append((moc_inrate_address, moc_inrate.sc.commissionRatesByTxType,
+                               [d_moc_state["commissionRatesTypes"]["MINT_RISKPRO_FEES_MOC"]],
+                               lambda x: str(x)))  # 6
+        list_aggregate.append((moc_inrate_address, moc_inrate.sc.commissionRatesByTxType,
+                               [d_moc_state["commissionRatesTypes"]["REDEEM_RISKPRO_FEES_MOC"]],
+                               lambda x: str(x)))  # 7
+        list_aggregate.append((moc_inrate_address, moc_inrate.sc.commissionRatesByTxType,
+                               [d_moc_state["commissionRatesTypes"]["MINT_STABLETOKEN_FEES_MOC"]],
+                               lambda x: str(x)))  # 8
+        list_aggregate.append((moc_inrate_address, moc_inrate.sc.commissionRatesByTxType,
+                               [d_moc_state["commissionRatesTypes"]["REDEEM_STABLETOKEN_FEES_MOC"]],
+                               lambda x: str(x)))  # 9
+        list_aggregate.append((moc_inrate_address, moc_inrate.sc.commissionRatesByTxType,
+                               [d_moc_state["commissionRatesTypes"]["MINT_RISKPROX_FEES_MOC"]],
+                               lambda x: str(x)))  # 10
+        list_aggregate.append((moc_inrate_address, moc_inrate.sc.commissionRatesByTxType,
+                               [d_moc_state["commissionRatesTypes"]["REDEEM_RISKPROX_FEES_MOC"]],
+                               lambda x: str(x)))  # 11
+
+    results = multicall.aggregate_multiple(list_aggregate, block_identifier=block_identifier)
+
+    # only valid results
+    if not results[2]['valid']:
+        return
+
+    # Start: Commission rates by transaction types
+    commission_rates = dict()
+    if app_mode == 'MoC':
+        commission_rates["MINT_BPRO_FEES_RBTC"] = results[1][0]
+        commission_rates["REDEEM_BPRO_FEES_RBTC"] = results[1][1]
+        commission_rates["MINT_DOC_FEES_RBTC"] = results[1][2]
+        commission_rates["REDEEM_DOC_FEES_RBTC"] = results[1][3]
+        commission_rates["MINT_BTCX_FEES_RBTC"] = results[1][4]
+        commission_rates["REDEEM_BTCX_FEES_RBTC"] = results[1][5]
+        commission_rates["MINT_BPRO_FEES_MOC"] = results[1][6]
+        commission_rates["REDEEM_BPRO_FEES_MOC"] = results[1][7]
+        commission_rates["MINT_DOC_FEES_MOC"] = results[1][8]
+        commission_rates["REDEEM_DOC_FEES_MOC"] = results[1][9]
+        commission_rates["MINT_BTCX_FEES_MOC"] = results[1][10]
+        commission_rates["REDEEM_BTCX_FEES_MOC"] = results[1][11]
+    elif app_mode == 'RRC20':
+        commission_rates["MINT_RISKPRO_FEES_RESERVE"] = results[1][0]
+        commission_rates["REDEEM_RISKPRO_FEES_RESERVE"] = results[1][1]
+        commission_rates["MINT_STABLETOKEN_FEES_RESERVE"] = results[1][2]
+        commission_rates["REDEEM_STABLETOKEN_FEES_RESERVE"] = results[1][3]
+        commission_rates["MINT_RISKPROX_FEES_RESERVE"] = results[1][4]
+        commission_rates["REDEEM_RISKPROX_FEES_RESERVE"] = results[1][5]
+        commission_rates["MINT_RISKPRO_FEES_MOC"] = results[1][6]
+        commission_rates["REDEEM_RISKPRO_FEES_MOC"] = results[1][7]
+        commission_rates["MINT_STABLETOKEN_FEES_MOC"] = results[1][8]
+        commission_rates["REDEEM_STABLETOKEN_FEES_MOC"] = results[1][9]
+        commission_rates["MINT_RISKPROX_FEES_MOC"] = results[1][10]
+        commission_rates["REDEEM_RISKPROX_FEES_MOC"] = results[1][11]
+    else:
+        raise Exception("Not valid APP Mode")
+
+    d_moc_state["commissionRates"] = commission_rates
+    # End: Commission rates by transaction types
 
     return d_moc_state
 
