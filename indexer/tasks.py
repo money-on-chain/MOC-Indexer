@@ -22,7 +22,7 @@ from .scan_moc_user import ScanUser
 from .scan_utils import BlockchainUtils
 
 
-__VERSION__ = '3.0.1'
+__VERSION__ = '3.0.2'
 
 log.info("Starting MoC Indexer version {0}".format(__VERSION__))
 
