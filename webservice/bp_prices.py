@@ -1,5 +1,5 @@
 from flask import Blueprint, current_app
-from lib_tools import dump_dict_bson
+from lib_tools import dump_dict_bson, mongodate_to_str
 import database
 from datetime import timedelta
 
@@ -18,7 +18,7 @@ def variation():
     DELTA_HOURS = current_app.config.get('DELTA_PRICE_HOURS')
 
     lextract = price_col.find({}, {
-        "_id": {"$toString": "$_id"},
+        "_id": 1,
         "blockHeight": 1,
         "bitcoinPrice": 1,
         "bproDiscountPrice": 1,
@@ -27,19 +27,21 @@ def variation():
         "bprox2PriceInBpro": 1,
         "bprox2PriceInRbtc": 1,
         "bprox2PriceInUsd": 1,
-        "createdAt": {"$toString": "$createdAt"},
-        "createdAtDate": "$createdAt",
+        "createdAt": 1,
         "reservePrecision": 1
     }).sort("blockHeight", -1).limit(1)
     current_prices = lextract[0]
 
-    current_date = current_prices.pop("createdAtDate")
+    current_prices['_id'] = str(current_prices['_id'])
+    current_date = current_prices['createdAt']
+    current_prices['createdAt'] = mongodate_to_str(current_prices['createdAt'])
+
     delta_date = current_date - timedelta(hours=DELTA_HOURS)
     delta_date_floor = delta_date.replace(hour=0, minute=0)
 
     filter = {"createdAt": {"$gte": delta_date_floor, "$lt": delta_date}}
     lextract2 = price_col.find(filter, {
-        "_id": {"$toString": "$_id"},
+        "_id": 1,
         "blockHeight": 1,
         "bitcoinPrice": 1,
         "bproDiscountPrice": 1,
@@ -48,10 +50,13 @@ def variation():
         "bprox2PriceInBpro": 1,
         "bprox2PriceInRbtc": 1,
         "bprox2PriceInUsd": 1,
-        "createdAt": {"$toString": "$createdAt"},
+        "createdAt": 1,
         "reservePrecision": 1
     }).sort("blockHeight", -1).limit(1)
     delta_prices = lextract2[0]
+
+    delta_prices['_id'] = str(delta_prices['_id'])
+    delta_prices['createdAt'] = mongodate_to_str(delta_prices['createdAt'])
 
     dict_values = {
         "current": current_prices,

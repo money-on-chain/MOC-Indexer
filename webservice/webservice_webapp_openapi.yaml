@@ -1,0 +1,307 @@
+---
+openapi: 3.0.1
+info:
+  title: MoC - API Webservice WebApp
+  description: MoC API WS for the PWA on IPFS
+  termsOfService: ""
+  contact:
+    email: omoc-team@coinfabrik.com
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: "202204201812"
+servers:
+- url: https://moneyonchain.com/
+tags:
+- name: operations
+  description: User operations endpoints
+- name: prices
+  description: Prices endpoints
+paths:
+  /api/v1/webapp/transactions/list/:
+    get:
+      tags:
+      - operations
+      summary: Returns the list of operations for an Address
+      operationId: tx-list
+      parameters:
+      - name: address
+        in: query
+        description: Address for the return of an operation list
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: token
+        in: query
+        description: Name of the Token for filtering operations
+        required: false
+        style: form
+        explode: true
+        schema:
+          $ref: '#/components/schemas/TokenList'
+      - name: limit
+        in: query
+        description: The number of items to return (pagination customized in API config)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: skip
+        in: query
+        description: The number of items to skip before starting to collect the result set
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionList'
+        "400":
+          description: Invalid Address
+          content: {}
+        "500":
+          description: Server error
+          content: {}
+  /api/v1/webapp/transactions/last/:
+    get:
+      tags:
+      - operations
+      summary: Returns the last operation for an Address
+      operationId: tx-last
+      parameters:
+      - name: address
+        in: query
+        description: Address for the return of an operation list
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: token
+        in: query
+        description: Name of the Token for filtering operations
+        required: false
+        style: form
+        explode: true
+        schema:
+          $ref: '#/components/schemas/TokenList'
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LastTransaction'
+        "400":
+          description: Invalid Address
+          content: {}
+        "500":
+          description: Server error
+          content: {}
+  /api/v1/webapp/prices/var/:
+    get:
+      tags:
+      - prices
+      summary: Return the current (most recent) token prices info with a backward variation (customized in API config)
+      operationId: price-info
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PriceVariation'
+        "500":
+          description: Server error
+          content: {}
+components:
+  schemas:
+    TransactionList:
+      type: object
+      properties:
+        transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/TransactionInfo'
+        count:
+          type: integer
+          description: Record count for the current response
+        total:
+          type: integer
+          description: Total record matches for the address and other paremeters given
+    TransactionInfo:
+      type: object
+      properties:
+        address:
+          type: string
+          description: User address
+        event:
+          type: string
+          description: Type of event (customized in API config)
+        transactionHash:
+          type: string
+          description: User operation transaction hash
+        RBTCAmount:
+          type: string
+          description: RBTC amount expressed in wei
+        RBTCTotal:
+          type: string
+          description: RBTC total amount expressed in wei
+        USDAmount:
+          type: string
+          description: USD amount expressed in wei
+        USDCommission:
+          type: string
+          description: USD commission amount expressed in wei
+        USDInterests:
+          type: string
+          description: USD interests amount expressed in wei
+        USDTotal:
+          type: string
+          description: USD total amount expressed in wei
+        userAmount:
+          type: string
+          description: User amount
+        amount:
+          type: string
+          description: Operation amount expressed in wei
+        blockNumber:
+          type: integer
+          description: Operation block number
+        gasFeeRBTC:
+          type: string
+          description: RBTC gas fee expressed in wei
+        gasFeeUSD:
+          type: string
+          description: USD gas fee expressed in wei
+        isPositive:
+          type: boolean
+          description: Is positive?
+        mocCommissionValue:
+          type: string
+          description: MoC commission value
+        mocPrice:
+          type: string
+          description: MoC price
+        processLogs:
+          type: boolean
+          description: Process logs definition
+        rbtcCommission:
+          type: string
+          description: RBTC commission amount expressed in wei
+        rbtcInterests:
+          type: string
+          description: RBTC interests amount expressed in wei
+        reservePrice:
+          type: string
+          description: Reserve price
+        status:
+          $ref: '#/components/schemas/StatusList'
+        tokenInvolved:
+          $ref: '#/components/schemas/TokenList'
+        confirmingPercent:
+          type: integer
+          description: Operation confirming percent
+        _id:
+          type: string
+          description: Record ID
+        lastUpdatedAt:
+          type: string
+          description: Timestamp of the record last update
+        createdAt:
+          type: string
+          description: Timestamp of the record creation
+        confirmationTime:
+          type: string
+          description: Timestamp of the record confirmation
+    LastTransaction:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: Record ID
+        transactionHash:
+          type: string
+          description: User operation transaction hash
+        address:
+          type: string
+          description: User address
+        status:
+          $ref: '#/components/schemas/StatusList'
+        event:
+          type: string
+          description: Type of event (customized in API config)
+        tokenInvolved:
+          $ref: '#/components/schemas/TokenList'
+        lastUpdatedAt:
+          type: string
+          description: Timestamp of the record last update
+        createdAt:
+          type: string
+          description: Timestamp of the record creation
+    PriceVariation:
+      type: object
+      properties:
+        current:
+          $ref: '#/components/schemas/PriceInfo'
+        hours_variation:
+          $ref: '#/components/schemas/PriceInfo'
+      description: 'Dictionary with two keys: current (most recent tip) and price variation in hours (customized in API config)'
+    PriceInfo:
+      type: object
+      properties:
+        blockHeight:
+          type: integer
+          description: Price block number
+        bitcoinPrice:
+          type: string
+          description: Bitcoin price expressed in wei
+        bproDiscountPrice:
+          type: string
+          description: BPRO discount price expressed in wei
+        bproPriceInRbtc:
+          type: string
+          description: BPRO price in RBTC expressed in wei
+        bproPriceInUsd:
+          type: string
+          description: BPRO price in USD expressed in wei
+        bprox2PriceInBpro:
+          type: string
+          description: BPROX2 price in BPRO expressed in wei
+        bprox2PriceInRbtc:
+          type: string
+          description: BPROX2 price in RBTC expressed in wei
+        bprox2PriceInUsd:
+          type: string
+          description: BPROX2 price in USD expressed in wei
+        reservePrecision:
+          type: string
+          description: Reserve precision
+        _id:
+          type: string
+          description: Record ID
+        createdAt:
+          type: string
+          description: Timestamp of the record creation
+    StatusList:
+      type: string
+      description: Operation status
+      enum:
+      - confirmed
+      - failed
+    TokenList:
+      type: string
+      description: List of the tokens involved in the operations
+      enum:
+      - MOC
+      - RISKPRO
+      - RISKPROX
+      - STABLE

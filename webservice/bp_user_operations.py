@@ -1,6 +1,6 @@
 from flask import Blueprint, request, current_app
 import database
-from lib_tools import checkAddress, dump_dict_bson
+from lib_tools import checkAddress, dump_dict_bson, mongodate_to_str
 
 transactions = Blueprint('transactions', __name__, url_prefix="/api/v1/webapp/transactions")
 
@@ -42,16 +42,16 @@ def tx_list():
         filter["tokenInvolved"] = token
 
     lextract = tx_col.find(filter, {
-        "_id": {"$toString": "$_id"},
+        "_id": 1,
         "transactionHash": 1,
         "address": 1,
         "status": 1,
         "event": 1,
         "tokenInvolved": 1,
         "userAmount": 1,
-        "lastUpdatedAt": {"$toString": "$lastUpdatedAt"},
-        "createdAt": {"$toString": "$createdAt"},
-        "confirmationTime": {"$toString": "$confirmationTime"},
+        "lastUpdatedAt": 1,
+        "createdAt": 1,
+        "confirmationTime": 1,
         "confirmingPercent": 1,
         "RBTCAmount": 1,
         "RBTCTotal": 1,
@@ -73,6 +73,13 @@ def tx_list():
     }).sort("createdAt", -1).skip(SKIP_RECORDS).limit(LIMIT_PAGE)
     records = list(lextract)
     records_count = len(records)
+
+    for rec in records:
+        rec['_id'] = str(rec['_id'])
+        rec['createdAt'] = mongodate_to_str(rec['createdAt'])
+        rec['lastUpdatedAt'] = mongodate_to_str(rec['lastUpdatedAt'])
+        rec['confirmationTime'] = mongodate_to_str(rec['confirmationTime'])
+
     dict_values = {
         "transactions": records,
         "count": records_count,
@@ -110,14 +117,19 @@ def tx_last():
         filter["tokenInvolved"] = token
 
     lextract = tx_col.find(filter, {
-        "_id": {"$toString": "$_id"},
+        "_id": 1,
         "transactionHash": 1,
         "address": 1,
         "status": 1,
         "event": 1,
         "tokenInvolved": 1,
-        "lastUpdatedAt": {"$toString": "$lastUpdatedAt"},
-        "createdAt": {"$toString": "$createdAt"}
-    }).sort("createdAt", -1).limit(1)
+        "lastUpdatedAt": 1,
+        "createdAt": 1
+    }).sort("lastUpdatedAt", -1).limit(1)
 
-    return dump_dict_bson(lextract[0]), 200
+    last_operation = lextract[0]
+    last_operation['_id'] = str(last_operation['_id'])
+    last_operation['createdAt'] = mongodate_to_str(last_operation['createdAt'])
+    last_operation['lastUpdatedAt'] = mongodate_to_str(last_operation['lastUpdatedAt'])
+
+    return dump_dict_bson(last_operation), 200

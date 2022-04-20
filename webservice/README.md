@@ -21,7 +21,7 @@ Database server connection
 - see other mandory fields for the functional services: 'pagination'; 'delta_price_hours'
 
 ### Python dependencies
-- requirements.txt
+- `pip install -r requirements.txt`
 
 ### API specification
 - TBD Swagger docs.

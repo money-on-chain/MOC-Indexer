@@ -1,7 +1,7 @@
 {
   "mongo": {
-    "uri": "mongodb://192.168.56.2:27017/",
-    "db": "local_alpha_testnet2"
+    "uri": "mongodb://10.10.0.139:27017/",
+    "db": "alpha_20220408"
   },
   "debug": true,
   "tasks": {
