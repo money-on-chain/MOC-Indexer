@@ -37,6 +37,9 @@ class IndexNewBitcoinTransfer(BaseIndexEvent):
             upsert=True)
         d_tx['post_id'] = post_id
 
+        log.info("EVENT::NewBitcoinTransfer::{0}".format(d_tx["transferId"]))
+        log.info(d_tx)
+
         return d_tx
 
     def on_event(self, m_client, parse_receipt, log_index=None):
@@ -70,6 +73,9 @@ class IndexBitcoinTransferStatusUpdated(BaseIndexEvent):
             {"$set": d_tx},
             upsert=False)
         d_tx['post_id'] = post_id
+
+        log.info("EVENT::BitcoinTransferStatusUpdated::{0}".format(d_tx["transferId"]))
+        log.info(d_tx)
 
         return d_tx
 
