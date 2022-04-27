@@ -19,6 +19,7 @@ class IndexNewBitcoinTransfer(BaseIndexEvent):
 
         d_tx = dict()
         d_tx["transactionHash"] = tx_hash
+        d_tx["transactionHashLastUpdated"] = tx_hash
         d_tx["blockNumber"] = parse_receipt["blockNumber"]
         d_tx["type"] = 'PEG_OUT'
         d_tx["transferId"] = str(tx_event["transferId"])
@@ -27,8 +28,9 @@ class IndexNewBitcoinTransfer(BaseIndexEvent):
         d_tx["amountSatoshi"] = str(tx_event["amountSatoshi"])
         d_tx["feeSatoshi"] = str(tx_event["feeSatoshi"])
         d_tx["rskAddress"] = tx_event["rskAddress"]
-        d_tx["status"] = None
+        d_tx["status"] = 0
         d_tx["timestamp"] = parse_receipt["timestamp"]
+        d_tx["updated"] = parse_receipt["timestamp"]
         d_tx["processLogs"] = True
 
         post_id = collection_bridge.find_one_and_update(
@@ -58,15 +60,10 @@ class IndexBitcoinTransferStatusUpdated(BaseIndexEvent):
         # get collection fast btc bridge
         collection_bridge = mongo_manager.collection_fast_btc_bridge(m_client)
 
-        tx_hash = parse_receipt["transactionHash"]
-
         d_tx = dict()
-        d_tx["transactionHash"] = tx_hash
-        d_tx["blockNumber"] = parse_receipt["blockNumber"]
-        d_tx["transferId"] = str(tx_event["transferId"])
+        d_tx["transactionHashLastUpdated"] = parse_receipt["transactionHash"]
         d_tx["status"] = tx_event["newStatus"]
-        d_tx["timestamp"] = parse_receipt["timestamp"]
-        d_tx["processLogs"] = True
+        d_tx["updated"] = parse_receipt["timestamp"]
 
         post_id = collection_bridge.find_one_and_update(
             {"transferId": d_tx["transferId"]},
