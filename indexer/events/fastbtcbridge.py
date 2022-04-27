@@ -63,6 +63,7 @@ class IndexBitcoinTransferStatusUpdated(BaseIndexEvent):
         d_tx = dict()
         d_tx["transactionHashLastUpdated"] = parse_receipt["transactionHash"]
         d_tx["status"] = tx_event["newStatus"]
+        d_tx["transferId"] = str(tx_event["transferId"])
         d_tx["updated"] = parse_receipt["timestamp"]
 
         post_id = collection_bridge.find_one_and_update(
