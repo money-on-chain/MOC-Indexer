@@ -6,6 +6,7 @@ from moneyonchain.moc import MoC, MoCConnector, MoCState, MoCInrate, MoCSettleme
 from moneyonchain.rdoc import RDOCMoC, RDOCMoCConnector, RDOCMoCState, RDOCMoCInrate, RDOCMoCSettlement, RDOCMoCExchange
 from moneyonchain.tokens import BProToken, DoCToken, StableToken, RiskProToken, MoCToken, ReserveToken
 from moneyonchain.multicall import Multicall2
+from moneyonchain.fastbtc import FastBtcBridge
 
 from indexer.mongo_manager import mongo_manager
 
@@ -22,7 +23,7 @@ from .scan_moc_user import ScanUser
 from .scan_utils import BlockchainUtils
 
 
-__VERSION__ = '3.0.2'
+__VERSION__ = '3.0.3'
 
 log.info("Starting MoC Indexer version {0}".format(__VERSION__))
 
@@ -173,6 +174,7 @@ class MoCIndexerTasks(TasksManager):
         contracts_addresses['MoCToken'] = contract_moc_state.moc_token()
         contracts_addresses['MoCVendors'] = contract_moc_state.moc_vendors()
         contracts_addresses['Multicall2'] = self.options['networks'][self.config_network]['addresses']['Multicall2']
+        contracts_addresses['FastBtcBridge'] = self.options['networks'][self.config_network]['addresses']['FastBtcBridge']
 
         if 'BProToken' in self.options['networks'][self.config_network]['addresses']:
             contracts_addresses['MoC_BProToken'] = self.options['networks'][self.config_network]['addresses']['BProToken']
@@ -197,6 +199,11 @@ class MoCIndexerTasks(TasksManager):
         self.contracts_loaded["Multicall2"] = Multicall2(
             network_manager,
             contract_address=contracts_addresses['Multicall2']).from_abi()
+
+        # FastBtcBridge
+        self.contracts_loaded["FastBtcBridge"] = FastBtcBridge(
+            network_manager,
+            contract_address=contracts_addresses['FastBtcBridge']).from_abi()
 
         return contracts_addresses
 
