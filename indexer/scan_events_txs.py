@@ -19,7 +19,9 @@ from indexer.events import IndexRiskProMint, IndexRiskProRedeem, IndexRiskProxMi
     IndexApproval, IndexApprovalMoCToken, \
     IndexRESERVETransfer, \
     IndexRISKPROTransfer, \
-    IndexSTABLETransfer
+    IndexSTABLETransfer, \
+    IndexNewBitcoinTransfer, \
+    IndexBitcoinTransferStatusUpdated
 
 
 class ScanEventsTxs:
@@ -91,6 +93,10 @@ class ScanEventsTxs:
         d_event[self.map_contract_addresses["MoCToken"]] = {
             "Transfer": "",
             "Approval": IndexApprovalMoCToken(self.options, self.app_mode, self.map_contract_addresses["MoC"])
+        }
+        d_event[self.map_contract_addresses["FastBtcBridge"]] = {
+            "NewBitcoinTransfer": IndexNewBitcoinTransfer(self.options, self.app_mode),
+            "BitcoinTransferStatusUpdated": IndexBitcoinTransferStatusUpdated(self.options, self.app_mode)
         }
         if self.app_mode == 'RRC20':
             d_event[self.map_contract_addresses["ReserveToken"]] = {

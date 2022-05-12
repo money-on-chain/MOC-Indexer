@@ -262,5 +262,17 @@ class MongoManager:
 
         return collection
 
+    def collection_fast_btc_bridge(self, client, start_index=True):
+
+        mongo_db = self.db
+        db = client[mongo_db]
+        collection = db['FastBtcBridge']
+
+        # index creation
+        if start_index:
+            collection.create_index([('transferId', pymongo.ASCENDING)], unique=True)
+
+        return collection
+
 
 mongo_manager = MongoManager()

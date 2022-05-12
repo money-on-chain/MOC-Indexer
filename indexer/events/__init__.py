@@ -11,3 +11,4 @@ from .token_reserve import IndexRESERVETransfer, IndexApproval
 from .token_riskpro import IndexRISKPROTransfer
 from .token_stable import IndexSTABLETransfer
 from .token_moc import IndexApprovalMoCToken
+from .fastbtcbridge import IndexNewBitcoinTransfer, IndexBitcoinTransferStatusUpdated
