@@ -25,6 +25,7 @@ from bp_main import webapp_api
 from bp_user_operations import transactions
 from bp_prices import price_variation
 from lib_tools import load_config
+from webservice.bp_fastbtc_bridge import fastbtc
 
 app = flask.Flask(__name__)
 
@@ -38,6 +39,7 @@ if not database.checkDBsOk(app):
 app.register_blueprint(webapp_api)
 app.register_blueprint(transactions)
 app.register_blueprint(price_variation)
+app.register_blueprint(fastbtc)
 
 
 @app.errorhandler(500)
