@@ -122,8 +122,88 @@ paths:
         "500":
           description: Server error
           content: {}
+  /api/v1/webapp/fastbtc/pegout/:
+    get:
+      tags:
+      - operations
+      summary: Returns the pegout requests from an address
+      operationId: fastbtc-pegout
+      parameters:
+      - name: address
+        in: query
+        description: Pegout request origination address
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PegoutContainer'
+        "400":
+          description: Invalid Address
+          content: {}
+        "500":
+          description: Server error
+          content: {}
 components:
   schemas:
+    PegOut:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: Object id
+        transferId:
+          type: string
+          description: The transfer id
+        transactionHash:
+          type: string
+          description: The transaction hash
+        blockNumber:
+          type: number
+          description: The block number
+        nonce:
+          type: number
+          description: the nonce
+        btcAddress:
+          type: string
+          description: The destination address
+        rskAddress:
+          type: string
+          description: The originating address
+        amountSatoshi:
+          type: string
+          description: Amount
+        feeSatoshi:
+          type: string
+          description: The fees
+        status:
+          type: number
+          description: PegOut status code
+        timestamp:
+          type: string
+          description: Creation date for the PegOut request
+        updated:
+          type: string
+          description: Last update date for the request
+        processLogs:
+          type: boolean
+          description: Process Logs
+        type:
+          type: string
+          description: Must be equal to "PEG_OUT"
+    PegoutContainer:
+      type: object
+      properties:
+        pegout_requests:
+          type: array
+          items:
+            $ref: '#/components/schemas/PegOut'
     TransactionList:
       type: object
       properties:

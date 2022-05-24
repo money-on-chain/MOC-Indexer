@@ -1,10 +1,12 @@
-from flask import Blueprint, current_app
+from flask import Blueprint, current_app, Response
 from lib_tools import dump_dict_bson, mongodate_to_str
 import database
 from datetime import timedelta
 
 price_variation = Blueprint('price_variation', __name__, url_prefix="/api/v1/webapp/prices")
 
+
+@price_variation.route('/var')
 @price_variation.route('/var/')
 def variation():
     """
@@ -62,5 +64,4 @@ def variation():
         "current": current_prices,
         str(DELTA_HOURS)+"hs": delta_prices
     }
-
-    return dump_dict_bson(dict_values), 200
+    return Response(dump_dict_bson(dict_values), mimetype="application/json")

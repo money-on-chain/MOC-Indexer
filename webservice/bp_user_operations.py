@@ -1,10 +1,12 @@
-from flask import Blueprint, request, current_app
+from flask import Blueprint, request, current_app, Response
 import database
-from lib_tools import checkAddress, dump_dict_bson, mongodate_to_str
+from lib_tools import checkAddress, dump_dict_bson, mongodate_to_str, \
+    getPagination
 
 transactions = Blueprint('transactions', __name__, url_prefix="/api/v1/webapp/transactions")
 
 
+@transactions.route("/list")
 @transactions.route("/list/")
 def tx_list():
     """
@@ -25,13 +27,7 @@ def tx_list():
     if not checkAddress(address):
         return "Invalid Address", 400
 
-    SKIP_RECORDS = int(request.args.get('skip', 0))
-    LIMIT_PAGE = int(request.args.get('limit', 0))
-    DEFAULT_PAGINATIONS = current_app.config.get('PAGINATION')
-
-    if LIMIT_PAGE not in DEFAULT_PAGINATIONS:
-        LIMIT_PAGE = DEFAULT_PAGINATIONS[0]
-
+    pagination = getPagination(request)
     tx_col = database.db.get_collection(current_app.config.get("REQ_COLLECTIONS")['tx_col_name'])
     EXCLUDED_EVENTS = current_app.config.get('EXCLUDED_EVENTS')
 
@@ -70,7 +66,7 @@ def tx_list():
         "rbtcCommission": 1,
         "rbtcInterests": 1,
         "reservePrice": 1
-    }).sort("createdAt", -1).skip(SKIP_RECORDS).limit(LIMIT_PAGE)
+    }).sort("createdAt", -1).skip(pagination.skip).limit(pagination.limit)
     records = list(lextract)
     records_count = len(records)
 
@@ -85,10 +81,10 @@ def tx_list():
         "count": records_count,
         "total": tx_col.count_documents(filter)
     }
+    return Response(dump_dict_bson(dict_values), mimetype="application/json")
 
-    return dump_dict_bson(dict_values), 200
 
-
+@transactions.route("/last")
 @transactions.route("/last/")
 def tx_last():
     """
@@ -132,4 +128,4 @@ def tx_last():
     last_operation['createdAt'] = mongodate_to_str(last_operation['createdAt'])
     last_operation['lastUpdatedAt'] = mongodate_to_str(last_operation['lastUpdatedAt'])
 
-    return dump_dict_bson(last_operation), 200
+    return Response(dump_dict_bson(last_operation), mimetype="application/json")
