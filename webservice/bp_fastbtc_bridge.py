@@ -1,7 +1,7 @@
 from flask import Blueprint, request, current_app, Response
 import database
 from lib_tools import checkAddress, dump_dict_bson, mongodate_to_str
-from webservice.lib_tools import getPagination
+from lib_tools import getPagination
 
 fastbtc = Blueprint('fastbtc', __name__, url_prefix="/api/v1/webapp/fastbtc")
 

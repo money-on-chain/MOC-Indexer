@@ -25,7 +25,7 @@ from bp_main import webapp_api
 from bp_user_operations import transactions
 from bp_prices import price_variation
 from lib_tools import load_config
-from webservice.bp_fastbtc_bridge import fastbtc
+from bp_fastbtc_bridge import fastbtc
 
 app = flask.Flask(__name__)
 

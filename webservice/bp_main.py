@@ -2,7 +2,7 @@ import flask
 from flask import Response
 
 import database
-from webservice.lib_tools import dump_dict_bson
+from lib_tools import dump_dict_bson
 
 webapp_api = flask.Blueprint('webapp_api', __name__)
 
