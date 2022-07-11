@@ -1,0 +1,52 @@
+{
+  "mongo": {
+    "uri": "mongodb://10.10.0.139:27017/",
+    "db": "alpha_20220408"
+  },
+  "debug": true,
+  "tasks": {
+    "scan_moc_blocks": {"interval":  3},
+    "scan_moc_events": {"interval":  4},
+    "scan_moc_prices": {"interval":  10},
+    "scan_moc_state": {"interval":  10},
+    "scan_moc_status": {"interval":  10},
+    "scan_moc_state_status": {"interval":  10},
+    "scan_user_state_update": {"interval":  10},
+    "scan_moc_blocks_not_processed": {"interval":  60},
+    "reconnect_on_lost_chain": {"interval":  180}
+  },
+  "scan_moc_blocks": {
+    "confirm_blocks": 10,
+    "blocks_look_behind": 1,
+    "seconds_not_in_chain_error": 600,
+    "blocks_recession": 0,
+    "from_block": 0,
+    "to_block": 0
+  },
+  "scan_moc_state": {
+    "block_height": 0
+  },
+  "scan_moc_prices": {
+    "blocks_look_behind": 1
+  },
+  "scan_moc_state_status": {
+    "blocks_look_behind": 1
+  },
+  "networks": {
+    "mocTestnetAlpha": {
+      "app_mode": "MoC",
+      "project": "MoC",
+      "addresses": {
+        "MoC": "0x01AD6f8E884ed4DDC089fA3efC075E9ba45C9039",
+        "Multicall2": "0xaf7be1ef9537018feda5397d9e3bb9a1e4e27ac8"
+      }
+    }
+  },
+  "webapp_api_settings": {
+    "port": 5005,
+    "pagination": [20, 40],
+    "excluded_events": ["RedeemRequestAlter", "RedeemRequestProcessed",
+      "SettlementRedeemStableToken", "TransferFromMoC", "QueueDOC"],
+    "delta_price_hours": 24
+  }
+}
