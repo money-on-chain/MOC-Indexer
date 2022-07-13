@@ -38,7 +38,7 @@ fi
 echo "Environment : $ENV" 
 
 echo "Start building AWS Monitor for MoC WebService Py..."
-docker image build  -t aws_api_webservice_${ENV} -f ./Docker/Dockerfile.webservice .
+docker image build  -t aws_api_webservice_${ENV} -f ./Dockerfile.webservice .
 echo "Build done! Exiting!"
 
 

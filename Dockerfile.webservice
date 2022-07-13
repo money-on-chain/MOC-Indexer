@@ -18,7 +18,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 RUN mkdir /home/www-data && mkdir /home/www-data/app
 WORKDIR /home/www-data/app/
-COPY ../config_parser.py ./
+COPY config_parser.py ./
 ADD webservice ./webservice/
 
 ENV PATH "$PATH:/home/www-data/app/"
