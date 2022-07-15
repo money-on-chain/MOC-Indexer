@@ -41,7 +41,10 @@ def pegout():
 
     for rec in records:
         rec['_id'] = str(rec['_id'])
-        rec['timestamp'] = mongodate_to_str(rec['timestamp'])
+        if rec['timestamp']:
+            rec['timestamp'] = mongodate_to_str(rec['timestamp'])
+        else:
+            rec['timestamp'] = ''
         try:
             rec['updated'] = mongodate_to_str(rec['updated'])
         except Exception:

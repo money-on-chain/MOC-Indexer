@@ -36,7 +36,10 @@ def variation():
 
     current_prices['_id'] = str(current_prices['_id'])
     current_date = current_prices['createdAt']
-    current_prices['createdAt'] = mongodate_to_str(current_prices['createdAt'])
+    if current_prices['createdAt']:
+        current_prices['createdAt'] = mongodate_to_str(current_prices['createdAt'])
+    else:
+        current_prices['createdAt'] = ''
 
     delta_date = current_date - timedelta(hours=DELTA_HOURS)
     delta_date_floor = delta_date.replace(hour=0, minute=0)
@@ -58,7 +61,10 @@ def variation():
     delta_prices = lextract2[0]
 
     delta_prices['_id'] = str(delta_prices['_id'])
-    delta_prices['createdAt'] = mongodate_to_str(delta_prices['createdAt'])
+    if delta_prices['createdAt']:
+        delta_prices['createdAt'] = mongodate_to_str(delta_prices['createdAt'])
+    else:
+        delta_prices['createdAt'] = ''
 
     dict_values = {
         "current": current_prices,

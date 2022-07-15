@@ -72,9 +72,18 @@ def tx_list():
 
     for rec in records:
         rec['_id'] = str(rec['_id'])
-        rec['createdAt'] = mongodate_to_str(rec['createdAt'])
-        rec['lastUpdatedAt'] = mongodate_to_str(rec['lastUpdatedAt'])
-        rec['confirmationTime'] = mongodate_to_str(rec['confirmationTime'])
+        if rec['createdAt']:
+            rec['createdAt'] = mongodate_to_str(rec['createdAt'])
+        else:
+            rec['createdAt'] = ''
+        if rec['lastUpdatedAt']:
+            rec['lastUpdatedAt'] = mongodate_to_str(rec['lastUpdatedAt'])
+        else:
+            rec['lastUpdatedAt'] = ''
+        if rec['confirmationTime']:
+            rec['confirmationTime'] = mongodate_to_str(rec['confirmationTime'])
+        else:
+            rec['confirmationTime'] = ''
 
     dict_values = {
         "transactions": records,
@@ -125,7 +134,13 @@ def tx_last():
 
     last_operation = lextract[0]
     last_operation['_id'] = str(last_operation['_id'])
-    last_operation['createdAt'] = mongodate_to_str(last_operation['createdAt'])
-    last_operation['lastUpdatedAt'] = mongodate_to_str(last_operation['lastUpdatedAt'])
+    if last_operation['createdAt']:
+        last_operation['createdAt'] = mongodate_to_str(last_operation['createdAt'])
+    else:
+        last_operation['createdAt'] = ''
+    if last_operation['lastUpdatedAt']:
+        last_operation['lastUpdatedAt'] = mongodate_to_str(last_operation['lastUpdatedAt'])
+    else:
+        last_operation['lastUpdatedAt'] = ''
 
     return Response(dump_dict_bson(last_operation), mimetype="application/json")
