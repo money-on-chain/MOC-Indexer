@@ -13,7 +13,7 @@ RUN echo $TZ > /etc/timezone && \
     dpkg-reconfigure -f noninteractive tzdata && \
     apt-get clean
 
-COPY requirements.txt ./
+COPY ./webservice/requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 RUN mkdir /home/www-data && mkdir /home/www-data/app
@@ -24,4 +24,4 @@ ADD webservice ./webservice/
 ENV PATH "$PATH:/home/www-data/app/"
 ENV PYTHONPATH "${PYTONPATH}:/home/www-data/app/"
 
-CMD [ "sh","-c","python ./webservice/app.py --config $APP_SETTINGS --connection_network=None --config_network=None"]
+CMD [ "sh","-c","echo $APP_SETTINGS > ./config.json && python ./webservice/app.py --config ./config.json --connection_network=None --config_network=None"]

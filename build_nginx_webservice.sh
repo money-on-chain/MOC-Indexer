@@ -4,4 +4,4 @@
 set -e
 
 # Create image that will compile the app into a bundle
-docker build -t nginx_api_ipfs -f webservice/Docker/Dockerfile.nginx .
+docker build -t nginx_operations -f webservice/Docker/Dockerfile.nginx .
