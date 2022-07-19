@@ -7,7 +7,7 @@ while getopts ":e:c:i:r:" o; do
     case "${o}" in
         e)
             e=${OPTARG}
-            (( e == "bnb-testnet" || e == "alpha-testnet" || e=="testnet" ||  e=="mainnet" || e=="rdoc-alpha-testnet" || e=="rdoc-testnet" ||  e=="rdoc-mainnet" || usage
+            (( e == "bnb-testnet" || e == "alpha-testnet" || e=="testnet" ||  e=="mainnet" || e=="rdoc-alpha-testnet" || e=="rdoc-testnet" ||  e=="rdoc-mainnet")) || usage
             case $e in
                 bnb-testnet)
                     ENV=$e
