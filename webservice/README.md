@@ -23,6 +23,12 @@ Database server connection
 ### Python dependencies
 - `pip install -r requirements.txt`
 
+### Usage
+
+Run:
+
+`python app.py --config ./settings/develop.json`
+
 ### API specification
 - TBD Swagger docs.
 
@@ -35,7 +41,7 @@ Database server connection
             Main program for the API Webservice IPFS WebApp
 
             usage example:
-                app.py --config ../settings/settings-moc-alpha-testnet-api.json --connection_network=None --config_network=None
+                app.py --config ./settings/settings-moc-alpha-testnet.json
 
             mandatory params (config file or env):
                 'port'; 'uri'; 'db'; 'pagination'; 'delta_price_hours'

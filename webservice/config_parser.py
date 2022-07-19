@@ -10,7 +10,7 @@ class ConfigParser(object):
         """ Options from file config.json """
 
         if not filename:
-            filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'settings', 'config.json')
+            filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'settings', 'develop.json')
 
         with open(filename) as f:
             options = json.load(f)
@@ -18,15 +18,11 @@ class ConfigParser(object):
         return options
 
     def __init__(self,
-                 connection_network='rskTesnetPublic',
-                 config_network='mocTestnetAlpha',
                  options=None):
 
-        self.connection_network = connection_network
-        self.config_network = config_network
         if not options:
-            self.config = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                       'config.json')
+            self.config = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'settings',
+                                       'develop.json')
         else:
             self.config = options
         self.parse()
@@ -35,12 +31,6 @@ class ConfigParser(object):
 
         usage = '%prog [options] '
         parser = OptionParser(usage=usage)
-
-        parser.add_option('-n', '--connection_network', action='store', dest='connection_network', type="string",
-                          help='network to connect')
-
-        parser.add_option('-e', '--config_network', action='store', dest='config_network', type="string",
-                          help='enviroment to connect')
 
         parser.add_option('-c', '--config', action='store', dest='config', type="string", help='config')
 
@@ -51,50 +41,18 @@ class ConfigParser(object):
         else:
             if not options.config:
                 # if there are no config try to read config.json from current folder
-                config_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'config.json')
+                config_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'settings', 'develop.json')
                 if not os.path.isfile(config_path):
                     raise Exception("Please select path to config or env APP_CONFIG. "
-                                    "Ex. /settings/settings-moc-alpha-testnet.json "
+                                    "Ex. /settings/develop.json "
                                     "Full Ex.:"
-                                    "python app_run_moc_indexer.py "
-                                    "--connection_network=rskTestnetPublic "
-                                    "--config_network=mocTestnetAlpha "
-                                    "--config ./settings/settings-moc-alpha-testnet.json"
+                                    "python app.py "                                    
+                                    "--config ./settings/develop.json"
                                     )
             else:
                 config_path = options.config
 
             self.config = self.options_from_config(config_path)
-
-        if 'APP_CONNECTION_NETWORK' in os.environ:
-            self.connection_network = os.environ['APP_CONNECTION_NETWORK']
-        else:
-            if not options.connection_network:
-                raise Exception("Please select connection network or env APP_CONNECTION_NETWORK. "
-                                "Ex.: rskTesnetPublic. "
-                                "Full Ex.:"
-                                "python app_run_moc_indexer.py "
-                                "--connection_network=rskTestnetPublic "
-                                "--config_network=mocTestnetAlpha "
-                                "--config ./settings/settings-moc-alpha-testnet.json"
-                                )
-            else:
-                self.connection_network = options.connection_network
-
-        if 'APP_CONFIG_NETWORK' in os.environ:
-            self.config_network = os.environ['APP_CONFIG_NETWORK']
-        else:
-            if not options.config_network:
-                raise Exception("Please select enviroment of your config or env APP_CONFIG_NETWORK. "
-                                "Ex.: rdocTestnetAlpha"
-                                "Full Ex.:"
-                                "python app_run_moc_indexer.py "
-                                "--connection_network=rskTestnetPublic "
-                                "--config_network=mocTestnetAlpha "
-                                "--config ./settings/settings-moc-alpha-testnet.json"
-                                )
-            else:
-                self.config_network = options.config_network
 
         if 'APP_MONGO_URI' in os.environ:
             mongo_uri = os.environ['APP_MONGO_URI']

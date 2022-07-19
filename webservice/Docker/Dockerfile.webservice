@@ -1,4 +1,4 @@
-FROM python:3.7
+FROM python:3.9
 
 LABEL  Maintainer="nicolas.flores@coinfabrik.com"
 
@@ -24,4 +24,4 @@ ADD webservice ./webservice/
 ENV PATH "$PATH:/home/www-data/app/"
 ENV PYTHONPATH "${PYTONPATH}:/home/www-data/app/"
 
-CMD [ "sh","-c","python ./webservice/app.py --config $APP_SETTINGS --connection_network=None --config_network=None"]
+CMD [ "sh","-c","python ./webservice/app.py --config $APP_SETTINGS"]

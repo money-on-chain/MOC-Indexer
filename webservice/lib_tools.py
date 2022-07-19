@@ -37,7 +37,7 @@ def dump_dict_bson(_dict):
 
 def load_config(app):
     cfg = ConfigParser()
-    app.config['API_VERSION'] = "202205241122"
+    app.config['API_VERSION'] = "202207151122"
     app.config['PORT'] = cfg.config['webapp_api_settings']['port']
     app.config['URI_PARAM'] = cfg.config['mongo']['uri']
     app.config['MONGO_DB'] = cfg.config['mongo']['db']
