@@ -58,7 +58,7 @@ if [ -z "${e}" ] || [ -z "${c}" ] || [ -z "${i}" ] || [ -z "${r}" ]; then
     usage
 fi
 
-docker image build -t aws_api_webservice_$ENV -f ./Dockerfile.webservice --build-arg APP_SETTINGS=$CONFIG_FILE .
+docker image build -t aws_operations_web_service_$ENV -f ./Dockerfile.webservice --build-arg APP_SETTINGS=$CONFIG_FILE .
 
 echo "Build done!"
 
@@ -67,8 +67,8 @@ $(aws ecr get-login --no-include-email --region $AWS_REGION)
 
 echo "Logging to AWS done!"
 
-docker tag aws_api_webservice_$ENV:latest $AWS_ID.dkr.ecr.$AWS_REGION.amazonaws.com/aws_api_webservice_$ENV:latest
+docker tag aws_operations_web_service_$ENV:latest $AWS_ID.dkr.ecr.$AWS_REGION.amazonaws.com/aws_operations_web_service_$ENV:latest
 
-docker push $AWS_ID.dkr.ecr.$AWS_REGION.amazonaws.com/aws_api_webservice_$ENV:latest
+docker push $AWS_ID.dkr.ecr.$AWS_REGION.amazonaws.com/aws_operations_web_service_$ENV:latest
 
 echo "finish done!"
