@@ -23,4 +23,4 @@ ADD webservice ./webservice/
 ENV PATH "$PATH:/home/www-data/app/"
 ENV PYTHONPATH "${PYTONPATH}:/home/www-data/app/"
 
-CMD [ "sh","-c","python ./webservice/app.py --config $APP_SETTINGS"]
+CMD [ "sh","-c","echo $APP_SETTINGS > ./config.json && python ./webservice/app.py --config ./config.json"]
