@@ -58,7 +58,7 @@ if [ -z "${e}" ] || [ -z "${c}" ] || [ -z "${i}" ] || [ -z "${r}" ]; then
     usage
 fi
 
-docker image build -t aws_operations_web_service_$ENV -f ./Dockerfile.webservice --build-arg APP_SETTINGS=$CONFIG_FILE .
+docker image build -t aws_operations_web_service_$ENV -f ./Dockerfile.webservice .
 
 echo "Build done!"
 
