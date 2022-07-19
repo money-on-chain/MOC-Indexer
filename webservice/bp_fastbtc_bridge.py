@@ -33,14 +33,13 @@ def pegout():
               "type": "PEG_OUT",
               }
 
-    lextract = tx_col.find(filter, {
-        "transactionHashLastUpdated": 0,
-        # "updated": 0
-    }).sort("timestamp", -1).skip(pagination.skip).limit(pagination.limit)
+    lextract = tx_col.find(filter, {}).sort("timestamp", -1).skip(pagination.skip).limit(pagination.limit)
     records = list(lextract)
 
     for rec in records:
         rec['_id'] = str(rec['_id'])
+        if 'transactionHashLastUpdated' not in rec:
+            rec['transactionHashLastUpdated'] = ''
         if rec['timestamp']:
             rec['timestamp'] = mongodate_to_str(rec['timestamp'])
         else:
