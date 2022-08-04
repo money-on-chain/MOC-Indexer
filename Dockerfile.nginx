@@ -3,7 +3,7 @@ FROM nginx:1.18.0
 RUN apt-get update
 
 # configuration
-COPY ./webservice/Docker/nginx/nginx.conf /etc/nginx/nginx.conf
+COPY ./webservice/nginx/nginx.conf /etc/nginx/nginx.conf
 
 
 # Append "daemon off;" to the beginning of the configuration
