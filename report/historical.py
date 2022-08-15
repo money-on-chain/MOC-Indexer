@@ -93,10 +93,14 @@ class ReportHistorical:
         log.info("")
         log.info("Current block height: {0}".format(coll_moc_state['blockHeight']))
         log.info("Global Coverage: {0}".format(int(coll_moc_state['globalCoverage']) / CONTRACT_PRECISION))
+        price_collateral_usd = int(coll_moc_state['bitcoinPrice']) / CONTRACT_PRECISION
+        log.info("1 {0} = {1} USD ".format(info_tokens["collateral"], price_collateral_usd))
+
         log.info("")
         log.info("TVL")
-        log.info("Total {0} in protocol: {1}".format(
-            info_tokens["collateral"], int(coll_moc_state['b0BTCAmount']) / CONTRACT_PRECISION))
+        total_collateral = int(coll_moc_state['b0BTCAmount']) / CONTRACT_PRECISION
+        log.info("Total {0} in protocol: {1} ({2} USD)".format(
+            info_tokens["collateral"], total_collateral, total_collateral * price_collateral_usd))
         log.info("Total {0} in protocol: {1}".format(
             info_tokens["tokens"]["RISKPRO"], int(coll_moc_state['b0BproAmount']) / CONTRACT_PRECISION))
         log.info("Total {0} in protocol: {1}".format(
@@ -161,10 +165,13 @@ class ReportHistorical:
         log.info("HISTORY (15 days ago)")
         log.info("block height: {0}".format(coll_moc_state_historic['blockHeight']))
         log.info("Global Coverage: {0}".format(int(coll_moc_state_historic['globalCoverage']) / CONTRACT_PRECISION))
+        price_collateral_usd = int(coll_moc_state_historic['bitcoinPrice']) / CONTRACT_PRECISION
+        log.info("1 {0} = {1} USD ".format(info_tokens["collateral"], price_collateral_usd))
         log.info("")
         log.info("TVL")
-        log.info("Total {0} in protocol: {1}".format(
-            info_tokens["collateral"], int(coll_moc_state_historic['b0BTCAmount']) / CONTRACT_PRECISION))
+        total_collateral = int(coll_moc_state_historic['b0BTCAmount']) / CONTRACT_PRECISION
+        log.info("Total {0} in protocol: {1} ({2} USD)".format(
+            info_tokens["collateral"], total_collateral, total_collateral * price_collateral_usd))
         log.info("Total {0} in protocol: {1}".format(
             info_tokens["tokens"]["RISKPRO"], int(coll_moc_state_historic['b0BproAmount']) / CONTRACT_PRECISION))
         log.info("Total {0} in protocol: {1}".format(
