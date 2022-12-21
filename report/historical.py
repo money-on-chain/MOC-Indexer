@@ -1,4 +1,5 @@
 import os
+from tabulate import tabulate
 
 from moneyonchain.networks import network_manager
 from indexer.mongo_manager import mongo_manager
@@ -222,4 +223,28 @@ class ReportHistorical:
             count += 1
 
         log.info("{0} user address found in protocol".format(count))
+
+    def pay_tc_holders_report_console(self):
+
+        # conect to mongo db
+        m_client = mongo_manager.connect()
+
+        # get collection from mongo
+        collection_pay_tc_holders = mongo_manager.collection_bitpro_holders_interest(m_client)
+
+        info_tokens = self.coins_and_tokens()
+
+        coll_pay_tc_holders = collection_pay_tc_holders.find({}, sort=[("blockHeight", 1)])
+        if not coll_pay_tc_holders:
+            log.error("BitProHoldersInterest collection not exist. Please run indexer first before running report")
+            return
+
+        count = 0
+        l_pay_tc_holders = []
+        titles = ['Count', 'blockNumber', 'Amount', 'Created']
+        for tx in coll_pay_tc_holders:
+            count += 1
+            l_pay_tc_holders.append([count, tx['blockHeight'], str(float(tx['amount']) / CONTRACT_PRECISION), tx['createdAt']])
+
+        print(tabulate(l_pay_tc_holders, headers=titles, tablefmt="pipe"))
 
