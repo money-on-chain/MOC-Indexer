@@ -8,6 +8,17 @@ from indexer.logger import log
 CONTRACT_PRECISION = 10 ** 18
 HISTORIC_BLOCK_HEIGHT_AMOUNT = 2880 * 15
 
+OPERATIONS_TRANSLATE = {
+    "RiskProRedeem": "RIFP Redeem",
+    "RiskProMint": "RIFP Mint",
+    "StableTokenMint": "RDOC Mint",
+    "StableTokenRedeem": "RDOC Redeem",
+    "FreeStableTokenRedeem": "RDOC Redeem",
+    "RiskProxRedeem": "RIFX Redeem",
+    "RiskProxMint": "RIFX Mint",
+    "Transfer": "Transfer"
+}
+
 
 class ReportHistorical:
 
@@ -247,4 +258,70 @@ class ReportHistorical:
             l_pay_tc_holders.append([count, tx['blockHeight'], str(float(tx['amount']) / CONTRACT_PRECISION), tx['createdAt']])
 
         print(tabulate(l_pay_tc_holders, headers=titles, tablefmt="pipe"))
+
+    def report_last_transactions(self):
+
+        # conect to mongo db
+        m_client = mongo_manager.connect()
+
+        # get collection moc_state from mongo
+        collection_moc_state = mongo_manager.collection_moc_state(m_client)
+        collection_transaction = mongo_manager.collection_transaction(m_client)
+
+        info_tokens = self.coins_and_tokens()
+
+        coll_moc_state = collection_moc_state.find_one({}, sort=[("blockHeight", -1)])
+        if not coll_moc_state:
+            log.error("MoC State collection not exist. Please run indexer first before running report")
+            return
+
+        historic_block_height = coll_moc_state['blockHeight'] - HISTORIC_BLOCK_HEIGHT_AMOUNT
+
+        # Current status
+        log.info("Stable Project: {0}".format(info_tokens['project_name']))
+        log.info("Collateral: {0}".format(info_tokens["collateral"]))
+        log.info("")
+        log.info("Current block height: {0}".format(coll_moc_state['blockHeight']))
+        log.info("Up to block height: {0}".format(historic_block_height))
+
+        coll_tx = collection_transaction.find({"event": {
+            "$in": ["RiskProRedeem",
+                    "RiskProMint",
+                    "StableTokenMint",
+                    "StableTokenRedeem",
+                    "FreeStableTokenRedeem",
+                    "RiskProxRedeem",
+                    "RiskProxMint"
+                    ]
+        },
+            "blockNumber": {"$gte": historic_block_height}})
+        if not coll_tx:
+            log.error("Transaction collection not exist. Please run indexer first before running report")
+            return
+
+        count = 0
+        l_transactions = []
+        titles = ['Count', 'Block Nº', 'Hash', 'Address', 'Event', 'Amount', 'Created']
+        for tx in coll_tx:
+            count += 1
+
+            if 'blockHeight' in tx:
+                block_height = tx['blockHeight']
+            else:
+                block_height = ''
+
+            l_transactions.append(
+                [
+                    count,
+                    block_height,
+                    tx['transactionHash'],
+                    tx['address'],
+                    OPERATIONS_TRANSLATE[tx["event"]],
+                    str(float(tx['amount']) / CONTRACT_PRECISION),
+                    tx['createdAt']
+                ]
+            )
+
+        print(tabulate(l_transactions, headers=titles, tablefmt="pipe"))
+
 
