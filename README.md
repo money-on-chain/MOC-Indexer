@@ -164,3 +164,36 @@ On the task definition it's important to set up the proper environment variables
 5. APP_MONGO_URI: mongo uri
 6. APP_MONGO_DB: mongo db
 
+
+### AWS Webservice **Building image**
+
+```
+./aws_webservice_build_and_push.sh -e <environment> -c <config file> -i <aws id>
+```
+
+ Where environment could be
+
+* alpha-testnet: alpha-testnet.moneyonchain.com
+* testnet: moc-testnet.moneyonchain.com
+* mainnet: alpha.moneyonchain.com
+* rdoc-mainnet: rif.moneyonchain.com
+* rdoc-testnet: rif-testnet.moneyonchain.com
+* rdoc-alphatestnet: rif-alpha.moneyonchain.com
+
+Finally it will build the docker image.
+
+
+**Example:**
+
+
+```
+bash ./aws_webservice_build_and_push.sh -e alpha-testnet -i 123 -r us-west-1 -c ./settings/aws-moc-alpha-testnet.json
+```
+
+## Setting up in AWS ECS
+
+On the task definition it's important to set up the proper environment variables.
+
+1. APP_CONFIG: The config.json you find in your _settings/deploy_XXX.json folder as json
+2. APP_MONGO_URI: mongo uri
+3. APP_MONGO_DB: mongo db

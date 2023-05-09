@@ -1,0 +1,26 @@
+FROM python:3.9
+
+LABEL  Maintainer="nicolas.flores@coinfabrik.com"
+
+RUN apt-get update && \
+    apt-get install -y \
+        locales
+
+RUN echo $TZ > /etc/timezone && \
+    apt-get update && apt-get install -y tzdata && \
+    rm /etc/localtime && \
+    ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && \
+    dpkg-reconfigure -f noninteractive tzdata && \
+    apt-get clean
+
+COPY ./webservice/requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+RUN mkdir /home/www-data && mkdir /home/www-data/app
+WORKDIR /home/www-data/app/
+ADD webservice ./webservice/
+
+ENV PATH "$PATH:/home/www-data/app/"
+ENV PYTHONPATH "${PYTONPATH}:/home/www-data/app/"
+
+CMD [ "sh","-c","python ./webservice/app.py"]

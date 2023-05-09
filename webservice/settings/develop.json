@@ -1,0 +1,14 @@
+{
+  "mongo": {
+    "uri": "mongodb://localhost:27017/",
+    "db": "moc-alpha-testnet"
+  },
+  "debug": true,
+  "webapp_api_settings": {
+    "port": 5005,
+    "pagination": [20, 40],
+    "excluded_events": ["RedeemRequestAlter", "RedeemRequestProcessed",
+      "SettlementRedeemStableToken", "TransferFromMoC", "QueueDOC"],
+    "delta_price_hours": 24
+  }
+}
