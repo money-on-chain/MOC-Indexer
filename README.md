@@ -1,5 +1,13 @@
 # MoC Indexer
 
+# WARNING: DEPRECATED!.
+# This repository is going to be archived
+# Please use instead:
+# API: [Stable Protocol API](https://github.com/money-on-chain/stable-protocol-api)
+# Indexer: [Stable Protocol Indexer](https://github.com/money-on-chain/stable-protocol-indexer)
+
+
+
 ## Introduction
 
 To speed up the app we need an indexer of the blockchain of our contracts. 
