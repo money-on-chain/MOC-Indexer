@@ -3,6 +3,7 @@ from tabulate import tabulate
 
 from moneyonchain.networks import network_manager
 from indexer.mongo_manager import mongo_manager
+from moneyonchain.tokens import RIFDoC, RIF
 from indexer.logger import log
 
 CONTRACT_PRECISION = 10 ** 18
@@ -323,5 +324,69 @@ class ReportHistorical:
             )
 
         print(tabulate(l_transactions, headers=titles, tablefmt="pipe"))
+
+    def report_account_transactions(self, account_address):
+
+        # conect to mongo db
+        m_client = mongo_manager.connect()
+
+        # get collection moc_state from mongo
+        collection_transaction = mongo_manager.collection_transaction(m_client)
+
+        rdoc_token = RIFDoC(network_manager).from_abi()
+
+        rif_token = RIF(network_manager).from_abi()
+
+        coll_tx = collection_transaction.find({"event": {
+            "$in": ["RiskProRedeem",
+                    "RiskProMint",
+                    "StableTokenMint",
+                    "StableTokenRedeem",
+                    "FreeStableTokenRedeem",
+                    "RiskProxRedeem",
+                    "RiskProxMint"
+                    ]
+            },
+            "address": account_address,
+            "status": "confirmed"
+        })
+        if not coll_tx:
+            log.error("Transaction collection not exist. Please run indexer first before running report")
+            return
+
+        count = 0
+        l_transactions = []
+        titles = ['Count', 'Block Nº', 'Hash', 'Address', 'Event', 'Amount', 'Reserve Price', 'Reserve Amount', 'Commissions', 'RDOC Balance', 'RIF Balance', 'Created']
+        for tx in coll_tx:
+            count += 1
+
+            if 'blockNumber' in tx:
+                block_height = tx['blockNumber']
+                rdoc_balance = rdoc_token.balance_of(account_address, block_identifier=block_height)
+                rif_balance = rif_token.balance_of(account_address, block_identifier=block_height)
+            else:
+                block_height = ''
+                rdoc_balance = 0
+                rif_balance = 0
+
+            l_transactions.append(
+                [
+                    count,
+                    block_height,
+                    tx['transactionHash'],
+                    tx['address'],
+                    OPERATIONS_TRANSLATE[tx["event"]],
+                    str(float(tx['amount']) / CONTRACT_PRECISION),
+                    str(float(tx['reservePrice']) / CONTRACT_PRECISION),
+                    str(float(tx['RBTCAmount']) / CONTRACT_PRECISION),
+                    str(float(tx['rbtcCommission']) / CONTRACT_PRECISION),
+                    str(rdoc_balance),
+                    str(rif_balance),
+                    tx['createdAt']
+                ]
+            )
+
+        print(tabulate(l_transactions, headers=titles, tablefmt="pipe"))
+
 
 
